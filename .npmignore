@@ -1,0 +1,9 @@
+test
+.idea
+e2e
+.editorconfig
+yarn.lock
+webpack.config.js
+dist
+dist-cdn
+.github
