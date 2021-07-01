@@ -149,7 +149,14 @@
     width: auto;
     word-spacing: normal;
     z-index: auto;
+    /* this prevents you from getting stuck on long press on progress bar, for desktop users only */
     -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+    -khtml-user-select: none; /* Konqueror HTML */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+    user-select: none;
 }
 
 .fluid_video_wrapper canvas {
