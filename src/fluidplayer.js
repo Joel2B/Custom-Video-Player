@@ -159,7 +159,7 @@ const fluidPlayerClass = function () {
                 posterImageSize: 'contain',
                 adProgressColor: '#f9d300',
                 playButtonShowing: true,
-                playPauseAnimation: true,
+                playPauseAnimation: false,
                 closeButtonCaption: 'Close', // Remove?
                 fillToContainer: false,
                 autoPlay: false,
