@@ -759,10 +759,14 @@ _:-ms-lang(x),
 .fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container .fluid_controls_buffered {
     position: absolute;
     top: 5px;
-    width: 0;
+    width: 100%;
     height: 5px;
     background-color: rgba(255, 255, 255, 0.5);
     z-index: -1;
+}
+
+.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container .fluid_controls_progress .fluid_controls_currentprogress {
+    transform: scaleX(0);
 }
 
 .fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container .fluid_controls_progress,
@@ -771,6 +775,7 @@ _:-ms-lang(x),
     height: 5px;
     display: flex;
     align-items: center;
+    width: 100%;
 }
 
 .fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container:hover {
@@ -786,21 +791,25 @@ _:-ms-lang(x),
     bottom: 14px;
 }
 
-.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container.fluid_slider .fluid_controls_progress .fluid_controls_currentprogress .fluid_controls_currentpos {
+.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container.fluid_slider .fluid_controls_progress .fluid_controls_marker_container {
+    transform: translateX(0);
+}
+
+.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container.fluid_slider .fluid_controls_progress .fluid_controls_marker_container .fluid_controls_currentpos {
     background-color: red;
 }
 
-.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container.fluid_slider .fluid_controls_progress .fluid_controls_currentprogress .fluid_controls_currentpos,
-.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container.fluid_ad_slider .fluid_controls_progress .fluid_controls_currentprogress .fluid_controls_currentpos {
+.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container.fluid_slider .fluid_controls_progress .fluid_controls_marker_container .fluid_controls_currentpos,
+.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container.fluid_ad_slider .fluid_controls_progress .fluid_controls_marker_container .fluid_controls_currentpos {
     transform: scale(0);
 }
 
-.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container.fluid_slider:hover .fluid_controls_progress .fluid_controls_currentprogress .fluid_controls_currentpos {
+.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container.fluid_slider:hover .fluid_controls_progress .fluid_controls_marker_container .fluid_controls_currentpos {
     transform: none;
     transition: transform .1s cubic-bezier(0,0,0.2,1);
 }
 
-.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container.fluid_slider .fluid_controls_progress .fluid_controls_currentprogress .fluid_controls_currentpos {
+.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container.fluid_slider .fluid_controls_progress .fluid_controls_marker_container .fluid_controls_currentpos {
     transition: transform .1s cubic-bezier(0.4,0,1,1);
 }
 
@@ -858,6 +867,11 @@ _:-ms-lang(x),
 }
 
 .fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container .fluid_controls_progress .fluid_controls_currentpos {
+    width: 13px;
+    height: 13px;
+    position: absolute;
+    border-radius: 6px;
+    top: -5.5px!important;
     right: -6.5px;
     z-index: 3;
 }
@@ -868,14 +882,6 @@ _:-ms-lang(x),
     height: 11px;
     position: absolute;
     top: -4px;
-    border-radius: 6px;
-}
-
-.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container .fluid_controls_progress .fluid_controls_currentpos {
-    width: 13px;
-    height: 13px;
-    position: absolute;
-    top: inherit;
     border-radius: 6px;
 }
 

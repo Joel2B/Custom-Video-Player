@@ -692,11 +692,17 @@ const fluidPlayerClass = function () {
         controls.progressCurrent.style.backgroundColor = options.primaryColor;
         controls.progressWrapper.appendChild(controls.progressCurrent);
 
-        // Progress container -> Progress wrapper -> Current progress -> Marker
+        // Progress container -> Progress wrapper -> Current progress -> Marker container
+        controls.progress_markerContainer = document.createElement('div');
+        controls.progress_markerContainer.className = 'fluid_controls_marker_container';
+        controls.progress_markerContainer.id = self.videoPlayerId + 'marker_container';
+        controls.progressWrapper.appendChild(controls.progress_markerContainer);
+
+        // Progress container -> Progress wrapper -> Current progress -> Marker container -> Marker
         controls.progress_current_marker = document.createElement('div');
         controls.progress_current_marker.className = 'fluid_controls_currentpos';
         controls.progress_current_marker.id = self.videoPlayerId + '_vast_control_currentpos';
-        controls.progressCurrent.appendChild(controls.progress_current_marker);
+        controls.progress_markerContainer.appendChild(controls.progress_current_marker);
 
         // Progress container -> Buffered indicator
         controls.bufferedIndicator = document.createElement('div');
@@ -874,11 +880,16 @@ const fluidPlayerClass = function () {
     };
 
     self.contolProgressbarUpdate = () => {
+        const totalWidth = document.getElementById(self.videoPlayerId + '_fluid_controls_progress_container').clientWidth;
         const currentProgressTag = self.domRef.player.parentNode.getElementsByClassName('fluid_controls_currentprogress');
+        const markerContainer = document.getElementById(self.videoPlayerId + 'marker_container');
 
         for (let i = 0; i < currentProgressTag.length; i++) {
-            currentProgressTag[i].style.width = (self.domRef.player.currentTime / self.currentVideoDuration * 100) + '%';
+            currentProgressTag[i].style.transform = `scaleX(${self.domRef.player.currentTime / self.currentVideoDuration})`;
+            currentProgressTag[i].style.transformOrigin = '0 0';
         }
+
+        markerContainer.style.transform = `translateX(${(self.domRef.player.currentTime / self.currentVideoDuration) * totalWidth}px)`;
     };
 
     self.controlDurationUpdate = () => {
@@ -1637,7 +1648,12 @@ const fluidPlayerClass = function () {
 
         //Set the progressbar
         self.domRef.player.addEventListener('timeupdate', () => {
-            self.contolProgressbarUpdate();
+            var updateInterval = setInterval(function () {
+                self.contolProgressbarUpdate();
+                if (self.domRef.player.paused) {
+                  clearInterval(updateInterval);
+                }
+              }, 30);
             self.controlDurationUpdate();
         });
 
