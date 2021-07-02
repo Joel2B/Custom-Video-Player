@@ -161,7 +161,7 @@ const fluidPlayerClass = function () {
                 playButtonShowing: true,
                 playPauseAnimation: false,
                 closeButtonCaption: 'Close', // Remove?
-                fillToContainer: false,
+                fillToContainer: true,
                 autoPlay: false,
                 preload: 'auto',
                 mute: false,
