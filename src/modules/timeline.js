@@ -88,13 +88,18 @@ export default function (playerInstance, options) {
     playerInstance.generateTimelinePreviewTags = () => {
         const progressContainer = document.getElementById(playerInstance.videoPlayerId + '_fluid_controls_progress_container');
         const previewContainer = document.createElement('div');
-
+        
         previewContainer.id = playerInstance.videoPlayerId + '_fluid_timeline_preview_container';
         previewContainer.className = 'fluid_timeline_preview_container';
         previewContainer.style.display = 'none';
         previewContainer.style.position = 'absolute';
-
         progressContainer.appendChild(previewContainer);
+
+        const previewTooltipText = document.createElement('div');
+        previewTooltipText.id = playerInstance.videoPlayerId + '_fluid_timeline_preview_tooltip_text';
+        previewTooltipText.className = 'fluid_timeline_preview_tooltip_text';
+        previewTooltipText.style.position = 'absolute';
+        previewContainer.appendChild(previewTooltipText);
 
         //Shadow is needed to not trigger mouseleave event, that stops showing thumbnails, in case one scrubs a bit too fast and leaves current thumb before new one drawn.
         const previewContainerShadow = document.createElement('div');
@@ -120,6 +125,7 @@ export default function (playerInstance, options) {
 
     playerInstance.drawTimelinePreview = (event) => {
         const timelinePreviewTag = document.getElementById(playerInstance.videoPlayerId + '_fluid_timeline_preview_container');
+        const timelinePreviewTooltipText = document.getElementById(playerInstance.videoPlayerId + '_fluid_timeline_preview_tooltip_text');
         const timelinePreviewShadow = document.getElementById(playerInstance.videoPlayerId + '_fluid_timeline_preview_container_shadow');
         const progressContainer = document.getElementById(playerInstance.videoPlayerId + '_fluid_controls_progress_container');
         const totalWidth = progressContainer.clientWidth;
@@ -145,8 +151,16 @@ export default function (playerInstance, options) {
             timelinePreviewShadow.style.display = 'block';
 
             if (thumbnailCoordinates !== false) {
+                const progressContainer = document.getElementById(playerInstance.videoPlayerId + '_fluid_controls_progress_container');
+                const totalWidth = progressContainer.clientWidth;
+                const hoverQ = playerInstance.getEventOffsetX(event, progressContainer);
+                const hoverSecondQ = playerInstance.currentVideoDuration * hoverQ / totalWidth;
+
                 timelinePreviewTag.style.width = thumbnailCoordinates.w + 'px';
                 timelinePreviewTag.style.height = thumbnailCoordinates.h + 'px';
+                timelinePreviewTooltipText.innerText = playerInstance.formatTime(hoverSecondQ);
+                timelinePreviewTooltipText.style.left = ((thumbnailCoordinates.w / 2) - (timelinePreviewTooltipText.clientWidth / 2)) + 'px';
+                timelinePreviewTooltipText.style.top = (thumbnailCoordinates.h + 7) + 'px';
                 timelinePreviewShadow.style.height = thumbnailCoordinates.h + 'px';
                 timelinePreviewTag.style.background =
                     'url(' + thumbnailCoordinates.image + ') no-repeat scroll -' + thumbnailCoordinates.x + 'px -' + thumbnailCoordinates.y + 'px';
