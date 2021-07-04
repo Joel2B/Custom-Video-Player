@@ -155,16 +155,21 @@ export default function (playerInstance, options) {
                 const totalWidth = progressContainer.clientWidth;
                 const hoverQ = playerInstance.getEventOffsetX(event, progressContainer);
                 const hoverSecondQ = playerInstance.currentVideoDuration * hoverQ / totalWidth;
+                // preview border is set to 2px, a total of 4px on both sides, and they are subtracted from the position of the timeline preview so that it stays within the width of the timeline
+                const borderWidthPreview = 4;
+                // add the top position to the tooltip so it is not along with the preview
+                const topTooltipText = 7;
 
                 timelinePreviewTag.style.width = thumbnailCoordinates.w + 'px';
                 timelinePreviewTag.style.height = thumbnailCoordinates.h + 'px';
                 timelinePreviewTooltipText.innerText = playerInstance.formatTime(hoverSecondQ);
                 timelinePreviewTooltipText.style.left = ((thumbnailCoordinates.w / 2) - (timelinePreviewTooltipText.clientWidth / 2)) + 'px';
-                timelinePreviewTooltipText.style.top = (thumbnailCoordinates.h + 7) + 'px';
+                timelinePreviewTooltipText.style.top = (thumbnailCoordinates.h + topTooltipText) + 'px';
                 timelinePreviewShadow.style.height = thumbnailCoordinates.h + 'px';
                 timelinePreviewTag.style.background =
                     'url(' + thumbnailCoordinates.image + ') no-repeat scroll -' + thumbnailCoordinates.x + 'px -' + thumbnailCoordinates.y + 'px';
-                timelinePreviewTag.style.left = hoverX - (thumbnailCoordinates.w / 2) + 'px';
+                const positionPreview = hoverX - (thumbnailCoordinates.w / 2);
+                timelinePreviewTag.style.left = (positionPreview >= 0 ? (positionPreview <= totalWidth - thumbnailCoordinates.w ? positionPreview : totalWidth - thumbnailCoordinates.w - borderWidthPreview) : 0 ) + 'px';
                 timelinePreviewTag.style.display = 'block';
                 if (!playerInstance.displayOptions.layoutControls.timelinePreview.spriteImage) {
                     timelinePreviewTag.style.backgroundSize = 'contain';
