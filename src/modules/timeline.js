@@ -169,7 +169,8 @@ export default function (playerInstance, options) {
                 timelinePreviewTag.style.background =
                     'url(' + thumbnailCoordinates.image + ') no-repeat scroll -' + thumbnailCoordinates.x + 'px -' + thumbnailCoordinates.y + 'px';
                 const positionPreview = hoverX - (thumbnailCoordinates.w / 2);
-                timelinePreviewTag.style.left = (positionPreview >= 0 ? (positionPreview <= totalWidth - thumbnailCoordinates.w ? positionPreview : totalWidth - thumbnailCoordinates.w - borderWidthPreview) : 0 ) + 'px';
+                const previewScrollLimitWidth = totalWidth - thumbnailCoordinates.w - borderWidthPreview;
+                timelinePreviewTag.style.left = (positionPreview >= 0 ? (positionPreview <= previewScrollLimitWidth ? positionPreview : previewScrollLimitWidth) : 0 ) + 'px';
                 timelinePreviewTag.style.display = 'block';
                 if (!playerInstance.displayOptions.layoutControls.timelinePreview.spriteImage) {
                     timelinePreviewTag.style.backgroundSize = 'contain';
