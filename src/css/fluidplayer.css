@@ -788,6 +788,13 @@ _:-ms-lang(x),
     border-radius: 3px;
 }
 
+.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container .fluid_timeline_preview_tooltip_text_container {
+    position: absolute;
+    width: 100%;
+    display: flex!important;
+    justify-content: center;
+}
+
 .fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container .fluid_timeline_preview_container, .fluid_timeline_preview_container_shadow {
     bottom: 42px;
 }

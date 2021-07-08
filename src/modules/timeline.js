@@ -95,11 +95,17 @@ export default function (playerInstance, options) {
         previewContainer.style.position = 'absolute';
         progressContainer.appendChild(previewContainer);
 
+        const tooltipTextContainer = document.createElement('div');
+        tooltipTextContainer.id = playerInstance.videoPlayerId + '_fluid_timeline_preview_tooltip_text_container';
+        tooltipTextContainer.className = 'fluid_timeline_preview_tooltip_text_container';
+        tooltipTextContainer.style.position = 'absolute';
+        previewContainer.appendChild(tooltipTextContainer);
+
         const previewTooltipText = document.createElement('div');
         previewTooltipText.id = playerInstance.videoPlayerId + '_fluid_timeline_preview_tooltip_text';
         previewTooltipText.className = 'fluid_timeline_preview_tooltip_text';
         previewTooltipText.style.position = 'absolute';
-        previewContainer.appendChild(previewTooltipText);
+        tooltipTextContainer.appendChild(previewTooltipText);
 
         //Shadow is needed to not trigger mouseleave event, that stops showing thumbnails, in case one scrubs a bit too fast and leaves current thumb before new one drawn.
         const previewContainerShadow = document.createElement('div');
@@ -125,6 +131,7 @@ export default function (playerInstance, options) {
 
     playerInstance.drawTimelinePreview = (event) => {
         const timelinePreviewTag = document.getElementById(playerInstance.videoPlayerId + '_fluid_timeline_preview_container');
+        const tooltipTextContainer = document.getElementById(playerInstance.videoPlayerId + '_fluid_timeline_preview_tooltip_text_container');
         const timelinePreviewTooltipText = document.getElementById(playerInstance.videoPlayerId + '_fluid_timeline_preview_tooltip_text');
         const timelinePreviewShadow = document.getElementById(playerInstance.videoPlayerId + '_fluid_timeline_preview_container_shadow');
         const progressContainer = document.getElementById(playerInstance.videoPlayerId + '_fluid_controls_progress_container');
@@ -159,19 +166,18 @@ export default function (playerInstance, options) {
                 const borderWidthPreview = 4;
                 // add the top position to the tooltip so it is not along with the preview
                 const topTooltipText = 7;
+                const positionPreview = hoverX - (thumbnailCoordinates.w / 2);
+                const previewScrollLimitWidth = totalWidth - thumbnailCoordinates.w - borderWidthPreview;
 
                 timelinePreviewTag.style.width = thumbnailCoordinates.w + 'px';
                 timelinePreviewTag.style.height = thumbnailCoordinates.h + 'px';
-                timelinePreviewTooltipText.innerText = playerInstance.formatTime(hoverSecondQ);
-                timelinePreviewTooltipText.style.left = ((thumbnailCoordinates.w / 2) - (timelinePreviewTooltipText.clientWidth / 2)) + 'px';
-                timelinePreviewTooltipText.style.top = (thumbnailCoordinates.h + topTooltipText) + 'px';
                 timelinePreviewShadow.style.height = thumbnailCoordinates.h + 'px';
                 timelinePreviewTag.style.background =
                     'url(' + thumbnailCoordinates.image + ') no-repeat scroll -' + thumbnailCoordinates.x + 'px -' + thumbnailCoordinates.y + 'px';
-                const positionPreview = hoverX - (thumbnailCoordinates.w / 2);
-                const previewScrollLimitWidth = totalWidth - thumbnailCoordinates.w - borderWidthPreview;
                 timelinePreviewTag.style.left = (positionPreview >= 0 ? (positionPreview <= previewScrollLimitWidth ? positionPreview : previewScrollLimitWidth) : 0 ) + 'px';
                 timelinePreviewTag.style.display = 'block';
+                tooltipTextContainer.style.top = (thumbnailCoordinates.h + topTooltipText) + 'px';
+                timelinePreviewTooltipText.innerText = playerInstance.formatTime(hoverSecondQ);
                 if (!playerInstance.displayOptions.layoutControls.timelinePreview.spriteImage) {
                     timelinePreviewTag.style.backgroundSize = 'contain';
                 }
