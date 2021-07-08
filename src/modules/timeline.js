@@ -86,14 +86,14 @@ export default function (playerInstance, options) {
     };
 
     playerInstance.generateTimelinePreviewTags = () => {
-        const progressContainer = document.getElementById(playerInstance.videoPlayerId + '_fluid_controls_progress_container');
+        const controlsContainer = document.getElementById(playerInstance.videoPlayerId + '_fluid_controls_container');
+
         const previewContainer = document.createElement('div');
-        
         previewContainer.id = playerInstance.videoPlayerId + '_fluid_timeline_preview_container';
         previewContainer.className = 'fluid_timeline_preview_container';
         previewContainer.style.display = 'none';
         previewContainer.style.position = 'absolute';
-        progressContainer.appendChild(previewContainer);
+        controlsContainer.appendChild(previewContainer);
 
         const tooltipTextContainer = document.createElement('div');
         tooltipTextContainer.id = playerInstance.videoPlayerId + '_fluid_timeline_preview_tooltip_text_container';
@@ -114,7 +114,7 @@ export default function (playerInstance, options) {
         previewContainerShadow.style.position = 'absolute';
         previewContainerShadow.style.display = 'none';
         previewContainerShadow.style.opacity = 1;
-        progressContainer.appendChild(previewContainerShadow);
+        controlsContainer.appendChild(previewContainerShadow);
     };
 
     playerInstance.getThumbnailCoordinates = (second) => {
@@ -174,7 +174,7 @@ export default function (playerInstance, options) {
                 timelinePreviewShadow.style.height = thumbnailCoordinates.h + 'px';
                 timelinePreviewTag.style.background =
                     'url(' + thumbnailCoordinates.image + ') no-repeat scroll -' + thumbnailCoordinates.x + 'px -' + thumbnailCoordinates.y + 'px';
-                timelinePreviewTag.style.left = (positionPreview >= 0 ? (positionPreview <= previewScrollLimitWidth ? positionPreview : previewScrollLimitWidth) : 0 ) + 'px';
+                timelinePreviewTag.style.left = (positionPreview >= 0 ? (positionPreview <= previewScrollLimitWidth ? positionPreview + 13 : previewScrollLimitWidth + 13) : 13 ) + 'px';
                 timelinePreviewTag.style.display = 'block';
                 tooltipTextContainer.style.top = (thumbnailCoordinates.h + topTooltipText) + 'px';
                 timelinePreviewTooltipText.innerText = playerInstance.formatTime(hoverSecondQ);

@@ -783,20 +783,20 @@ _:-ms-lang(x),
     transition: transform .1s cubic-bezier(0,0,0.2,1);
 }
 
-.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container .fluid_timeline_preview_container {
+.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_timeline_preview_container {
     border: 2px solid rgb(255 255 255) !important;
     border-radius: 3px;
 }
 
-.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container .fluid_timeline_preview_tooltip_text_container {
+.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_timeline_preview_tooltip_text_container {
     position: absolute;
     width: 100%;
     display: flex!important;
     justify-content: center;
 }
 
-.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container .fluid_timeline_preview_container, .fluid_timeline_preview_container_shadow {
-    bottom: 42px;
+.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_timeline_preview_container, .fluid_timeline_preview_container_shadow {
+    bottom: 75px;
 }
 
 .fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container.fluid_slider .fluid_controls_progress .fluid_controls_marker_container {
