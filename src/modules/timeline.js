@@ -168,17 +168,17 @@ export default function (playerInstance, options) {
                 const topTooltipText = 7;
                 // get the left position of the timeline
                 const timelinePosition = parseInt(getComputedStyle(progressContainer).left.replace('px', ''));
-                const currentPositionPreview = hoverX - (thumbnailCoordinates.w / 2);
+                const currentPreviewPosition = hoverX - (thumbnailCoordinates.w / 2);
                 const previewScrollLimitWidth = totalWidth - thumbnailCoordinates.w - borderWidthPreview;
-                let positionPreview;
-                if (currentPositionPreview >= 0) {
-                    if (currentPositionPreview <= previewScrollLimitWidth) {
-                        positionPreview = currentPositionPreview + timelinePosition;
+                let previewPosition;
+                if (currentPreviewPosition >= 0) {
+                    if (currentPreviewPosition <= previewScrollLimitWidth) {
+                        previewPosition = currentPreviewPosition + timelinePosition;
                     } else {
-                        positionPreview = previewScrollLimitWidth + timelinePosition;
+                        previewPosition = previewScrollLimitWidth + timelinePosition;
                     }
                 } else {
-                    positionPreview = timelinePosition;
+                    previewPosition = timelinePosition;
                 }
                 
                 timelinePreviewTag.style.width = thumbnailCoordinates.w + 'px';
@@ -186,7 +186,7 @@ export default function (playerInstance, options) {
                 timelinePreviewShadow.style.height = thumbnailCoordinates.h + 'px';
                 timelinePreviewTag.style.background =
                     'url(' + thumbnailCoordinates.image + ') no-repeat scroll -' + thumbnailCoordinates.x + 'px -' + thumbnailCoordinates.y + 'px';
-                timelinePreviewTag.style.left = positionPreview + 'px';
+                timelinePreviewTag.style.left = previewPosition + 'px';
                 timelinePreviewTag.style.display = 'block';
                 tooltipTextContainer.style.top = (thumbnailCoordinates.h + topTooltipText) + 'px';
                 timelinePreviewTooltipText.innerText = playerInstance.formatTime(hoverSecondQ);
