@@ -163,18 +163,30 @@ export default function (playerInstance, options) {
                 const hoverQ = playerInstance.getEventOffsetX(event, progressContainer);
                 const hoverSecondQ = playerInstance.currentVideoDuration * hoverQ / totalWidth;
                 // preview border is set to 2px, a total of 4px on both sides, and they are subtracted from the position of the timeline preview so that it stays within the width of the timeline
-                const borderWidthPreview = 4;
+                const borderWidthPreview = getComputedStyle(timelinePreviewTag).borderWidth.replace('px', '');
                 // add the top position to the tooltip so it is not along with the preview
                 const topTooltipText = 7;
-                const positionPreview = hoverX - (thumbnailCoordinates.w / 2);
+                // get the left position of the timeline
+                const timelinePosition = parseInt(getComputedStyle(progressContainer).left.replace('px', ''));
+                const currentPositionPreview = hoverX - (thumbnailCoordinates.w / 2);
                 const previewScrollLimitWidth = totalWidth - thumbnailCoordinates.w - borderWidthPreview;
-
+                let positionPreview;
+                if (currentPositionPreview >= 0) {
+                    if (currentPositionPreview <= previewScrollLimitWidth) {
+                        positionPreview = currentPositionPreview + timelinePosition;
+                    } else {
+                        positionPreview = previewScrollLimitWidth + timelinePosition;
+                    }
+                } else {
+                    positionPreview = timelinePosition;
+                }
+                
                 timelinePreviewTag.style.width = thumbnailCoordinates.w + 'px';
                 timelinePreviewTag.style.height = thumbnailCoordinates.h + 'px';
                 timelinePreviewShadow.style.height = thumbnailCoordinates.h + 'px';
                 timelinePreviewTag.style.background =
                     'url(' + thumbnailCoordinates.image + ') no-repeat scroll -' + thumbnailCoordinates.x + 'px -' + thumbnailCoordinates.y + 'px';
-                timelinePreviewTag.style.left = (positionPreview >= 0 ? (positionPreview <= previewScrollLimitWidth ? positionPreview + 13 : previewScrollLimitWidth + 13) : 13 ) + 'px';
+                timelinePreviewTag.style.left = positionPreview + 'px';
                 timelinePreviewTag.style.display = 'block';
                 tooltipTextContainer.style.top = (thumbnailCoordinates.h + topTooltipText) + 'px';
                 timelinePreviewTooltipText.innerText = playerInstance.formatTime(hoverSecondQ);
