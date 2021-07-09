@@ -163,7 +163,7 @@ export default function (playerInstance, options) {
                 const hoverQ = playerInstance.getEventOffsetX(event, progressContainer);
                 const hoverSecondQ = playerInstance.currentVideoDuration * hoverQ / totalWidth;
                 // preview border is set to 2px, a total of 4px on both sides, and they are subtracted from the position of the timeline preview so that it stays within the width of the timeline
-                const borderWidthPreview = getComputedStyle(timelinePreviewTag).borderWidth.replace('px', '');
+                const borderWidthPreview = parseInt(getComputedStyle(timelinePreviewTag).borderWidth.replace('px', '')) * 2;
                 // add the top position to the tooltip so it is not along with the preview
                 const topTooltipText = 7;
                 // get the left position of the timeline
