@@ -1077,7 +1077,6 @@ const fluidPlayerClass = function () {
         }
 
         self.resizeVpaidAuto();
-
     };
 
     self.findClosestParent = (el, selector) => {
@@ -1271,6 +1270,14 @@ const fluidPlayerClass = function () {
         document.addEventListener('mousemove', onProgressbarMouseMove);
         document.addEventListener('touchmove', onProgressbarMouseMove);
     };
+
+    self.resizeMarkerContainer = () => {
+        setTimeout(() => {
+            const totalWidth = document.getElementById(self.videoPlayerId + '_fluid_controls_progress_container').clientWidth;
+            const markerContainer = document.getElementById(self.videoPlayerId + '_marker_container');
+            markerContainer.style.transform = `translateX(${(self.domRef.player.currentTime / self.currentVideoDuration) * totalWidth}px)`;
+        }, 125);
+    }
 
     self.onVolumeBarMouseDown = () => {
         const shiftVolume = volumeBarX => {
@@ -1709,6 +1716,18 @@ const fluidPlayerClass = function () {
                 self.playbackRate = 1;
             }
         });
+
+        if(window.attachEvent) {
+            window.attachEvent('onresize', function() {
+                self.resizeMarkerContainer();
+            });
+        } else if(window.addEventListener) {
+            window.addEventListener('resize', function() {
+                self.resizeMarkerContainer();
+            }, true);
+        } else {
+            console.log('[FP_ERROR] The browser does not support Javascript event binding.');
+        }
     };
 
     // Create the time position preview only if the vtt previews aren't enabled
@@ -2644,6 +2663,7 @@ const fluidPlayerClass = function () {
         self.domRef.player.dispatchEvent(event);
 
         self.resizeVpaidAuto();
+        self.resizeMarkerContainer();
     };
 
     self.defaultTheatre = () => {
