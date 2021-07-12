@@ -75,7 +75,8 @@ module.exports = (env, argv) => {
             plugins.push(new HtmlWebpackPlugin({
                 template: path.resolve(__dirname, 'test/html/', file),
                 inject: false,
-                filename: publicName
+                filename: publicName,
+                scriptLoading: 'blocking',
             }));
 
             caseFiles.push({
@@ -95,14 +96,24 @@ module.exports = (env, argv) => {
         }));
 
         // Copy static assets for E2E
-        plugins.push(new CopyPlugin(
-            [
-                {from: path.resolve(__dirname, 'test/static/'), to: path.resolve(wpDistOptions.path, 'static')}
+        plugins.push(new CopyPlugin({
+            patterns: [
+                {
+                    from: path.resolve(__dirname, 'test/static/'), 
+                    to: path.resolve(wpDistOptions.path, 'static')
+                }
             ]
-        ));
+        }));
     }
 
     return {
+        resolve: {
+            fallback: {
+                buffer: require.resolve("buffer"),
+                stream: require.resolve("stream-browserify"),
+                fs: false
+            }
+        },
         devServer: {
             contentBase: wpDistOptions.path,
             index: 'index.html',
