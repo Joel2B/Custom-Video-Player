@@ -1242,7 +1242,7 @@ const fluidPlayerClass = function () {
             if (!self.showTimeOnHover) {
                 self.drawTimelinePreview(event);
             } else {
-                self.drawTimelineBasicPreview();
+                self.drawTimelineBasicPreview(event);
             }
             document.getElementById(self.videoPlayerId + '_fluid_controls_progress_container').style.transform = 'none';
             document.getElementById(self.videoPlayerId + '_vast_control_currentpos').style.transform = 'none';
@@ -1751,12 +1751,16 @@ const fluidPlayerClass = function () {
         }
     };
 
-    self.drawTimelineBasicPreview = () => {
+    self.drawTimelineBasicPreview = (event) => {
         const progressContainer = document.getElementById(self.videoPlayerId + '_fluid_controls_progress_container');
         const totalWidth = progressContainer.clientWidth;
-        const hoverTimeItem = document.getElementById(self.videoPlayerId + '_fluid_timeline_preview');
         const hoverQ = self.getEventOffsetX(event, progressContainer);
 
+        if (hoverQ < 0 || hoverQ > totalWidth) {
+            return;
+        }
+
+        const hoverTimeItem = document.getElementById(self.videoPlayerId + '_fluid_timeline_preview');
         const hoverSecondQ = self.currentVideoDuration * hoverQ / totalWidth;
         const timelinePosition = parseInt(getComputedStyle(progressContainer).left.replace('px', ''));
         const currentPreviewPosition = hoverQ - hoverTimeItem.clientWidth / 2;
@@ -1772,7 +1776,7 @@ const fluidPlayerClass = function () {
         } else {
             previewPosition = timelinePosition;
         }
-        
+
         hoverTimeItem.innerText = self.formatTime(hoverSecondQ);
         hoverTimeItem.style.visibility = 'visible';
         hoverTimeItem.style.left = previewPosition + 'px';
@@ -1797,7 +1801,7 @@ const fluidPlayerClass = function () {
         // Set up hover for time position preview display
         document.getElementById(self.videoPlayerId + '_fluid_controls_progress_container')
             .addEventListener('mousemove', event => {
-                self.drawTimelineBasicPreview();
+                self.drawTimelineBasicPreview(event);
             }, false);
 
         // Hide timeline preview on mouseout
