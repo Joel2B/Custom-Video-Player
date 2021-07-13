@@ -1223,8 +1223,9 @@ const fluidPlayerClass = function () {
             shiftTime(currentX);
             self.contolProgressbarUpdate(self.videoPlayerId);
             self.controlDurationUpdate(self.videoPlayerId);
-            
-            self.drawTimelinePreview(event);
+            if (!self.showTimeOnHover) {
+                self.drawTimelinePreview(event);
+            }
             document.getElementById(self.videoPlayerId + '_fluid_controls_progress_container').style.transform = 'none';
             document.getElementById(self.videoPlayerId + '_vast_control_currentpos').style.transform = 'none';
             
@@ -1233,8 +1234,10 @@ const fluidPlayerClass = function () {
         const onProgressbarMouseUp = event => {
             document.getElementById(self.videoPlayerId + '_fluid_controls_progress_container').removeAttribute('style');
             document.getElementById(self.videoPlayerId + '_vast_control_currentpos').removeAttribute('style');
-            document.getElementById(self.videoPlayerId + '_fluid_timeline_preview_container').style.display = 'none';
-            document.getElementById(self.videoPlayerId + '_fluid_timeline_preview_container_shadow').style.display = 'none';
+            if (!self.showTimeOnHover) {
+                document.getElementById(self.videoPlayerId + '_fluid_timeline_preview_container').style.display = 'none';
+                document.getElementById(self.videoPlayerId + '_fluid_timeline_preview_container_shadow').style.display = 'none';
+            }
             
             document.removeEventListener('mousemove', onProgressbarMouseMove);
             document.removeEventListener('touchmove', onProgressbarMouseMove);
