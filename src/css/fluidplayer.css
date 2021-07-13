@@ -426,13 +426,14 @@ svg:not(:root) {
 }
 
 .fluid_timeline_preview {
+    width: 32px;
     bottom: 50px;
     color: #ffffff;
     font-size: 13px;
     line-height: 15px;
     font-family: -apple-system, BlinkMacSystemFont, 'segoe ui', roboto, oxygen-sans, ubuntu, cantarell, 'helvetica neue', 'arial', sans-serif, 'apple color emoji', 'segoe ui emoji', 'segoe ui symbol';
     font-weight: 500;
-    text-align: start;
+    text-align: center;
     padding: 5px 9px;
     background-color: rgba(28,28,28,0.9);
     border-radius: 2px;
