@@ -160,8 +160,6 @@ export default function (playerInstance, options) {
             if (thumbnailCoordinates !== false) {
                 const progressContainer = document.getElementById(playerInstance.videoPlayerId + '_fluid_controls_progress_container');
                 const totalWidth = progressContainer.clientWidth;
-                const hoverQ = playerInstance.getEventOffsetX(event, progressContainer);
-                const hoverSecondQ = playerInstance.currentVideoDuration * hoverQ / totalWidth;
                 // preview border is set to 2px, a total of 4px on both sides, and they are subtracted from the position of the timeline preview so that it stays within the width of the timeline
                 const borderWidthPreview = parseInt(getComputedStyle(timelinePreviewTag).borderWidth.replace('px', '')) * 2;
                 // add the top position to the tooltip so it is not along with the preview
@@ -189,7 +187,7 @@ export default function (playerInstance, options) {
                 timelinePreviewTag.style.left = previewPosition + 'px';
                 timelinePreviewTag.style.display = 'block';
                 tooltipTextContainer.style.top = (thumbnailCoordinates.h + topTooltipText) + 'px';
-                timelinePreviewTooltipText.innerText = playerInstance.formatTime(hoverSecondQ);
+                timelinePreviewTooltipText.innerText = playerInstance.formatTime(hoverSecond);
                 if (!playerInstance.displayOptions.layoutControls.timelinePreview.spriteImage) {
                     timelinePreviewTag.style.backgroundSize = 'contain';
                 }
