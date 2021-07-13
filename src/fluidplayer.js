@@ -1760,7 +1760,7 @@ const fluidPlayerClass = function () {
 
         previewContainer.id = self.videoPlayerId + '_fluid_timeline_preview';
         previewContainer.className = 'fluid_timeline_preview';
-        previewContainer.style.visibility = 'visible';
+        previewContainer.style.visibility = 'hidden';
         previewContainer.style.position = 'absolute';
 
         controlsContainer.appendChild(previewContainer);
