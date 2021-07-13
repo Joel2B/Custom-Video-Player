@@ -161,11 +161,11 @@ export default function (playerInstance, options) {
                 const progressContainer = document.getElementById(playerInstance.videoPlayerId + '_fluid_controls_progress_container');
                 const totalWidth = progressContainer.clientWidth;
                 // preview border is set to 2px, a total of 4px on both sides, and they are subtracted from the position of the timeline preview so that it stays within the width of the timeline
-                const borderWidthPreview = parseInt(getComputedStyle(timelinePreviewTag).borderWidth.replace('px', '')) * 2;
+                const borderWidthPreview = parseInt(window.getComputedStyle(timelinePreviewTag, null).getPropertyValue('border-left-width').replace('px', '')) * 2;
                 // add the top position to the tooltip so it is not along with the preview
                 const topTooltipText = 7;
                 // get the left position of the timeline
-                const timelinePosition = parseInt(getComputedStyle(progressContainer).left.replace('px', ''));
+                const timelinePosition = parseInt(window.getComputedStyle(progressContainer, null).getPropertyValue('left').replace('px', ''));
                 const currentPreviewPosition = hoverX - (thumbnailCoordinates.w / 2);
                 const previewScrollLimitWidth = totalWidth - thumbnailCoordinates.w - borderWidthPreview;
                 let previewPosition;

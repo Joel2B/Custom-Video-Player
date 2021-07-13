@@ -1764,7 +1764,7 @@ const fluidPlayerClass = function () {
 
         const hoverTimeItem = document.getElementById(self.videoPlayerId + '_fluid_timeline_preview');
         const hoverSecondQ = self.currentVideoDuration * hoverQ / totalWidth;
-        const timelinePosition = parseInt(getComputedStyle(progressContainer).left.replace('px', ''));
+        const timelinePosition = parseInt(window.getComputedStyle(progressContainer, null).getPropertyValue('left').replace('px', ''));
         const currentPreviewPosition = hoverQ - hoverTimeItem.clientWidth / 2;
         const previewScrollLimitWidth = totalWidth - hoverTimeItem.clientWidth;
 
