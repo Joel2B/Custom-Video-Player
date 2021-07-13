@@ -1755,15 +1755,15 @@ const fluidPlayerClass = function () {
             return;
         }
 
-        const progressContainer = document.getElementById(self.videoPlayerId + '_fluid_controls_progress_container');
+        const controlsContainer = document.getElementById(self.videoPlayerId + '_fluid_controls_container');
         const previewContainer = document.createElement('div');
 
         previewContainer.id = self.videoPlayerId + '_fluid_timeline_preview';
         previewContainer.className = 'fluid_timeline_preview';
-        previewContainer.style.display = 'none';
+        previewContainer.style.visibility = 'visible';
         previewContainer.style.position = 'absolute';
 
-        progressContainer.appendChild(previewContainer);
+        controlsContainer.appendChild(previewContainer);
 
         // Set up hover for time position preview display
         document.getElementById(self.videoPlayerId + '_fluid_controls_progress_container')
@@ -1774,17 +1774,36 @@ const fluidPlayerClass = function () {
                 const hoverQ = self.getEventOffsetX(event, progressContainer);
 
                 const hoverSecondQ = self.currentVideoDuration * hoverQ / totalWidth;
-                hoverTimeItem.innerText = self.formatTime(hoverSecondQ);
+                const timelinePosition = parseInt(getComputedStyle(progressContainer).left.replace('px', ''));
+                const currentPreviewPosition = hoverQ - hoverTimeItem.clientWidth / 2;
+                const previewScrollLimitWidth = totalWidth - hoverTimeItem.clientWidth;
 
-                hoverTimeItem.style.display = 'block';
-                hoverTimeItem.style.left = (hoverSecondQ / self.domRef.player.duration * 100) + "%";
+                let previewPosition;
+                if (currentPreviewPosition >= 0) {
+                    if (currentPreviewPosition <= previewScrollLimitWidth) {
+                        previewPosition = currentPreviewPosition + timelinePosition;
+                    } else {
+                        previewPosition = previewScrollLimitWidth + timelinePosition;
+                    }
+                } else {
+                    previewPosition = timelinePosition;
+                }
+                
+                hoverTimeItem.innerText = self.formatTime(hoverSecondQ);
+                hoverTimeItem.style.visibility = 'visible';
+                hoverTimeItem.style.left = previewPosition + 'px';
             }, false);
 
         // Hide timeline preview on mouseout
         document.getElementById(self.videoPlayerId + '_fluid_controls_progress_container')
-            .addEventListener('mouseout', () => {
+            .addEventListener('mouseout', (event) => {
+                const progress = document.getElementById(self.videoPlayerId + '_fluid_controls_progress_container');
+                if (typeof event.clientX !== 'undefined' && progress.contains(document.elementFromPoint(event.clientX, event.clientY))) {
+                    //False positive (Chrome bug when fast click causes leave event)
+                    return;
+                }
                 const hoverTimeItem = document.getElementById(self.videoPlayerId + '_fluid_timeline_preview');
-                hoverTimeItem.style.display = 'none';
+                hoverTimeItem.style.visibility = 'hidden';
             }, false);
     };
 
