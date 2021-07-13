@@ -503,7 +503,7 @@ const fluidPlayerClass = function () {
 
         const loaderDiv = document.getElementById('vast_video_loading_' + self.videoPlayerId);
 
-        loaderDiv.style.display = showLoader ? 'table' : 'none';
+        loaderDiv.style.opacity = showLoader ? '1' : '0';
     };
 
     self.sendRequest = (url, withCredentials, timeout, functionReadyStateChange) => {
@@ -634,7 +634,23 @@ const fluidPlayerClass = function () {
         controls.loader = document.createElement('div');
         controls.loader.className = 'vast_video_loading';
         controls.loader.id = 'vast_video_loading_' + self.videoPlayerId;
-        controls.loader.style.display = 'none';
+
+        var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        var circle = document.createElementNS("http://www.w3.org/2000/svg", 'circle');
+
+        svg.setAttribute("viewBox","25 25 50 50");
+        svg.setAttribute('class', 'circular');
+
+        circle.setAttribute('cx', '50');
+        circle.setAttribute('cy', '50');
+        circle.setAttribute('r', '20');
+        circle.setAttribute('fill', 'none');
+        circle.setAttribute('stroke-width', '2');
+        circle.setAttribute('stroke-miterlimit', '10');
+        circle.setAttribute('class', 'path');
+
+        svg.appendChild(circle);
+        controls.loader.appendChild(svg);
 
         // Root element
         controls.root = document.createElement('div');
