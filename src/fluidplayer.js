@@ -296,7 +296,7 @@ const fluidPlayerClass = function () {
             if (!options.hasOwnProperty(key)) {
                 continue;
             }
-            if (typeof options[key] == "object") {
+            if (typeof options[key] == 'object') {
                 for (let subKey in options[key]) {
                     if (!options[key].hasOwnProperty(subKey)) {
                         continue;
@@ -635,10 +635,10 @@ const fluidPlayerClass = function () {
         controls.loader.className = 'vast_video_loading';
         controls.loader.id = 'vast_video_loading_' + self.videoPlayerId;
 
-        var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        var circle = document.createElementNS("http://www.w3.org/2000/svg", 'circle');
+        var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        var circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
 
-        svg.setAttribute("viewBox","25 25 50 50");
+        svg.setAttribute('viewBox', '25 25 50 50');
         svg.setAttribute('class', 'circular');
 
         circle.setAttribute('cx', '50');
@@ -827,8 +827,8 @@ const fluidPlayerClass = function () {
 
         const initialPlay = document.getElementById(self.videoPlayerId + '_fluid_initial_play');
         if (initialPlay) {
-            document.getElementById(self.videoPlayerId + '_fluid_initial_play').style.display = "none";
-            document.getElementById(self.videoPlayerId + '_fluid_initial_play_button').style.opacity = "1";
+            document.getElementById(self.videoPlayerId + '_fluid_initial_play').style.display = 'none';
+            document.getElementById(self.videoPlayerId + '_fluid_initial_play_button').style.opacity = '1';
         }
 
         if (!self.domRef.player.paused) {
@@ -860,8 +860,8 @@ const fluidPlayerClass = function () {
         }
 
         if (self.isCurrentlyPlayingAd && self.displayOptions.vastOptions.showPlayButton) {
-            document.getElementById(self.videoPlayerId + '_fluid_initial_play').style.display = "block";
-            document.getElementById(self.videoPlayerId + '_fluid_initial_play_button').style.opacity = "1";
+            document.getElementById(self.videoPlayerId + '_fluid_initial_play').style.display = 'block';
+            document.getElementById(self.videoPlayerId + '_fluid_initial_play_button').style.opacity = '1';
         }
 
         if (fpLogo) {
@@ -1263,7 +1263,7 @@ const fluidPlayerClass = function () {
             document.removeEventListener('touchend', onProgressbarMouseUp);
 
             // when you hold down and exit, and stop pressing while outside the progress bar item, the position of the progress bar returns to the beginning of the item where you stopped pressing
-            let clickedX = self.getEventOffsetX(event, document.getElementById(self.videoPlayerId + "_fluid_controls_progress_container"));
+            let clickedX = self.getEventOffsetX(event, document.getElementById(self.videoPlayerId + '_fluid_controls_progress_container'));
 
             if (isNaN(clickedX) && !isNaN(initialPosition)) {
                 clickedX = initialPosition;
@@ -2071,12 +2071,12 @@ const fluidPlayerClass = function () {
         let firstSource = true;
         for (const source of self.videoSources) {
             // Fix for issues occurring on iOS with mkv files
-            const getTheType = source.url.split(".").pop();
+            const getTheType = source.url.split('.').pop();
             if (self.mobileInfo.userOs === 'iOS' && getTheType === 'mkv') {
                 continue;
             }
 
-            const sourceSelected = (firstSource) ? "source_selected" : "";
+            const sourceSelected = (firstSource) ? 'source_selected' : '';
             const hdElement = (source.isHD) ? '<sup style="color:' + self.displayOptions.layoutControls.primaryColor + '" class="fp_hd_source"></sup>' : '';
             firstSource = false;
             const sourceChangeDiv = document.createElement('div');
@@ -2339,7 +2339,7 @@ const fluidPlayerClass = function () {
         const containerDiv = document.createElement('div');
         containerDiv.id = self.videoPlayerId + '_fluid_initial_play_button';
         containerDiv.className = 'fluid_html_on_pause';
-        const backgroundColor = (self.displayOptions.layoutControls.primaryColor) ? self.displayOptions.layoutControls.primaryColor : "#333333";
+        const backgroundColor = (self.displayOptions.layoutControls.primaryColor) ? self.displayOptions.layoutControls.primaryColor : '#333333';
         containerDiv.innerHTML = '<div id="' + self.videoPlayerId + '_fluid_initial_play" class="fluid_initial_play" style="background-color:' + backgroundColor + '"><div id="' + self.videoPlayerId + '_fluid_state_button" class="fluid_initial_play_button"></div></div>';
         const initPlayFunction = function () {
             self.playPauseToggle();
@@ -2563,7 +2563,7 @@ const fluidPlayerClass = function () {
                     continue;
                 }
 
-                const newBufferLength = (self.domRef.player.buffered.end(self.domRef.player.buffered.length - 1 - i) / duration) * 100 + "%";
+                const newBufferLength = (self.domRef.player.buffered.end(self.domRef.player.buffered.length - 1 - i) / duration) * 100 + '%';
 
                 for (let j = 0; j < bufferBar.length; j++) {
                     bufferBar[j].style.width = newBufferLength;
@@ -2735,17 +2735,17 @@ const fluidPlayerClass = function () {
         let defaultHorizontalMargin = '10px';
         videoWrapper.style.width = workingWidth;
         videoWrapper.style.height = self.displayOptions.layoutControls.theatreSettings.height;
-        videoWrapper.style.maxHeight = screen.height + "px";
+        videoWrapper.style.maxHeight = screen.height + 'px';
         videoWrapper.style.marginTop = self.displayOptions.layoutControls.theatreSettings.marginTop + 'px';
         switch (self.displayOptions.layoutControls.theatreSettings.horizontalAlign) {
             case 'center':
                 // We must calculate the margin differently based on whether they passed % or px
-                if (typeof (workingWidth) == 'string' && workingWidth.substr(workingWidth.length - 1) === "%") {
+                if (typeof (workingWidth) == 'string' && workingWidth.substr(workingWidth.length - 1) === '%') {
                     // A margin of half the remaining space
-                    defaultHorizontalMargin = ((100 - parseInt(workingWidth.substring(0, workingWidth.length - 1))) / 2) + "%";
-                } else if (typeof (workingWidth) == 'string' && workingWidth.substr(workingWidth.length - 2) === "px") {
+                    defaultHorizontalMargin = ((100 - parseInt(workingWidth.substring(0, workingWidth.length - 1))) / 2) + '%';
+                } else if (typeof (workingWidth) == 'string' && workingWidth.substr(workingWidth.length - 2) === 'px') {
                     // Half the (Remaining width / fullwidth)
-                    defaultHorizontalMargin = (((screen.width - parseInt(workingWidth.substring(0, workingWidth.length - 2))) / screen.width) * 100 / 2) + "%";
+                    defaultHorizontalMargin = (((screen.width - parseInt(workingWidth.substring(0, workingWidth.length - 2))) / screen.width) * 100 / 2) + '%';
                 } else {
                     console.log('[FP_ERROR] Theatre width specified invalid.');
                 }
@@ -2777,7 +2777,7 @@ const fluidPlayerClass = function () {
             return;
         }
         containerDiv.style.background = "url('" + self.displayOptions.layoutControls.posterImage + "') center center / "
-            + self.displayOptions.layoutControls.posterImageSize + " no-repeat black";
+            + self.displayOptions.layoutControls.posterImageSize + ' no-repeat black';
         self.domRef.player.parentNode.insertBefore(containerDiv, null);
     };
 
@@ -2992,7 +2992,7 @@ const fluidPlayerClass = function () {
             return false;
         }
 
-        const logoBlock = document.getElementById(self.videoPlayerId + "_logo");
+        const logoBlock = document.getElementById(self.videoPlayerId + '_logo');
 
         // We create the logo from scratch if it doesn't already exist, they might not give everything correctly so we
         self.displayOptions.layoutControls.logo.imageUrl = (logo.imageUrl) ? logo.imageUrl : null;
