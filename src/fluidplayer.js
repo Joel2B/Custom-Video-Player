@@ -1255,6 +1255,8 @@ const fluidPlayerClass = function () {
             if (!self.showTimeOnHover) {
                 document.getElementById(self.videoPlayerId + '_fluid_timeline_preview_container').style.display = 'none';
                 document.getElementById(self.videoPlayerId + '_fluid_timeline_preview_container_shadow').style.display = 'none';
+            } else {
+                document.getElementById(self.videoPlayerId + '_fluid_timeline_preview').style.visibility = 'hidden';
             }
             
             document.removeEventListener('mousemove', onProgressbarMouseMove);
