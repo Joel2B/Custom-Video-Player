@@ -1241,6 +1241,8 @@ const fluidPlayerClass = function () {
             self.controlDurationUpdate(self.videoPlayerId);
             if (!self.showTimeOnHover) {
                 self.drawTimelinePreview(event);
+            } else {
+                self.drawTimelineBasicPreview();
             }
             document.getElementById(self.videoPlayerId + '_fluid_controls_progress_container').style.transform = 'none';
             document.getElementById(self.videoPlayerId + '_vast_control_currentpos').style.transform = 'none';
@@ -1749,6 +1751,33 @@ const fluidPlayerClass = function () {
         }
     };
 
+    self.drawTimelineBasicPreview = () => {
+        const progressContainer = document.getElementById(self.videoPlayerId + '_fluid_controls_progress_container');
+        const totalWidth = progressContainer.clientWidth;
+        const hoverTimeItem = document.getElementById(self.videoPlayerId + '_fluid_timeline_preview');
+        const hoverQ = self.getEventOffsetX(event, progressContainer);
+
+        const hoverSecondQ = self.currentVideoDuration * hoverQ / totalWidth;
+        const timelinePosition = parseInt(getComputedStyle(progressContainer).left.replace('px', ''));
+        const currentPreviewPosition = hoverQ - hoverTimeItem.clientWidth / 2;
+        const previewScrollLimitWidth = totalWidth - hoverTimeItem.clientWidth;
+
+        let previewPosition;
+        if (currentPreviewPosition >= 0) {
+            if (currentPreviewPosition <= previewScrollLimitWidth) {
+                previewPosition = currentPreviewPosition + timelinePosition;
+            } else {
+                previewPosition = previewScrollLimitWidth + timelinePosition;
+            }
+        } else {
+            previewPosition = timelinePosition;
+        }
+        
+        hoverTimeItem.innerText = self.formatTime(hoverSecondQ);
+        hoverTimeItem.style.visibility = 'visible';
+        hoverTimeItem.style.left = previewPosition + 'px';
+    };
+
     // Create the time position preview only if the vtt previews aren't enabled
     self.createTimePositionPreview = () => {
         if (!self.showTimeOnHover) {
@@ -1768,30 +1797,7 @@ const fluidPlayerClass = function () {
         // Set up hover for time position preview display
         document.getElementById(self.videoPlayerId + '_fluid_controls_progress_container')
             .addEventListener('mousemove', event => {
-                const progressContainer = document.getElementById(self.videoPlayerId + '_fluid_controls_progress_container');
-                const totalWidth = progressContainer.clientWidth;
-                const hoverTimeItem = document.getElementById(self.videoPlayerId + '_fluid_timeline_preview');
-                const hoverQ = self.getEventOffsetX(event, progressContainer);
-
-                const hoverSecondQ = self.currentVideoDuration * hoverQ / totalWidth;
-                const timelinePosition = parseInt(getComputedStyle(progressContainer).left.replace('px', ''));
-                const currentPreviewPosition = hoverQ - hoverTimeItem.clientWidth / 2;
-                const previewScrollLimitWidth = totalWidth - hoverTimeItem.clientWidth;
-
-                let previewPosition;
-                if (currentPreviewPosition >= 0) {
-                    if (currentPreviewPosition <= previewScrollLimitWidth) {
-                        previewPosition = currentPreviewPosition + timelinePosition;
-                    } else {
-                        previewPosition = previewScrollLimitWidth + timelinePosition;
-                    }
-                } else {
-                    previewPosition = timelinePosition;
-                }
-                
-                hoverTimeItem.innerText = self.formatTime(hoverSecondQ);
-                hoverTimeItem.style.visibility = 'visible';
-                hoverTimeItem.style.left = previewPosition + 'px';
+                self.drawTimelineBasicPreview();
             }, false);
 
         // Hide timeline preview on mouseout
