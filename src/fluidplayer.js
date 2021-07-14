@@ -1615,7 +1615,8 @@ const fluidPlayerClass = function () {
                     // pause the regular linear vast or content video player
                     self.domRef.player.pause();
                 }
-
+                // run more tests to see if it doesn't break any functions
+                self.controlPlayPauseToggle();
                 self.playPauseAnimationToggle(false);
             }
 
