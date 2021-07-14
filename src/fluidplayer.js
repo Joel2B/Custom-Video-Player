@@ -712,7 +712,7 @@ const fluidPlayerClass = function () {
         controls.progress_markerContainer = document.createElement('div');
         controls.progress_markerContainer.className = 'fluid_controls_marker_container';
         controls.progress_markerContainer.id = self.videoPlayerId + '_marker_container';
-        controls.progressWrapper.appendChild(controls.progress_markerContainer);
+        controls.progressContainer.appendChild(controls.progress_markerContainer);
 
         // Progress container -> Progress wrapper -> Current progress -> Marker container -> Marker
         controls.progress_current_marker = document.createElement('div');
