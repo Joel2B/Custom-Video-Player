@@ -1244,13 +1244,24 @@ const fluidPlayerClass = function () {
             } else {
                 self.drawTimelineBasicPreview(event);
             }
-            document.getElementById(self.videoPlayerId + '_fluid_controls_progress_container').style.transform = 'none';
-            document.getElementById(self.videoPlayerId + '_vast_control_currentpos').style.transform = 'none';
-            
+            const progressContainer = document.getElementById(self.videoPlayerId + '_fluid_controls_progress_container').childNodes;
+            for (let i = 0; i < progressContainer.length; i++) {
+                if (progressContainer[i].className.indexOf('fluid_controls_marker_container') != -1) {
+                    continue;
+                }
+                progressContainer[i].style.transform = 'none';
+            }
+            document.getElementById(self.videoPlayerId + '_vast_control_currentpos').style.setProperty('transform', 'none', 'important');
         };
 
         const onProgressbarMouseUp = event => {
-            document.getElementById(self.videoPlayerId + '_fluid_controls_progress_container').removeAttribute('style');
+            const progressContainer = document.getElementById(self.videoPlayerId + '_fluid_controls_progress_container').childNodes;
+            for (let i = 0; i < progressContainer.length; i++) {
+                if (progressContainer[i].className.indexOf('fluid_controls_marker_container') != -1) {
+                    continue;
+                }
+                progressContainer[i].style.transform = '';
+            }
             document.getElementById(self.videoPlayerId + '_vast_control_currentpos').removeAttribute('style');
             if (!self.showTimeOnHover) {
                 document.getElementById(self.videoPlayerId + '_fluid_timeline_preview_container').style.display = 'none';
