@@ -105,6 +105,12 @@ const fluidPlayerClass = function () {
         self.timelinePreviewData = [];
         self.mainVideoCurrentTime = 0;
         self.mainVideoDuration = 0;
+        self.currentFrameRate = 0;
+        self.currentFrameCount = 0;
+        self.countCheckFPS = 0;
+        self.fpsTimer = null;
+        self.stopCheckFPSInterval = false;
+        self.updateFpsTimer = 0.5;
         self.isTimer = false;
         self.timer = null;
         self.timerPool = {};
@@ -1139,7 +1145,7 @@ const fluidPlayerClass = function () {
                     .replace(/\s/g, '')
                     .replace(/px/g, '')
                     .split(',')
-                ;
+                    ;
             }
         } catch (e) {
             coordinates = null;
@@ -1269,7 +1275,7 @@ const fluidPlayerClass = function () {
             } else {
                 document.getElementById(self.videoPlayerId + '_fluid_timeline_preview').style.visibility = 'hidden';
             }
-            
+
             document.removeEventListener('mousemove', onProgressbarMouseMove);
             document.removeEventListener('touchmove', onProgressbarMouseMove);
             document.removeEventListener('mouseup', onProgressbarMouseUp);
@@ -1412,6 +1418,7 @@ const fluidPlayerClass = function () {
 
     self.getNewCurrentTimeValueByKeyCode = (keyCode, currentTime, duration) => {
         let newCurrentTime = currentTime;
+        let frameTime = self.currentFrameRate != 0 ? 1 / self.currentFrameRate : 24;
 
         switch (keyCode) {
             case 37://left arrow
@@ -1442,6 +1449,14 @@ const fluidPlayerClass = function () {
                     const percent = (keyCode - 48) * 10;
                     newCurrentTime = duration * percent / 100;
                 }
+                break;
+            case 188: // ,
+                newCurrentTime -= frameTime;
+                newCurrentTime = newCurrentTime < frameTime ? 0 : newCurrentTime;
+                break;
+            case 190:// .
+                newCurrentTime += frameTime;
+                newCurrentTime = newCurrentTime > duration - frameTime ? duration : newCurrentTime;
                 break;
         }
 
@@ -1504,6 +1519,8 @@ const fluidPlayerClass = function () {
                 case 55://7
                 case 56://8
                 case 57://9
+                case 188:// ,
+                case 190:// .
                     self.onKeyboardSeekPosition(keyCode);
                     event.preventDefault();
                     break;
@@ -1548,6 +1565,54 @@ const fluidPlayerClass = function () {
         if (self.theatreMode && !self.theatreModeAdvanced) {
             self.theatreToggle();
         }
+    };
+
+    self.checkFPS = (totalVideoFrames) => {
+        const previousFrameRate = self.currentFrameRate;
+        self.currentFrameRate = (totalVideoFrames - self.currentFrameCount) / self.updateFpsTimer;
+        self.currentFrameCount = totalVideoFrames;
+        
+        if (previousFrameRate == self.currentFrameRate) {
+            self.countCheckFPS++;
+        } else {
+            self.countCheckFPS = 0;
+        }
+
+        if (self.domRef.player.paused) {
+            clearInterval(self.fpsTimer);
+        }
+
+        if (self.countCheckFPS >= 3) {
+            clearInterval(self.fpsTimer);
+            self.stopCheckFPSInterval = true;
+        }
+    }
+
+    self.checkFPSInterval = () => {
+        clearInterval(self.fpsTimer);
+        const isFirefoxAndroid = self.mobileInfo.userOs == false
+            && self.mobileInfo.userOs === 'Android'
+            && browserVersion.browserName === 'Mozilla Firefox';
+        const isSafariIOS = self.mobileInfo.userOs !== false
+            && self.mobileInfo.userOs === 'IOS'
+            && browserVersion.browserName === 'Safari';
+
+        if (self.stopCheckFPSInterval || isFirefoxAndroid || isSafariIOS) {
+            return;
+        }
+
+        self.fpsTimer = setInterval(() => {
+            const video = self.domRef.player;
+            if (typeof video.getVideoPlaybackQuality === 'function' &&
+                typeof video.getVideoPlaybackQuality().totalVideoFrames === 'number') {
+                const videoPlaybackQuality = video.getVideoPlaybackQuality();
+                self.checkFPS(videoPlaybackQuality.totalVideoFrames);
+            } else if (typeof video.webkitDecodedFrameCount === 'number') {
+                self.checkFPS(video.webkitDecodedFrameCount);
+            } else {
+                console.log('[FP_ERROR] The browser does not support webkitDecodedFrameCount.');
+            }
+        }, self.updateFpsTimer * 1000);
     };
 
     self.initialPlay = () => {
@@ -1692,6 +1757,7 @@ const fluidPlayerClass = function () {
         self.domRef.player.addEventListener('play', () => {
             self.controlPlayPauseToggle();
             self.contolVolumebarUpdate();
+            self.checkFPSInterval();
         }, false);
 
         self.domRef.player.addEventListener('fluidplayerpause', () => {
@@ -1703,9 +1769,9 @@ const fluidPlayerClass = function () {
             var updateInterval = setInterval(function () {
                 self.contolProgressbarUpdate();
                 if (self.domRef.player.paused) {
-                  clearInterval(updateInterval);
+                    clearInterval(updateInterval);
                 }
-              }, 30);
+            }, 30);
             self.controlDurationUpdate();
         });
 
@@ -1752,12 +1818,12 @@ const fluidPlayerClass = function () {
             }
         });
 
-        if(window.attachEvent) {
-            window.attachEvent('onresize', function() {
+        if (window.attachEvent) {
+            window.attachEvent('onresize', function () {
                 self.resizeMarkerContainer();
             });
-        } else if(window.addEventListener) {
-            window.addEventListener('resize', function() {
+        } else if (window.addEventListener) {
+            window.addEventListener('resize', function () {
                 self.resizeMarkerContainer();
             }, true);
         } else {
