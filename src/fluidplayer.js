@@ -1419,9 +1419,11 @@ const fluidPlayerClass = function () {
     };
 
     self.getNewCurrentTimeValueByKeyCode = (keyCode, currentTime, duration) => {
+        self.currentFrameRate = Math.round(self.currentFrameRate != 0 ? self.currentFrameRate : 24);
         let newCurrentTime = currentTime;
-        let frameTime = self.currentFrameRate != 0 ? 1 / self.currentFrameRate : 24;
-
+        let frameTime = 1 / self.currentFrameRate;
+        let frame = Math.floor(Number(newCurrentTime.toFixed(5)) * self.currentFrameRate);
+        
         switch (keyCode) {
             case 37://left arrow
                 newCurrentTime -= 5;
@@ -1461,7 +1463,18 @@ const fluidPlayerClass = function () {
                 newCurrentTime = newCurrentTime > duration - frameTime ? duration : newCurrentTime;
                 break;
         }
-
+        
+        if (FP_DEVELOPMENT_MODE && (keyCode == 188 || keyCode == 190)) {
+            console.log(`
+            key: ( ${keyCode == 188 ? ',' : '.'} ),
+            current frame: ${frame},
+            currentFrameRate: ${self.currentFrameRate},
+            currentTime: ${currentTime}, 
+            seekBackward: ${((frame - 1) / self.currentFrameRate) + 0.00001}, 
+            seekForward: ${((frame + 1) / self.currentFrameRate) + 0.00001},
+            applied currentTime: ${newCurrentTime}`);
+        }
+        
         return newCurrentTime;
     };
 
@@ -1570,7 +1583,6 @@ const fluidPlayerClass = function () {
     };
 
     self.checkFPS = (totalVideoFrames) => {
-
         const previousFrameRate = self.currentFrameRate;
         self.currentFrameRate = (totalVideoFrames - self.currentFrameCount) / self.updateFpsTimer;
         self.currentFrameCount = totalVideoFrames;
@@ -1584,6 +1596,16 @@ const fluidPlayerClass = function () {
             self.countRegularFPS++;
         } else {
             self.countRegularFPS = 0;
+        }
+
+        if (FP_DEVELOPMENT_MODE) {
+            console.log(`
+            averageFPS: ${Math.round(self.totalFPS / self.countCheckFPS)},
+            currentFrameRate: ${self.currentFrameRate}, 
+            previousFrameRate: ${previousFrameRate}, 
+            currentFrameCount: ${self.currentFrameCount}, 
+            countCheckFPS: ${self.countCheckFPS}, 
+            `);
         }
 
         if (self.countRegularFPS >= 3) {
