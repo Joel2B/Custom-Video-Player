@@ -112,7 +112,7 @@ const fluidPlayerClass = function () {
         self.countRegularFPS = 0;
         self.fpsTimer = null;
         self.stopCheckFPSInterval = false;
-        self.updateFpsTimer = 0.1;
+        self.updateFpsTimer = 0.3;
         self.isTimer = false;
         self.timer = null;
         self.timerPool = {};
@@ -1570,33 +1570,34 @@ const fluidPlayerClass = function () {
     };
 
     self.checkFPS = (totalVideoFrames) => {
+
         const previousFrameRate = self.currentFrameRate;
         self.currentFrameRate = (totalVideoFrames - self.currentFrameCount) / self.updateFpsTimer;
         self.currentFrameCount = totalVideoFrames;
+        if (self.currentFrameRate == 0) {
+            return;
+        }
         self.totalFPS += self.currentFrameRate;
         self.countCheckFPS++;
 
-        if (self.currentFrameRate != 0 && previousFrameRate == self.currentFrameRate) {
+        if (previousFrameRate == self.currentFrameRate) {
             self.countRegularFPS++;
         } else {
             self.countRegularFPS = 0;
         }
 
-        if (self.domRef.player.paused) {
+        if (self.countRegularFPS >= 3) {
             clearInterval(self.fpsTimer);
-            self.totalFPS = 0;
-            self.countCheckFPS = 0;
-        }
-
-        if (self.countCheckFPS >= 30) {
+            self.stopCheckFPSInterval = true;
+        } else if (self.countCheckFPS >= 15) {
             self.currentFrameRate = self.totalFPS / self.countCheckFPS;
             clearInterval(self.fpsTimer);
             self.stopCheckFPSInterval = true;
         }
 
-        if (self.countRegularFPS >= 5) {
+        if (self.domRef.player.paused) {
+            self.currentFrameRate = self.totalFPS / self.countCheckFPS;
             clearInterval(self.fpsTimer);
-            self.stopCheckFPSInterval = true;
         }
     }
 
