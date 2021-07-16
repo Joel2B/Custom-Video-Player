@@ -907,13 +907,15 @@ const fluidPlayerClass = function () {
         const totalWidth = document.getElementById(self.videoPlayerId + '_fluid_controls_progress_container').clientWidth;
         const currentProgressTag = self.domRef.player.parentNode.getElementsByClassName('fluid_controls_currentprogress');
         const markerContainer = document.getElementById(self.videoPlayerId + '_marker_container');
+        const scaleX = self.domRef.player.currentTime / self.currentVideoDuration;
+        const translateX = scaleX * totalWidth;
 
         for (let i = 0; i < currentProgressTag.length; i++) {
-            currentProgressTag[i].style.transform = `scaleX(${self.domRef.player.currentTime / self.currentVideoDuration})`;
+            currentProgressTag[i].style.transform = `scaleX(${scaleX})`;
             currentProgressTag[i].style.transformOrigin = '0 0';
         }
 
-        markerContainer.style.transform = `translateX(${(self.domRef.player.currentTime / self.currentVideoDuration) * totalWidth}px)`;
+        markerContainer.style.transform = `translateX(${translateX}px)`;
     };
 
     self.controlDurationUpdate = () => {
@@ -1237,6 +1239,7 @@ const fluidPlayerClass = function () {
             const totalWidth = document.getElementById(self.videoPlayerId + '_fluid_controls_progress_container').clientWidth;
             if (totalWidth) {
                 self.domRef.player.currentTime = self.currentVideoDuration * timeBarX / totalWidth;
+                self.contolProgressbarUpdate();
             }
         };
 
@@ -1245,7 +1248,6 @@ const fluidPlayerClass = function () {
             const currentX = self.getEventOffsetX(event, document.getElementById(self.videoPlayerId + '_fluid_controls_progress_container'));
             initialPosition = NaN; // mouse up will fire after the move, we don't want to trigger the initial position in the event of iOS
             shiftTime(currentX);
-            self.contolProgressbarUpdate(self.videoPlayerId);
             self.controlDurationUpdate(self.videoPlayerId);
             if (!self.showTimeOnHover) {
                 self.drawTimelinePreview(event);
