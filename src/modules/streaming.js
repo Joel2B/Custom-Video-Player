@@ -10,14 +10,15 @@ if (typeof window !== 'undefined' && !window.dashjs) {
 }
 
 export default function (playerInstance, options) {
+    const $script = require('scriptjs');
+
     playerInstance.initialiseStreamers = () => {
         playerInstance.detachStreamers();
         switch (playerInstance.displayOptions.layoutControls.mediaType) {
             case 'application/dash+xml': // MPEG-DASH
                 if (!playerInstance.dashScriptLoaded && (!window.dashjs || window.dashjs.isDefaultSubject)) {
                     playerInstance.dashScriptLoaded = true;
-                    import(/* webpackChunkName: "dashjs" */ 'dashjs').then((it) => {
-                        window.dashjs = it.default;
+                    $script('https://cdn.dashjs.org/latest/dash.mediaplayer.min.js', function () {
                         playerInstance.initialiseDash();
                     });
                 } else {
@@ -27,8 +28,7 @@ export default function (playerInstance, options) {
             case 'application/x-mpegurl': // HLS
                 if (!playerInstance.hlsScriptLoaded && !window.Hls) {
                     playerInstance.hlsScriptLoaded = true;
-                    import(/* webpackChunkName: "hlsjs" */ 'hls.js').then((it) => {
-                        window.Hls = it.default;
+                    $script('https://cdn.jsdelivr.net/npm/hls.js@latest', function () {
                         playerInstance.initialiseHls();
                     });
                 } else {

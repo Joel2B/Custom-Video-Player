@@ -47,6 +47,7 @@
     "copy-webpack-plugin": "^9.0.1",
     "css-loader": "^6.1.0",
     "html-webpack-plugin": "^5.3.2",
+    "scriptjs": "^2.5.9",
     "semver": "^7.3.5",
     "style-loader": "^3.1.0",
     "svg-url-loader": "^7.1.1",
