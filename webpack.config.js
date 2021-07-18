@@ -6,6 +6,7 @@ const cheerio = require('cheerio');
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CopyPlugin = require('copy-webpack-plugin');
 const TerserPlugin = require("terser-webpack-plugin");
+const WebpackObfuscatorPlugin = require('webpack-obfuscator');
 
 // Loading the current package.json - will be used to determine version etc.
 const packageJSON = require(path.resolve(__dirname, 'package.json'));
@@ -48,6 +49,7 @@ module.exports = (env, argv) => {
     const wpDebug = wpMode === 'development' && typeof argv.debug !== 'undefined' && !!argv.debug;
     const wpDist = typeof argv.dist !== 'undefined' ? argv.dist : 'development';
     const wpDistOptions = getDistOptions(wpDist);
+    const wpObf = env.obf;
 
     if ('development' !== wpDist && (wpMode !== 'production' || wpDebug)) {
         throw 'Building a production distribution in development mode or with debug enabled is not allowed!'
@@ -105,6 +107,35 @@ module.exports = (env, argv) => {
                 }
             ]
         }));
+    }
+
+    if (wpObf) {
+        plugins.push(new WebpackObfuscatorPlugin({
+            compact: true,
+            controlFlowFlattening: false,
+            deadCodeInjection: false,
+            debugProtection: false,
+            debugProtectionInterval: false,
+            disableConsoleOutput: false,
+            identifierNamesGenerator: 'mangled-shuffled',
+            log: false,
+            numbersToExpressions: false,
+            renameGlobals: false,
+            rotateStringArray: true,
+            selfDefending: false,
+            shuffleStringArray: true,
+            simplify: true,
+            splitStrings: false,
+            stringArray: true,
+            stringArrayEncoding: [],
+            stringArrayIndexShift: true,
+            stringArrayWrappersCount: 1,
+            stringArrayWrappersChainedCalls: true,
+            stringArrayWrappersParametersMaxCount: 2,
+            stringArrayWrappersType: 'variable',
+            stringArrayThreshold: 0.75,
+            unicodeEscapeSequence: false
+        }, ['dash*js', 'hls*js', 'panolens*js']));
     }
 
     return {

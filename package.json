@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack --mode=production",
+    "build-obf": "webpack --mode=production --env=obf=true",
     "build-cdn": "webpack --mode=production --dist=current && webpack --mode=production --dist=versioned",
     "build-dev": "webpack --mode=development",
     "build-dev-debug": "webpack --mode=development --debug",
@@ -51,6 +52,7 @@
     "svg-url-loader": "^7.1.1",
     "webpack": "^5.45.1",
     "webpack-cli": "^4.7.2",
-    "webpack-dev-server": "^3.11.2"
+    "webpack-dev-server": "^3.11.2",
+    "webpack-obfuscator": "^3.3.2"
   }
 }
