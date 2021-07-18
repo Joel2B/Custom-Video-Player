@@ -7,10 +7,7 @@ export default function (playerInstance, options) {
             playerInstance.displayOptions.vastOptions.vastTimeout,
             function () {
                 const convertVttRawData = function (vttRawData) {
-                    if (!(
-                        (typeof vttRawData.cues !== 'undefined') &&
-                        (vttRawData.cues.length)
-                    )) {
+                    if (!vttRawData.length) {
                         return [];
                     }
 
@@ -18,8 +15,8 @@ export default function (playerInstance, options) {
                     let tempThumbnailData = null;
                     let tempThumbnailCoordinates = null;
 
-                    for (let i = 0; i < vttRawData.cues.length; i++) {
-                        tempThumbnailData = vttRawData.cues[i].text.split('#');
+                    for (let i = 0; i < vttRawData.length; i++) {
+                        tempThumbnailData = vttRawData[i].text.split('#');
                         let xCoords = 0, yCoords = 0, wCoords = 122.5, hCoords = 69;
 
                         // .vtt file contains sprite corrdinates
@@ -51,8 +48,8 @@ export default function (playerInstance, options) {
                         }
 
                         result.push({
-                            startTime: vttRawData.cues[i].startTime,
-                            endTime: vttRawData.cues[i].endTime,
+                            startTime: vttRawData[i].startTime,
+                            endTime: vttRawData[i].endTime,
                             image: imageUrl,
                             x: xCoords,
                             y: yCoords,
@@ -76,11 +73,14 @@ export default function (playerInstance, options) {
                 }
 
                 const textResponse = xmlHttpReq.responseText;
+                const parser = new WebVTT.Parser(window, WebVTT.StringDecoder());
+                const cues = [];
 
-                const webVttParser = new window.WebVTTParser();
-                const vttRawData = webVttParser.parse(textResponse);
+                parser.oncue = (cue) => cues.push(cue);
+                parser.parse(textResponse);
+                parser.flush();
 
-                playerInstance.timelinePreviewData = convertVttRawData(vttRawData);
+                playerInstance.timelinePreviewData = convertVttRawData(cues);
             }
         );
     };
@@ -178,7 +178,7 @@ export default function (playerInstance, options) {
                 } else {
                     previewPosition = timelinePosition;
                 }
-                
+
                 timelinePreviewTag.style.width = thumbnailCoordinates.w + 'px';
                 timelinePreviewTag.style.height = thumbnailCoordinates.h + 'px';
                 timelinePreviewShadow.style.height = thumbnailCoordinates.h + 'px';
@@ -188,10 +188,10 @@ export default function (playerInstance, options) {
                 timelinePreviewTag.style.display = 'block';
                 tooltipTextContainer.style.top = (thumbnailCoordinates.h + topTooltipText) + 'px';
                 timelinePreviewTooltipText.innerText = playerInstance.formatTime(hoverSecond);
+
                 if (!playerInstance.displayOptions.layoutControls.timelinePreview.spriteImage) {
                     timelinePreviewTag.style.backgroundSize = 'contain';
                 }
-
             } else {
                 timelinePreviewTag.style.display = 'none';
             }
@@ -225,8 +225,7 @@ export default function (playerInstance, options) {
         playerInstance.generateTimelinePreviewTags();
 
         if ('VTT' === timelinePreview.type && typeof timelinePreview.file === 'string') {
-            import(/* webpackChunkName: "webvtt" */ '../../vendor/webvtt').then((it) => {
-                window.WebVTTParser = it.default;
+            import(/* webpackChunkName: "webvtt" */ 'videojs-vtt.js').then(() => {
                 playerInstance.setupThumbnailPreviewVtt();
             });
         } else if ('static' === timelinePreview.type && typeof timelinePreview.frames === 'object') {

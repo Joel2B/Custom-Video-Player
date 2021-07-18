@@ -15,7 +15,7 @@ export default function (playerInstance, options) {
      */
     playerInstance.getMobileOs = () => {
         const ua = navigator.userAgent || '';
-        const result = {device: false, userOs: false, userOsVer: false, userOsMajor: false};
+        const result = { device: false, userOs: false, userOsVer: false, userOsMajor: false };
 
         let versionIndex;
         // determine OS
@@ -62,7 +62,7 @@ export default function (playerInstance, options) {
      */
     playerInstance.getBrowserVersion = () => {
         const ua = navigator.userAgent || '';
-        const result = {browserName: false, fullVersion: false, majorVersion: false, userOsMajor: false};
+        const result = { browserName: false, fullVersion: false, majorVersion: false, userOsMajor: false };
 
         let idx, uaindex;
 
