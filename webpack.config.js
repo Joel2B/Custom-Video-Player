@@ -5,6 +5,7 @@ const semver = require('semver');
 const cheerio = require('cheerio');
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CopyPlugin = require('copy-webpack-plugin');
+const TerserPlugin = require("terser-webpack-plugin");
 
 // Loading the current package.json - will be used to determine version etc.
 const packageJSON = require(path.resolve(__dirname, 'package.json'));
@@ -99,7 +100,7 @@ module.exports = (env, argv) => {
         plugins.push(new CopyPlugin({
             patterns: [
                 {
-                    from: path.resolve(__dirname, 'test/static/'), 
+                    from: path.resolve(__dirname, 'test/static/'),
                     to: path.resolve(wpDistOptions.path, 'static')
                 }
             ]
@@ -109,8 +110,8 @@ module.exports = (env, argv) => {
     return {
         resolve: {
             fallback: {
-                buffer: require.resolve("buffer"),
-                stream: require.resolve("stream-browserify"),
+                buffer: false,
+                stream: false,
                 fs: false
             }
         },
@@ -125,7 +126,21 @@ module.exports = (env, argv) => {
             fluidplayer: './src/browser.js'
         },
         optimization: {
-            minimize: wpMode !== 'development'
+            minimize: wpMode !== 'development',
+            splitChunks: false,
+            minimizer: [
+                new TerserPlugin({
+                    terserOptions: {
+                        format: {
+                            comments: false
+                        },
+                        compress: {
+                            drop_console: true,
+                        },
+                    },
+
+                }),
+            ]
         },
         output: {
             filename: '[name].min.js',
@@ -141,7 +156,8 @@ module.exports = (env, argv) => {
                     use: {
                         loader: 'babel-loader',
                         options: {
-                            presets: ['@babel/preset-env']
+                            presets: ['@babel/preset-env'],
+                            cacheDirectory: true
                         }
                     }
                 },
@@ -151,9 +167,9 @@ module.exports = (env, argv) => {
                 },
                 {
                     test: /\.svg$/,
-                    loader: 'svg-url-loader'
+                    type: 'asset'
                 }
-            ],
+            ]
         }
     };
 }
