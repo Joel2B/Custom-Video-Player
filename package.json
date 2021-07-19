@@ -33,10 +33,7 @@
     "IE 11"
   ],
   "dependencies": {
-    "dashjs": "4.0.0-npm",
     "es6-promise": "^4.2.8",
-    "hls.js": "~1.0.7",
-    "panolens": "~0.12.1",
     "videojs-vtt.js": "~0.15.3"
   },
   "devDependencies": {
