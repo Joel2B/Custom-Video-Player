@@ -337,10 +337,12 @@ export default function (playerInstance, options) {
             .display = 'inline-block';
 
         if (!window.PANOLENS) {
-            import(/* webpackChunkName: "panolens" */ 'panolens').then((it) => {
-                window.PANOLENS = it;
-                playerInstance.createCardboardView();
-            });
+            $script('https://cdn.jsdelivr.net/npm/three@latest/build/three.min.js', () => {
+                $script('https://cdn.jsdelivr.net/npm/panolens@latest/build/panolens.min.js', () => {
+                    playerInstance.createCardboardView();
+                });
+            }); 
+
         } else {
             playerInstance.createCardboardView();
         }
