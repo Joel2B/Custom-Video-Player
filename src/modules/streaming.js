@@ -106,7 +106,7 @@ export default function (playerInstance, options) {
         }
 
         playerInstance.inSubMenu = false;
-        
+
         playerInstance.currentQualityLevel = levelSelect;
         playerInstance.updateViewQualityLevels();
 
@@ -157,7 +157,7 @@ export default function (playerInstance, options) {
 
             const options = playerInstance.displayOptions.modules.configureHls(defaultOptions);
             const hls = new Hls(options);
-            
+
             playerInstance.hlsPlayer = hls;
 
             hls.attachMedia(playerInstance.domRef.player);
@@ -211,7 +211,7 @@ export default function (playerInstance, options) {
 
             hls.on(Hls.Events.MANIFEST_PARSED, (e, data) => {
                 console.log('MANIFEST_PARSED', data)
-                
+
                 let levels = []
 
                 for (const [index, level] of data.levels.entries()) {

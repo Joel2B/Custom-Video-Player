@@ -84,7 +84,7 @@ export default function (playerInstance, options) {
     };
 
     playerInstance.getDimensionFromNonLinear = (tag) => {
-        const result = {'width': null, 'height': null};
+        const result = { 'width': null, 'height': null };
         const nonLinear = tag.getElementsByTagName('NonLinear');
 
         if (nonLinear.length) {
@@ -712,7 +712,7 @@ export default function (playerInstance, options) {
 
     playerInstance.setVastList = () => {
         const ads = {};
-        const adGroupedByRolls = {preRoll: [], postRoll: [], midRoll: [], onPauseRoll: []};
+        const adGroupedByRolls = { preRoll: [], postRoll: [], midRoll: [], onPauseRoll: [] };
         const def = {
             id: null,
             roll: null,

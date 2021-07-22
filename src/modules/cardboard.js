@@ -15,9 +15,9 @@ export default function (playerInstance, options) {
         const go = playerInstance.vrROTATION_POSITION;
         const back = -playerInstance.vrROTATION_POSITION;
         const pos = param < 1 ? go : back;
-        const easing = {val: pos};
+        const easing = { val: pos };
         const tween = new TWEEN.Tween(easing)
-            .to({val: 0}, playerInstance.vrROTATION_SPEED)
+            .to({ val: 0 }, playerInstance.vrROTATION_SPEED)
             .easing(TWEEN.Easing.Quadratic.InOut)
             .onUpdate(function () {
                 playerInstance.vrViewer.OrbitControls.rotateLeft(easing.val)
@@ -28,9 +28,9 @@ export default function (playerInstance, options) {
         const go = playerInstance.vrROTATION_POSITION;
         const back = -playerInstance.vrROTATION_POSITION;
         const pos = param < 1 ? go : back;
-        const easing = {val: pos};
+        const easing = { val: pos };
         const tween = new TWEEN.Tween(easing)
-            .to({val: 0}, playerInstance.vrROTATION_SPEED)
+            .to({ val: 0 }, playerInstance.vrROTATION_SPEED)
             .easing(TWEEN.Easing.Quadratic.InOut)
             .onUpdate(function () {
                 playerInstance.vrViewer.OrbitControls.rotateUp(easing.val)
@@ -341,8 +341,7 @@ export default function (playerInstance, options) {
                 $script('https://cdn.jsdelivr.net/npm/panolens@latest/build/panolens.min.js', () => {
                     playerInstance.createCardboardView();
                 });
-            }); 
-
+            });
         } else {
             playerInstance.createCardboardView();
         }

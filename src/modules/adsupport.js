@@ -447,7 +447,7 @@ export default function (playerInstance, options) {
         }
 
         const time = parseInt(playerInstance.getCurrentTime()) + parseInt(duration);
-        playerInstance.scheduleTask({time: time, closeStaticAd: adListId});
+        playerInstance.scheduleTask({ time: time, closeStaticAd: adListId });
     };
 
     // ADS
@@ -798,7 +798,7 @@ export default function (playerInstance, options) {
 
             if (playerInstance.adList[adListIds[index]].adType === 'nonLinear') {
                 adsByType.nonLinear.push(adListIds[index]);
-                playerInstance.scheduleTask({time: time, playRoll: 'midRoll', adListId: adsByType.nonLinear.shift()});
+                playerInstance.scheduleTask({ time: time, playRoll: 'midRoll', adListId: adsByType.nonLinear.shift() });
             }
         }
 
@@ -889,7 +889,7 @@ export default function (playerInstance, options) {
             playerInstance.createAdMarker(adListId, time);
         }
 
-        playerInstance.scheduleTask({time: time, playRoll: 'midRoll', adListId: adListId});
+        playerInstance.scheduleTask({ time: time, playRoll: 'midRoll', adListId: adListId });
     };
 
     playerInstance.postRoll = (event) => {
@@ -1077,7 +1077,7 @@ export default function (playerInstance, options) {
     // ADS
     playerInstance.scheduleTask = (task) => {
         if (!playerInstance.timerPool.hasOwnProperty(task.time)) {
-            playerInstance.timerPool[task.time] = {linear: [], nonLinear: [], closeStaticAd: []};
+            playerInstance.timerPool[task.time] = { linear: [], nonLinear: [], closeStaticAd: [] };
         }
 
         if (task.hasOwnProperty('playRoll') && playerInstance.adList[task.adListId].adType === 'linear') {
@@ -1272,12 +1272,12 @@ export default function (playerInstance, options) {
 
         const defaultPositions = {
             top: {
-                left: {h: 34, v: 34},
-                right: {h: 0, v: 34}
+                left: { h: 34, v: 34 },
+                right: { h: 0, v: 34 }
             },
             bottom: {
-                left: {h: 34, v: 50},
-                right: {h: 0, v: 50}
+                left: { h: 34, v: 50 },
+                right: { h: 0, v: 50 }
             }
         };
 

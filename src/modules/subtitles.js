@@ -71,13 +71,13 @@ export default function (playerInstance, options) {
         }
 
         const tracks = [];
-        tracks.push({'label': subtitlesOff, 'url': 'na', 'lang': subtitlesOff});
+        tracks.push({ 'label': subtitlesOff, 'url': 'na', 'lang': subtitlesOff });
 
         const tracksList = playerInstance.domRef.player.querySelectorAll('track');
 
         [].forEach.call(tracksList, function (track) {
             if (track.kind === 'metadata' && track.src) {
-                tracks.push({'label': track.label, 'url': track.src, 'lang': track.srclang});
+                tracks.push({ 'label': track.label, 'url': track.src, 'lang': track.srclang });
             }
         });
 

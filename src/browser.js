@@ -16,4 +16,3 @@ if (window) {
         window.fluidPlayer = fluidPlayerInitializer;
     }
 }
-
