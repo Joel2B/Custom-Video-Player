@@ -1409,6 +1409,7 @@ const fluidPlayerClass = function () {
     self.checkFPS = (totalVideoFrames) => {
         const previousFrameRate = self.currentFrameRate;
         self.currentFrameRate = (totalVideoFrames - self.currentFrameCount) / self.updateFpsTimer;
+        self.currentFrameRate /= self.domRef.player.playbackRate;
         self.currentFrameCount = totalVideoFrames;
         if (self.currentFrameRate == 0) {
             return;
