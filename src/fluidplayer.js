@@ -4,6 +4,7 @@
 import VPAIDModule from './modules/vpaid';
 import VASTModule from './modules/vast';
 import CardboardModule from './modules/cardboard';
+import ControlsModule from './modules/controls';
 import SubtitleModule from './modules/subtitles';
 import TimelineModule from './modules/timeline';
 import AdSupportModule from './modules/adsupport';
@@ -14,6 +15,7 @@ const FP_MODULES = [
     VPAIDModule,
     VASTModule,
     CardboardModule,
+    ControlsModule,
     SubtitleModule,
     TimelineModule,
     AdSupportModule,
@@ -37,7 +39,8 @@ const fluidPlayerClass = function () {
     const self = this;
 
     self.domRef = {
-        player: null
+        player: null,
+        controls: {}
     };
 
     // noinspection JSUnresolvedVariable
@@ -157,6 +160,11 @@ const fluidPlayerClass = function () {
         self.fluidPseudoPause = false;
         self.mobileInfo = self.getMobileOs();
         self.events = {};
+        self.widthOptionsMenu = 185;
+        self.hightOptionsMenu = 108;
+        self.hightLevelOptions = 90;
+        self.currentQualityLevel = -1;
+        self.inSubMenu = false;
 
         //Default options
         self.displayOptions = {
@@ -364,6 +372,8 @@ const fluidPlayerClass = function () {
 
         self.createVideoSourceSwitch();
 
+        self.setupMenu();
+
         self.createSubtitles();
 
         self.createCardboard();
@@ -453,7 +463,7 @@ const fluidPlayerClass = function () {
             }
         };
 
-        if (!!self.displayOptions.layoutControls.autoPlay && !self.dashScriptLoaded && !self.hlsScriptLoaded) {
+        if (!!self.getLocalStorage('autoPlay') && !self.dashScriptLoaded && !self.hlsScriptLoaded) {
             //There is known issue with Safari 11+, will prevent autoPlay, so we wont try
             const browserVersion = self.getBrowserVersion();
 
@@ -633,198 +643,6 @@ const fluidPlayerClass = function () {
 
     self.checkShouldDisplayVolumeBar = () => {
         return 'iOS' !== self.getMobileOs().userOs;
-    };
-
-    self.generateCustomControlTags = (options) => {
-        const controls = {};
-
-        // Loader
-        controls.loader = document.createElement('div');
-        controls.loader.className = 'vast_video_loading';
-        controls.loader.id = 'vast_video_loading_' + self.videoPlayerId;
-
-        var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        var circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-
-        svg.setAttribute('viewBox', '25 25 50 50');
-        svg.setAttribute('class', 'circular');
-
-        circle.setAttribute('cx', '50');
-        circle.setAttribute('cy', '50');
-        circle.setAttribute('r', '20');
-        circle.setAttribute('fill', 'none');
-        circle.setAttribute('stroke-width', '2');
-        circle.setAttribute('stroke-miterlimit', '10');
-        circle.setAttribute('class', 'path');
-
-        svg.appendChild(circle);
-        controls.loader.appendChild(svg);
-
-        // Root element
-        controls.root = document.createElement('div');
-        controls.root.className = 'fluid_controls_container';
-        controls.root.id = self.videoPlayerId + '_fluid_controls_container';
-
-        if (!options.displayVolumeBar) {
-            controls.root.className = controls.root.className + ' no_volume_bar';
-        }
-
-        if (options.controlForwardBackward) {
-            controls.root.className = controls.root.className + ' skip_controls';
-        }
-
-        // Left container
-        controls.leftContainer = document.createElement('div');
-        controls.leftContainer.className = 'fluid_controls_left';
-        controls.root.appendChild(controls.leftContainer);
-
-        // Left container -> Play/Pause
-        controls.playPause = document.createElement('div');
-        controls.playPause.className = 'fluid_button fluid_button_play fluid_control_playpause';
-        controls.playPause.id = self.videoPlayerId + '_fluid_control_playpause';
-        controls.leftContainer.appendChild(controls.playPause);
-
-        if (options.controlForwardBackward) {
-            // Left container -> Skip backwards
-            controls.skipBack = document.createElement('div');
-            controls.skipBack.className = 'fluid_button fluid_button_skip_back';
-            controls.skipBack.id = self.videoPlayerId + '_fluid_control_skip_back';
-            controls.leftContainer.appendChild(controls.skipBack);
-
-            // Left container -> Skip forward
-            controls.skipForward = document.createElement('div');
-            controls.skipForward.className = 'fluid_button fluid_button_skip_forward';
-            controls.skipForward.id = self.videoPlayerId + '_fluid_control_skip_forward';
-            controls.leftContainer.appendChild(controls.skipForward);
-        }
-
-        // Progress container
-        controls.progressContainer = document.createElement('div');
-        controls.progressContainer.className = 'fluid_controls_progress_container fluid_slider';
-        controls.progressContainer.id = self.videoPlayerId + '_fluid_controls_progress_container';
-        controls.root.appendChild(controls.progressContainer);
-
-        // Progress container -> Progress wrapper
-        controls.progressWrapper = document.createElement('div');
-        controls.progressWrapper.className = 'fluid_controls_progress';
-        controls.progressContainer.appendChild(controls.progressWrapper);
-
-        // Progress container -> Progress wrapper -> Current progress
-        controls.progressCurrent = document.createElement('div');
-        controls.progressCurrent.className = 'fluid_controls_currentprogress';
-        controls.progressCurrent.id = self.videoPlayerId + '_vast_control_currentprogress';
-        controls.progressCurrent.style.backgroundColor = options.primaryColor;
-        controls.progressWrapper.appendChild(controls.progressCurrent);
-
-        // Progress container -> Progress wrapper -> Current progress -> Marker container
-        controls.progress_markerContainer = document.createElement('div');
-        controls.progress_markerContainer.className = 'fluid_controls_marker_container';
-        controls.progress_markerContainer.id = self.videoPlayerId + '_marker_container';
-        controls.progressContainer.appendChild(controls.progress_markerContainer);
-
-        // Progress container -> Progress wrapper -> Current progress -> Marker container -> Marker
-        controls.progress_current_marker = document.createElement('div');
-        controls.progress_current_marker.className = 'fluid_controls_currentpos';
-        controls.progress_current_marker.id = self.videoPlayerId + '_vast_control_currentpos';
-        controls.progress_markerContainer.appendChild(controls.progress_current_marker);
-
-        // Progress container -> Buffered indicator
-        controls.bufferedIndicator = document.createElement('div');
-        controls.bufferedIndicator.className = 'fluid_controls_buffered';
-        controls.bufferedIndicator.id = self.videoPlayerId + '_buffered_amount';
-        controls.progressContainer.appendChild(controls.bufferedIndicator);
-
-        // Progress container -> Ad markers
-        controls.adMarkers = document.createElement('div');
-        controls.adMarkers.className = 'fluid_controls_ad_markers_holder';
-        controls.adMarkers.id = self.videoPlayerId + '_ad_markers_holder';
-        controls.progressContainer.appendChild(controls.adMarkers);
-
-        // Right container
-        controls.rightContainer = document.createElement('div');
-        controls.rightContainer.className = 'fluid_controls_right';
-        controls.root.appendChild(controls.rightContainer);
-
-        // Right container -> Fullscreen
-        controls.fullscreen = document.createElement('div');
-        controls.fullscreen.id = self.videoPlayerId + '_fluid_control_fullscreen';
-        controls.fullscreen.className = 'fluid_button fluid_control_fullscreen fluid_button_fullscreen';
-        controls.rightContainer.appendChild(controls.fullscreen);
-
-        // Right container -> Theatre
-        controls.theatre = document.createElement('div');
-        controls.theatre.id = self.videoPlayerId + '_fluid_control_theatre';
-        controls.theatre.className = 'fluid_button fluid_control_theatre fluid_button_theatre';
-        controls.rightContainer.appendChild(controls.theatre);
-
-        // Right container -> Cardboard
-        controls.cardboard = document.createElement('div');
-        controls.cardboard.id = self.videoPlayerId + '_fluid_control_cardboard';
-        controls.cardboard.className = 'fluid_button fluid_control_cardboard fluid_button_cardboard';
-        controls.rightContainer.appendChild(controls.cardboard);
-
-        // Right container -> Subtitles
-        controls.subtitles = document.createElement('div');
-        controls.subtitles.id = self.videoPlayerId + '_fluid_control_subtitles';
-        controls.subtitles.className = 'fluid_button fluid_button_subtitles';
-        controls.rightContainer.appendChild(controls.subtitles);
-
-        // Right container -> Video source
-        controls.videoSource = document.createElement('div');
-        controls.videoSource.id = self.videoPlayerId + '_fluid_control_video_source';
-        controls.videoSource.className = 'fluid_button fluid_button_video_source';
-        controls.rightContainer.appendChild(controls.videoSource);
-
-        // Right container -> Playback rate
-        controls.playbackRate = document.createElement('div');
-        controls.playbackRate.id = self.videoPlayerId + '_fluid_control_playback_rate';
-        controls.playbackRate.className = 'fluid_button fluid_button_playback_rate';
-        controls.rightContainer.appendChild(controls.playbackRate);
-
-        // Right container -> Download
-        controls.download = document.createElement('div');
-        controls.download.id = self.videoPlayerId + '_fluid_control_download';
-        controls.download.className = 'fluid_button fluid_button_download';
-        controls.rightContainer.appendChild(controls.download);
-
-        // Right container -> Volume container
-        controls.volumeContainer = document.createElement('div');
-        controls.volumeContainer.id = self.videoPlayerId + '_fluid_control_volume_container';
-        controls.volumeContainer.className = 'fluid_control_volume_container fluid_slider';
-        controls.rightContainer.appendChild(controls.volumeContainer);
-
-        // Right container -> Volume container -> Volume
-        controls.volume = document.createElement('div');
-        controls.volume.id = self.videoPlayerId + '_fluid_control_volume';
-        controls.volume.className = 'fluid_control_volume';
-        controls.volumeContainer.appendChild(controls.volume);
-
-        // Right container -> Volume container -> Volume -> Current
-        controls.volumeCurrent = document.createElement('div');
-        controls.volumeCurrent.id = self.videoPlayerId + '_fluid_control_currentvolume';
-        controls.volumeCurrent.className = 'fluid_control_currentvolume';
-        controls.volume.appendChild(controls.volumeCurrent);
-
-        // Right container -> Volume container -> Volume -> Current -> position
-        controls.volumeCurrentPos = document.createElement('div');
-        controls.volumeCurrentPos.id = self.videoPlayerId + '_fluid_control_volume_currentpos';
-        controls.volumeCurrentPos.className = 'fluid_control_volume_currentpos';
-        controls.volumeCurrent.appendChild(controls.volumeCurrentPos);
-
-        // Right container -> Volume container
-        controls.mute = document.createElement('div');
-        controls.mute.id = self.videoPlayerId + '_fluid_control_mute';
-        controls.mute.className = 'fluid_button fluid_button_volume fluid_control_mute';
-        controls.rightContainer.appendChild(controls.mute);
-
-        // Right container -> Volume container
-        controls.duration = document.createElement('div');
-        controls.duration.id = self.videoPlayerId + '_fluid_control_duration';
-        controls.duration.className = 'fluid_control_duration fluid_fluid_control_duration';
-        controls.duration.innerText = '00:00 / 00:00';
-        controls.rightContainer.appendChild(controls.duration);
-
-        return controls;
     };
 
     self.controlPlayPauseToggle = () => {
@@ -1425,7 +1243,7 @@ const fluidPlayerClass = function () {
         let newCurrentTime = currentTime;
         let frameTime = 1 / self.currentFrameRate;
         let frame = Math.floor(Number(newCurrentTime.toFixed(5)) * self.currentFrameRate);
-        
+
         switch (keyCode) {
             case 37://left arrow
                 newCurrentTime -= 5;
@@ -1465,7 +1283,7 @@ const fluidPlayerClass = function () {
                 newCurrentTime = newCurrentTime > duration - frameTime ? duration : newCurrentTime;
                 break;
         }
-        
+
         if (FP_DEVELOPMENT_MODE && (keyCode == 188 || keyCode == 190)) {
             console.log(`
             key: ( ${keyCode == 188 ? ',' : '.'} ),
@@ -1476,7 +1294,7 @@ const fluidPlayerClass = function () {
             seekForward: ${((frame + 1) / self.currentFrameRate) + 0.00001},
             applied currentTime: ${newCurrentTime}`);
         }
-        
+
         return newCurrentTime;
     };
 
@@ -1491,7 +1309,11 @@ const fluidPlayerClass = function () {
         self.hideTitle();
     };
 
-    self.handleMouseenterForKeyboard = () => {
+    self.handleMouseenterForKeyboard = (e) => {
+        if (e.target != self.domRef.controls.menuButton && !self.domRef.controls.optionsMenu.contains(e.target)) {
+            self.closeMenu();
+        }
+
         if (self.captureKey) {
             return;
         }
@@ -2029,7 +1851,7 @@ const fluidPlayerClass = function () {
         self.domRef.player.parentNode.insertBefore(controls.loader, self.domRef.player.nextSibling);
 
         // Register controls locally
-        self.domRef.controls = controls;
+        self.domRef.controls = Object.assign(controls, self.domRef.controls);
 
         /**
          * Set the volumebar after its elements are properly rendered.
@@ -2066,7 +1888,6 @@ const fluidPlayerClass = function () {
 
         self.setVideoPreload();
 
-        self.createPlaybackList();
 
         self.createDownload();
 
@@ -2266,6 +2087,117 @@ const fluidPlayerClass = function () {
             sourceChangeList.style.display = 'none';
         };
         sourceChangeList.addEventListener('mouseleave', mouseOut);
+    };
+
+    self.restartMenu = () => {
+        self.domRef.controls.menuBackground.style.width = `${self.widthOptionsMenu}px`;
+        self.domRef.controls.menuBackground.style.height = `${self.hightOptionsMenu}px`;
+        self.domRef.controls.mainPage.style.width = `${self.widthOptionsMenu}px`;
+        self.domRef.controls.optionsMenu.classList.remove('cvp_level2');
+        self.domRef.controls.levelsPage.classList.add('hide');
+        self.domRef.controls.speedsPage.classList.add('hide');
+    }
+
+    self.restartMenuLater = () => {
+        setTimeout(() => {
+            self.restartMenu();
+        }, 200);
+    }
+
+    self.setupAutoPlay = () => {
+        self.domRef.controls.autoPlay.addEventListener('click', () => {
+            if (self.domRef.controls.autoPlay.className.indexOf('cvp_enabled') != -1) {
+                self.domRef.controls.autoPlay.classList.remove('cvp_enabled');
+                self.setLocalStorage('autoPlay', false, 30);
+            } else {
+                self.domRef.controls.autoPlay.classList.add('cvp_enabled');
+                self.setLocalStorage('autoPlay', true, 30);
+            }
+        });
+    }
+
+    self.openSubMenu = (option, subPage, width, height) => {
+        subPage.classList.remove('hide');
+        self.domRef.controls.optionsMenu.classList.toggle('cvp_level2');
+        self.domRef.controls.menuBackground.style.width = `${width}px`;
+        self.domRef.controls.menuBackground.style.height = `${height}px`;
+        self.domRef.controls.menuHeader.textContent = option.firstChild.textContent;
+        self.inSubMenu = true;
+    }
+
+    self.setupPlaybackRates = () => {
+        self.createPlaybackList();
+        self.domRef.controls.speedSelector.addEventListener('click', () => {
+            self.openSubMenu(
+                self.domRef.controls.speedSelector,
+                self.domRef.controls.speedsPage,
+                110,
+                165
+            );
+        });
+
+        const currentSpeed = self.getLocalStorage('fluidSpeed');
+        if (currentSpeed !== false) {
+            const previousSpeed = document.querySelector('.cvp_speed .cvp_active');
+            previousSpeed.classList.remove('cvp_active');
+
+            setTimeout(() => {
+                self.setPlaybackSpeed(currentSpeed);
+            }, 500);
+
+            const selectedSpeed = document.querySelector(`[data-speed='${currentSpeed}']`)
+            selectedSpeed.classList.add('cvp_active');
+        }
+    }
+
+    self.setupQualityLevels = () => {
+        self.domRef.controls.qualitySelector.addEventListener('click', () => {
+            self.openSubMenu(
+                self.domRef.controls.qualitySelector,
+                self.domRef.controls.levelsPage,
+                115,
+                self.hightLevelOptions
+            );
+        });
+    }
+
+    self.setupClickMenuHeader = () => {
+        self.domRef.controls.menuHeader.addEventListener('click', () => {
+            self.restartMenu();
+            self.inSubMenu = false;
+        });
+    }
+
+    self.isMenuClosed = () => {
+        return self.domRef.controls.optionsMenu.className.indexOf('cvp_visible') == -1 ? true : false;
+    }
+
+    self.closeMenu = () => {
+        if (self.isMenuClosed()) {
+            return;
+        }
+
+        self.domRef.controls.optionsMenu.classList.remove('cvp_visible');
+        self.inSubMenu = false;
+        self.restartMenuLater();
+    }
+
+    self.setupClickMenuButton = () => {
+        self.domRef.controls.menuButton.addEventListener('click', () => {
+            if (self.isMenuClosed()) {
+                self.domRef.controls.optionsMenu.classList.add('cvp_visible');
+            } else {
+                self.closeMenu();
+            }
+        });
+    }
+
+    self.setupMenu = () => {
+        self.setupClickMenuButton();
+        self.setupClickMenuHeader();
+        self.setupAutoPlay();
+        self.setupPlaybackRates();
+        self.setupQualityLevels();
     };
 
     self.setVideoSource = (url) => {
@@ -2571,6 +2503,8 @@ const fluidPlayerClass = function () {
     };
 
     self.hideControlBar = () => {
+        self.closeMenu();
+
         if (self.isCurrentlyPlayingAd && !self.domRef.player.paused) {
             self.toggleAdCountdown(true);
         }
@@ -2705,41 +2639,38 @@ const fluidPlayerClass = function () {
     };
 
     self.createPlaybackList = () => {
-        const playbackRates = ['x2', 'x1.5', 'x1', 'x0.5'];
+        const playbackRates = [0.5, 1, 1.5, 2];
+        const childs = new DocumentFragment();
 
-        if (!self.displayOptions.layoutControls.playbackRateEnabled) {
-            return;
+        for (const value of playbackRates) {
+            childs.appendChild(self.createElement({
+                tag: 'li',
+                textContent: (value == 1) ? 'Normal' : value,
+                dataset: {
+                    speed: value
+                },
+                ...(value == 1) && { className: 'cvp_active' }
+            }, (e) => {
+                const previousSpeed = document.querySelector('.cvp_speed .cvp_active');
+                const selectedSpeed = e.target;
+
+                previousSpeed.classList.remove('cvp_active');
+                document.querySelector(`[data-speed='${selectedSpeed.dataset.speed}']`).classList.add('cvp_active');
+
+                self.closeMenu();
+
+                self.domRef.controls.speedSelector.lastChild.textContent = selectedSpeed.firstChild.textContent;
+
+                self.restartMenuLater();
+
+                self.setPlaybackSpeed(selectedSpeed.dataset.speed);
+            }))
         }
 
-        document.getElementById(self.videoPlayerId + '_fluid_control_playback_rate').style.display = 'inline-block';
-
-        const sourceChangeButton = document.getElementById(self.videoPlayerId + '_fluid_control_playback_rate');
-
-        const sourceChangeList = document.createElement('div');
-        sourceChangeList.id = self.videoPlayerId + '_fluid_control_video_playback_rate';
-        sourceChangeList.className = 'fluid_video_playback_rates';
-        sourceChangeList.style.display = 'none';
-
-        playbackRates.forEach(function (rate) {
-            const sourceChangeDiv = document.createElement('div');
-            sourceChangeDiv.className = 'fluid_video_playback_rates_item';
-            sourceChangeDiv.innerText = rate;
-
-            sourceChangeDiv.addEventListener('click', function (event) {
-                event.stopPropagation();
-                let playbackRate = this.innerText.replace('x', '');
-                self.setPlaybackSpeed(playbackRate);
-                self.openCloseVideoPlaybackRate();
-
-            });
-            sourceChangeList.appendChild(sourceChangeDiv);
-        });
-
-        sourceChangeButton.appendChild(sourceChangeList);
-        sourceChangeButton.addEventListener('click', function () {
-            self.openCloseVideoPlaybackRate();
-        });
+        self.domRef.controls.speedsPage.append(childs);
     };
+
+    self.setPlaybackSpeedAtStatup
 
     self.openCloseVideoPlaybackRate = () => {
         const sourceChangeList = document.getElementById(self.videoPlayerId + '_fluid_control_video_playback_rate');
@@ -2953,20 +2884,20 @@ const fluidPlayerClass = function () {
             }
         }
 
-        if (typeof (self.fluidStorage.fluidQuality) !== 'undefined'
-            && self.displayOptions.layoutControls.persistentSettings.quality) {
-            const sourceOption = document.getElementById('source_' + self.videoPlayerId + '_' + self.fluidStorage.fluidQuality);
-            const sourceChangeButton = document.getElementById(self.videoPlayerId + '_fluid_control_video_source');
-            if (sourceOption) {
-                sourceOption.click();
-                sourceChangeButton.click();
-            }
-        }
+        // if (typeof (self.fluidStorage.fluidQuality) !== 'undefined'
+        //     && self.displayOptions.layoutControls.persistentSettings.quality) {
+        //     const sourceOption = document.getElementById('source_' + self.videoPlayerId + '_' + self.fluidStorage.fluidQuality);
+        //     const sourceChangeButton = document.getElementById(self.videoPlayerId + '_fluid_control_video_source');
+        //     if (sourceOption) {
+        //         sourceOption.click();
+        //         sourceChangeButton.click();
+        //     }
+        // }
 
-        if (typeof (self.fluidStorage.fluidSpeed) !== 'undefined'
-            && self.displayOptions.layoutControls.persistentSettings.speed) {
-            self.setPlaybackSpeed(self.fluidStorage.fluidSpeed);
-        }
+        // if (typeof (self.fluidStorage.fluidSpeed) !== 'undefined'
+        //     && self.displayOptions.layoutControls.persistentSettings.speed) {
+        //     self.setPlaybackSpeed(self.fluidStorage.fluidSpeed);
+        // }
 
         if (typeof (self.fluidStorage.fluidTheatre) !== 'undefined'
             && self.fluidStorage.fluidTheatre === 'true'
@@ -3000,7 +2931,7 @@ const fluidPlayerClass = function () {
             return;
         }
         self.domRef.player.playbackRate = speed;
-        self.fluidStorage.fluidSpeed = speed;
+        self.setLocalStorage('fluidSpeed', speed, 30);
     };
 
     self.setVolume = (passedVolume) => {

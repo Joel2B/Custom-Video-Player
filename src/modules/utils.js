@@ -165,4 +165,90 @@ export default function (playerInstance, options) {
         }
         return value;
     };
+
+    playerInstance.createElement = (data, event) => {
+        const elem = document.createElement(data.tag);
+        if (typeof event === 'function') {
+            elem.addEventListener('click', event);
+        }
+        for (const key in data) {
+            const value = data[key];
+            switch (key) {
+                case 'tag':
+                    break;
+                case 'style':
+                    for (const subKey in value) {
+                        elem[key][subKey] = value[subKey];
+                    }
+                    break;
+                case 'parent':
+                    data.parent.appendChild(elem);
+                    break;
+                case 'childs':
+                    for (let i = 0; i < value.length; i++) {
+                        const child = playerInstance.createElement(value[i]);
+                        elem.appendChild(child);
+                    }
+                    break;
+                case 'dataset':
+                    elem[key][Object.keys(value)[0]] = Object.values(value)[0];
+                    break;
+                case 'domRef':
+                    console.log(value, playerInstance.domRef.controls);
+                    playerInstance.domRef.controls[value] = elem;
+                default:
+                    elem[key] = value;
+                    break;
+            }
+        }
+        return elem;
+    }
+
+    playerInstance.$ = (selector) => document.querySelector(selector);
+
+    playerInstance.storageAvailable = () => {
+        try {
+            const test = '__storage_test__';
+            const storage = window.localStorage;
+            storage.setItem(test, test);
+            storage.removeItem(test);
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    playerInstance.setLocalStorage = (key, value, days) => {
+        if (!playerInstance.storageAvailable()) {
+            return false;
+        }
+        const data = {
+            value: value,
+            expire: new Date().getTime() / 1000 + 60 * 60 * 24 * (days || 1)
+        }
+        localStorage.setItem(key, JSON.stringify(data));
+    }
+
+    playerInstance.getLocalStorage = (key) => {
+        if (!playerInstance.storageAvailable()) {
+            return false;
+        }
+        let data = localStorage.getItem(key);
+        if (!data) {
+            return false;
+        }
+        data = JSON.parse(data);
+        if (data.value == undefined || data.expire < new Date().getTime() / 1000) {
+            localStorage.removeItem(key);
+            return false;
+        }
+        return data.value;
+    }
+
+    playerInstance.removeLocalStorage = (key) => {
+        if (!playerInstance.storageAvailable()) {
+            return false;
+        }
+        localStorage.removeItem(key);
+    }
 }
