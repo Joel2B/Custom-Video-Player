@@ -135,7 +135,7 @@ module.exports = (env, argv) => {
             stringArrayWrappersType: 'variable',
             stringArrayThreshold: 0.75,
             unicodeEscapeSequence: false
-        }, ['dash*js', 'hls*js', 'panolens*js']));
+        }));
     }
 
     return {
@@ -159,19 +159,7 @@ module.exports = (env, argv) => {
         optimization: {
             minimize: wpMode !== 'development',
             splitChunks: false,
-            minimizer: [
-                new TerserPlugin({
-                    terserOptions: {
-                        format: {
-                            comments: false
-                        },
-                        compress: {
-                            drop_console: true,
-                        },
-                    },
-
-                }),
-            ]
+            minimizer: [new TerserPlugin()]
         },
         output: {
             filename: '[name].min.js',
