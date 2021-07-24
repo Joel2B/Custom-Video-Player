@@ -1316,7 +1316,15 @@ const fluidPlayerClass = function () {
     };
 
     self.handleMouseenterForKeyboard = (e) => {
-        if (e.target != self.domRef.controls.menuButton && !self.domRef.controls.optionsMenu.contains(e.target)) {
+        let clickedMenuButton = false;
+        // improve this iteration
+        Array.from(self.domRef.wrapper.getElementsByClassName('fluid_button_main_menu')).map((elem) => {
+            if (elem == e.target) {
+                clickedMenuButton = true;
+            }
+        });
+        
+        if (!clickedMenuButton && !self.domRef.controls.optionsMenu.contains(e.target)) {
             self.closeMenu();
         }
 
