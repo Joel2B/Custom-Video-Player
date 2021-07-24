@@ -724,16 +724,20 @@ const fluidPlayerClass = function () {
     };
 
     self.contolProgressbarUpdate = () => {
-        const totalWidth = self.domRef.controls.progressContainer.clientWidth;
-        const currentProgressTag = self.domRef.controls.progressCurrent;
-        const markerContainer = self.domRef.controls.progressMarkerContainer;
-        const scaleX = self.domRef.player.currentTime / self.currentVideoDuration;
-        const translateX = scaleX * totalWidth;
+        const progressContainer = self.domRef.wrapper.getElementsByClassName('fluid_controls_progress_container');
 
-        currentProgressTag.style.transform = `scaleX(${scaleX})`;
-        currentProgressTag.style.transformOrigin = '0 0';
+        for (let i = 0; i < progressContainer.length; i++) {
+            const totalWidth = progressContainer[i].clientWidth;
+            const currentProgressTag = progressContainer[i].firstChild.firstChild;
+            const markerContainer = progressContainer[i].firstChild.nextSibling;
+            const scaleX = self.domRef.player.currentTime / self.currentVideoDuration;
+            const translateX = scaleX * totalWidth;
 
-        markerContainer.style.transform = `translateX(${translateX}px)`;
+            currentProgressTag.style.transform = `scaleX(${scaleX})`;
+            currentProgressTag.style.transformOrigin = '0 0';
+
+            markerContainer.style.transform = `translateX(${translateX}px)`;
+        }
     };
 
     self.controlDurationUpdate = () => {
@@ -1028,16 +1032,11 @@ const fluidPlayerClass = function () {
         return evt.clientY - y;
     };
 
-    self.onProgressbarMouseDown = (event) => {
+    self.onProgressbarMouseDown = event => {
         self.displayOptions.layoutControls.playPauseAnimation = false;
         // we need an initial position for touchstart events, as mouse up has no offset x for iOS
-        let initialPosition;
-
-        if (self.displayOptions.layoutControls.showCardBoardView) {
-            initialPosition = self.getEventOffsetX(event, event.target.parentNode);
-        } else {
-            initialPosition = self.getEventOffsetX(event, self.domRef.controls.progressContainer);
-        }
+        const progressContainer = self.domRef.controls.progressContainer;
+        let initialPosition = self.getEventOffsetX(event, progressContainer);
 
         if (self.isCurrentlyPlayingAd) {
             return;
@@ -1051,7 +1050,7 @@ const fluidPlayerClass = function () {
         }
 
         const shiftTime = timeBarX => {
-            const totalWidth = self.domRef.controls.progressContainer.clientWidth;
+            const totalWidth = progressContainer.clientWidth;
             if (totalWidth) {
                 self.domRef.player.currentTime = self.currentVideoDuration * timeBarX / totalWidth;
                 self.contolProgressbarUpdate();
@@ -1060,39 +1059,42 @@ const fluidPlayerClass = function () {
 
         const onProgressbarMouseMove = event => {
             // while holding down on the progress bar and exiting the bar, it shows wrong position of the progress bar
-            const currentX = self.getEventOffsetX(event, self.domRef.controls.progressContainer);
+            const currentX = self.getEventOffsetX(event, progressContainer);
             initialPosition = NaN; // mouse up will fire after the move, we don't want to trigger the initial position in the event of iOS
             shiftTime(currentX);
-            self.controlDurationUpdate(self.videoPlayerId);
+            self.controlDurationUpdate();
+
             if (!self.showTimeOnHover) {
                 self.drawTimelinePreview(event);
             } else {
                 self.drawTimelineBasicPreview(event);
             }
-            const progressContainer = self.domRef.controls.progressContainer.childNodes;
-            for (let i = 0; i < progressContainer.length; i++) {
-                if (progressContainer[i].className.indexOf('fluid_controls_marker_container') != -1) {
-                    continue;
+
+            Array.from(progressContainer.childNodes).map((elem) => {
+                if (elem.className.indexOf('marker_container') == -1) {
+                    elem.style.transform = 'none'
                 }
-                progressContainer[i].style.transform = 'none';
-            }
-            document.getElementById(self.videoPlayerId + '_vast_control_currentpos').style.setProperty('transform', 'none', 'important');
+            });
+
+            progressContainer.firstChild.nextSibling.firstChild.style.setProperty('transform', 'none', 'important');
         };
 
         const onProgressbarMouseUp = event => {
-            const progressContainer = self.domRef.controls.progressContainer.childNodes;
-            for (let i = 0; i < progressContainer.length; i++) {
-                if (progressContainer[i].className.indexOf('fluid_controls_marker_container') != -1) {
-                    continue;
+            Array.from(progressContainer.childNodes).map((elem) => {
+                if (elem.className.indexOf('marker_container') == -1) {
+                    elem.style.transform = ''
                 }
-                progressContainer[i].style.transform = '';
-            }
-            document.getElementById(self.videoPlayerId + '_vast_control_currentpos').removeAttribute('style');
+            });
+
+            Array.from(progressContainer.childNodes).map(elem => elem.style.removeProperty('transform'));
+
+            progressContainer.firstChild.nextSibling.firstChild.removeAttribute('style');
+
             if (!self.showTimeOnHover) {
                 document.getElementById(self.videoPlayerId + '_fluid_timeline_preview_container').style.display = 'none';
                 document.getElementById(self.videoPlayerId + '_fluid_timeline_preview_container_shadow').style.display = 'none';
             } else {
-                document.getElementById(self.videoPlayerId + '_fluid_timeline_preview').style.visibility = 'hidden';
+                progressContainer.parentNode.lastChild.style.visibility = 'hidden';
             }
 
             document.removeEventListener('mousemove', onProgressbarMouseMove);
@@ -1101,7 +1103,7 @@ const fluidPlayerClass = function () {
             document.removeEventListener('touchend', onProgressbarMouseUp);
 
             // when you hold down and exit, and stop pressing while outside the progress bar item, the position of the progress bar returns to the beginning of the item where you stopped pressing
-            let clickedX = self.getEventOffsetX(event, self.domRef.controls.progressContainer);
+            let clickedX = self.getEventOffsetX(event, progressContainer);
 
             if (isNaN(clickedX) && !isNaN(initialPosition)) {
                 clickedX = initialPosition;
@@ -1132,9 +1134,16 @@ const fluidPlayerClass = function () {
 
     self.resizeMarkerContainer = () => {
         setTimeout(() => {
-            const totalWidth = self.domRef.controls.progressContainer.clientWidth;
-            const markerContainer = document.getElementById(self.videoPlayerId + '_marker_container');
-            markerContainer.style.transform = `translateX(${(self.domRef.player.currentTime / self.currentVideoDuration) * totalWidth}px)`;
+            const progressContainer = self.domRef.wrapper.getElementsByClassName('fluid_controls_progress_container');
+
+            for (let i = 0; i < progressContainer.length; i++) {
+                const totalWidth = progressContainer[i].clientWidth;
+                const markerContainer = progressContainer[i].firstChild.nextSibling;
+                const scaleX = self.domRef.player.currentTime / self.currentVideoDuration;
+                const translateX = scaleX * totalWidth;
+
+                markerContainer.style.transform = `translateX(${translateX}px)`;
+            }
         }, 125);
     }
 
@@ -1638,18 +1647,8 @@ const fluidPlayerClass = function () {
         const isMobileChecks = self.getMobileOs();
         const eventOn = (isMobileChecks.userOs) ? 'touchstart' : 'mousedown';
 
-        if (self.displayOptions.layoutControls.showCardBoardView) {
-            self.trackEvent(
-                self.domRef.player.parentNode,
-                eventOn,
-                '.fluid_controls_progress_container',
-                event => self.onProgressbarMouseDown(event),
-                false
-            );
-        } else {
-            self.domRef.controls.progressContainer
-                .addEventListener(eventOn, event => self.onProgressbarMouseDown(event), false);
-        }
+        self.domRef.controls.progressContainer
+            .addEventListener(eventOn, event => self.onProgressbarMouseDown(event), false);
 
         //Set the volume controls
         document.getElementById(self.videoPlayerId + '_fluid_control_volume_container')
@@ -1700,7 +1699,7 @@ const fluidPlayerClass = function () {
             return;
         }
 
-        const hoverTimeItem = document.getElementById(self.videoPlayerId + '_fluid_timeline_preview');
+        const hoverTimeItem = progressContainer.parentNode.lastChild;
         const hoverSecondQ = self.currentVideoDuration * hoverQ / totalWidth;
 
         hoverTimeItem.style.width = hoverSecondQ >= 3600 ? '52px' : '';
@@ -1721,8 +1720,8 @@ const fluidPlayerClass = function () {
         }
 
         hoverTimeItem.innerText = self.formatTime(hoverSecondQ);
+        hoverTimeItem.style.left = `${previewPosition}px`;
         hoverTimeItem.style.visibility = 'visible';
-        hoverTimeItem.style.left = previewPosition + 'px';
     };
 
     // Create the time position preview only if the vtt previews aren't enabled
@@ -1731,33 +1730,32 @@ const fluidPlayerClass = function () {
             return;
         }
 
-        const controlsContainer = document.getElementById(self.videoPlayerId + '_fluid_controls_container');
-        const previewContainer = document.createElement('div');
-
-        previewContainer.id = self.videoPlayerId + '_fluid_timeline_preview';
-        previewContainer.className = 'fluid_timeline_preview';
-        previewContainer.style.visibility = 'hidden';
-        previewContainer.style.position = 'absolute';
-
-        controlsContainer.appendChild(previewContainer);
+        self.domRef.controls.basicPreview = self.createElement({
+            tag: 'div',
+            id: self.videoPlayerId + '_fluid_timeline_preview',
+            className: 'fluid_timeline_preview',
+            style: {
+                visibility: 'hidden',
+                position: 'absolute'
+            },
+            parent: self.domRef.controls.root
+        });
 
         // Set up hover for time position preview display
-        self.domRef.controls.progressContainer
-            .addEventListener('mousemove', event => {
-                self.drawTimelineBasicPreview(event);
-            }, false);
+        self.trackEvent(self.domRef.player.parentNode, 'mousemove', '.fluid_controls_progress_container', (event) => {
+            self.drawTimelineBasicPreview(event);
+        });
 
         // Hide timeline preview on mouseout
-        self.domRef.controls.progressContainer
-            .addEventListener('mouseout', (event) => {
-                const progress = self.domRef.controls.progressContainer;
-                if (typeof event.clientX !== 'undefined' && progress.contains(document.elementFromPoint(event.clientX, event.clientY))) {
-                    //False positive (Chrome bug when fast click causes leave event)
-                    return;
-                }
-                const hoverTimeItem = document.getElementById(self.videoPlayerId + '_fluid_timeline_preview');
-                hoverTimeItem.style.visibility = 'hidden';
-            }, false);
+        self.trackEvent(self.domRef.player.parentNode, 'mouseout', '.fluid_controls_progress_container', (event) => {
+            const progress = self.domRef.controls.progressContainer;
+            if (typeof event.clientX !== 'undefined' && progress.contains(document.elementFromPoint(event.clientX, event.clientY))) {
+                //False positive (Chrome bug when fast click causes leave event)
+                return;
+            }
+            const hoverTimeItem = progress.parentNode.lastChild;
+            hoverTimeItem.style.visibility = 'hidden';
+        });
     };
 
     self.setCustomContextMenu = () => {
@@ -2194,6 +2192,7 @@ const fluidPlayerClass = function () {
     }
 
     self.setupMenu = () => {
+        self.domRef.player.parentNode.insertBefore(self.domRef.controls.optionsMenu, null);
         self.setupClickMenuButton();
         self.setupClickMenuHeader();
         self.setupAutoPlay();

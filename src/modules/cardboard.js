@@ -1,5 +1,7 @@
 'use strict';
 export default function (playerInstance, options) {
+    const $script = require('scriptjs');
+
     playerInstance.createCardboardJoystickButton = (identity) => {
         const vrJoystickPanel = document.getElementById(playerInstance.videoPlayerId + '_fluid_vr_joystick_panel');
         const joystickButton = document.createElement('div');
@@ -106,7 +108,7 @@ export default function (playerInstance, options) {
 
     playerInstance.cardBoardSwitchToNormal = () => {
         const vrJoystickPanel = document.getElementById(playerInstance.videoPlayerId + '_fluid_vr_joystick_panel');
-        const controlBar = document.getElementById(playerInstance.videoPlayerId + '_fluid_controls_container');
+        const controlBar = playerInstance.domRef.controls.root;
         const videoPlayerTag = playerInstance.domRef.player;
 
         playerInstance.vrViewer.enableEffect(PANOLENS.MODES.NORMAL);
@@ -171,7 +173,7 @@ export default function (playerInstance, options) {
     };
 
     playerInstance.cardBoardCreateVRControls = () => {
-        const controlBar = document.getElementById(playerInstance.videoPlayerId + '_fluid_controls_container');
+        const controlBar = playerInstance.domRef.controls.root;
 
         // create and append dual control bar
         const newControlBar = controlBar.cloneNode(true);
@@ -183,10 +185,11 @@ export default function (playerInstance, options) {
         newControlBar.classList.add("fluid_vr2_controls_container");
         playerInstance.domRef.player.parentNode.insertBefore(newControlBar, playerInstance.domRef.player.nextSibling);
         playerInstance.copyEvents(newControlBar);
+        playerInstance.domRef.controls.progressContainerSecond = newControlBar.firstChild.nextSibling;
     };
 
     playerInstance.cardBoardSwitchToVR = () => {
-        const controlBar = document.getElementById(playerInstance.videoPlayerId + '_fluid_controls_container');
+        const controlBar = playerInstance.domRef.controls.root;
 
         playerInstance.vrViewer.enableEffect(PANOLENS.MODES.CARDBOARD);
 
@@ -222,14 +225,16 @@ export default function (playerInstance, options) {
             skipBtn.style.display = 'none';
         }
 
+        playerInstance.domRef.controls.progressContainerSecond
+            .addEventListener('mousedown', event => playerInstance.onProgressbarMouseDown(event), false);
     };
 
     playerInstance.cardBoardMoveTimeInfo = () => {
         const timePlaceholder = document.getElementById(playerInstance.videoPlayerId + '_fluid_control_duration');
-        const controlBar = document.getElementById(playerInstance.videoPlayerId + '_fluid_controls_container');
+        const controlBar = playerInstance.domRef.controls.root;
 
         timePlaceholder.classList.add("cardboard_time");
-        controlBar.appendChild(timePlaceholder);
+        playerInstance.domRef.controls.basicPreview.before(timePlaceholder);
 
         // override the time display function for this instance
         playerInstance.controlDurationUpdate = function () {
@@ -319,10 +324,21 @@ export default function (playerInstance, options) {
 
         playerInstance.trackEvent(playerInstance.domRef.player.parentNode, 'click', '.fluid_control_cardboard', function () {
             if (playerInstance.vrMode) {
+                playerInstance.domRef.controls.progressContainer = playerInstance.domRef.controls.tmp;
                 playerInstance.cardBoardSwitchToNormal();
             } else {
+                playerInstance.domRef.controls.tmp = playerInstance.domRef.controls.progressContainer
                 playerInstance.cardBoardSwitchToVR();
+                playerInstance.domRef.controls.progressContainerSecond
+                    .addEventListener('mouseenter', () => {
+                        playerInstance.domRef.controls.progressContainer = playerInstance.domRef.controls.progressContainerSecond;
+                    }, false);
+                playerInstance.domRef.controls.progressContainerSecond
+                    .addEventListener('mouseleave', () => {
+                        playerInstance.domRef.controls.progressContainer = playerInstance.domRef.controls.tmp;
+                    }, false);
             }
+            playerInstance.resizeMarkerContainer();
         });
     };
 
@@ -337,7 +353,7 @@ export default function (playerInstance, options) {
             .display = 'inline-block';
 
         if (!window.PANOLENS) {
-            $script('https://cdn.jsdelivr.net/npm/three@latest/build/three.min.js', () => {
+            $script('https://cdn.jsdelivr.net/npm/three@0.105.0/build/three.min.js', () => {
                 $script('https://cdn.jsdelivr.net/npm/panolens@latest/build/panolens.min.js', () => {
                     playerInstance.createCardboardView();
                 });

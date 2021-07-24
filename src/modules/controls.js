@@ -154,9 +154,7 @@ export default function (playerInstance, options) {
             tag: 'div',
             id: playerInstance.videoPlayerId + '_cvp_options_menu',
             className: 'cvp_options_menu',
-            parent: controls.root,
-            domRef: 'optionsMenu'
-        })
+        });
 
         // Right container -> Menu -> background
         controls.menuBackground = playerInstance.createElement({
