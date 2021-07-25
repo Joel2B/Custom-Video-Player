@@ -86,35 +86,49 @@ export default function (playerInstance, options) {
     };
 
     playerInstance.generateTimelinePreviewTags = () => {
-        const controlsContainer = document.getElementById(playerInstance.videoPlayerId + '_fluid_controls_container');
+        playerInstance.domRef.controls.previewContainer = playerInstance.createElement({
+            tag: 'div',
+            id: playerInstance.videoPlayerId + '_fluid_timeline_preview_container',
+            className: 'fluid_timeline_preview_container',
+            style: {
+                display: 'none',
+                position: 'absolute',
+            },
+            parent: playerInstance.domRef.controls.root
+        })
 
-        const previewContainer = document.createElement('div');
-        previewContainer.id = playerInstance.videoPlayerId + '_fluid_timeline_preview_container';
-        previewContainer.className = 'fluid_timeline_preview_container';
-        previewContainer.style.display = 'none';
-        previewContainer.style.position = 'absolute';
-        controlsContainer.appendChild(previewContainer);
+        playerInstance.domRef.controls.tooltipTextContainer = playerInstance.createElement({
+            tag: 'div',
+            id: playerInstance.videoPlayerId + '_fluid_timeline_preview_tooltip_text_container',
+            className: 'fluid_timeline_preview_tooltip_text_container',
+            style: {
+                position: 'absolute'
+            },
+            parent: playerInstance.domRef.controls.previewContainer
+        })
 
-        const tooltipTextContainer = document.createElement('div');
-        tooltipTextContainer.id = playerInstance.videoPlayerId + '_fluid_timeline_preview_tooltip_text_container';
-        tooltipTextContainer.className = 'fluid_timeline_preview_tooltip_text_container';
-        tooltipTextContainer.style.position = 'absolute';
-        previewContainer.appendChild(tooltipTextContainer);
-
-        const previewTooltipText = document.createElement('div');
-        previewTooltipText.id = playerInstance.videoPlayerId + '_fluid_timeline_preview_tooltip_text';
-        previewTooltipText.className = 'fluid_timeline_preview_tooltip_text';
-        previewTooltipText.style.position = 'absolute';
-        tooltipTextContainer.appendChild(previewTooltipText);
+        playerInstance.domRef.controls.previewTooltipText = playerInstance.createElement({
+            tag: 'div',
+            id: playerInstance.videoPlayerId + '_fluid_timeline_preview_tooltip_text',
+            className: 'fluid_timeline_preview_tooltip_text',
+            style: {
+                position: 'absolute'
+            },
+            parent: playerInstance.domRef.controls.tooltipTextContainer
+        })
 
         //Shadow is needed to not trigger mouseleave event, that stops showing thumbnails, in case one scrubs a bit too fast and leaves current thumb before new one drawn.
-        const previewContainerShadow = document.createElement('div');
-        previewContainerShadow.id = playerInstance.videoPlayerId + '_fluid_timeline_preview_container_shadow';
-        previewContainerShadow.className = 'fluid_timeline_preview_container_shadow';
-        previewContainerShadow.style.position = 'absolute';
-        previewContainerShadow.style.display = 'none';
-        previewContainerShadow.style.opacity = 1;
-        controlsContainer.appendChild(previewContainerShadow);
+        playerInstance.domRef.controls.previewContainerShadow = playerInstance.createElement({
+            tag: 'div',
+            id: playerInstance.videoPlayerId + '_fluid_timeline_preview_container_shadow',
+            className: 'fluid_timeline_preview_container_shadow',
+            style: {
+                position: 'absolute',
+                display: 'none',
+                opacity: 1
+            },
+            parent: playerInstance.domRef.controls.root
+        })
     };
 
     playerInstance.getThumbnailCoordinates = (second) => {
@@ -130,11 +144,11 @@ export default function (playerInstance, options) {
     };
 
     playerInstance.drawTimelinePreview = (event) => {
-        const timelinePreviewTag = document.getElementById(playerInstance.videoPlayerId + '_fluid_timeline_preview_container');
-        const tooltipTextContainer = document.getElementById(playerInstance.videoPlayerId + '_fluid_timeline_preview_tooltip_text_container');
-        const timelinePreviewTooltipText = document.getElementById(playerInstance.videoPlayerId + '_fluid_timeline_preview_tooltip_text');
-        const timelinePreviewShadow = document.getElementById(playerInstance.videoPlayerId + '_fluid_timeline_preview_container_shadow');
-        const progressContainer = document.getElementById(playerInstance.videoPlayerId + '_fluid_controls_progress_container');
+        const timelinePreviewTag = playerInstance.domRef.controls.previewContainer;
+        const tooltipTextContainer = playerInstance.domRef.controls.tooltipTextContainer;
+        const timelinePreviewTooltipText = playerInstance.domRef.controls.previewTooltipText;
+        const timelinePreviewShadow = playerInstance.domRef.controls.previewContainerShadow;
+        const progressContainer = playerInstance.domRef.controls.progressContainer;
         const totalWidth = progressContainer.clientWidth;
 
         if (playerInstance.isCurrentlyPlayingAd) {
@@ -158,7 +172,7 @@ export default function (playerInstance, options) {
             timelinePreviewShadow.style.display = 'block';
 
             if (thumbnailCoordinates !== false) {
-                const progressContainer = document.getElementById(playerInstance.videoPlayerId + '_fluid_controls_progress_container');
+                const progressContainer = playerInstance.domRef.controls.progressContainer;
                 const totalWidth = progressContainer.clientWidth;
                 // preview border is set to 2px, a total of 4px on both sides, and they are subtracted from the position of the timeline preview so that it stays within the width of the timeline
                 const borderWidthPreview = parseInt(window.getComputedStyle(timelinePreviewTag, null).getPropertyValue('border-left-width').replace('px', '')) * 2;
@@ -200,7 +214,7 @@ export default function (playerInstance, options) {
 
     playerInstance.setupThumbnailPreview = () => {
         let timelinePreview = playerInstance.displayOptions.layoutControls.timelinePreview;
-        if (!timelinePreview || !timelinePreview.type) {
+        if (!timelinePreview || !timelinePreview.type || playerInstance.showCardBoardView) {
             return;
         }
 
@@ -210,17 +224,17 @@ export default function (playerInstance, options) {
             eventOn = 'touchmove';
             eventOff = 'touchend';
         }
-        document.getElementById(playerInstance.videoPlayerId + '_fluid_controls_progress_container')
+        playerInstance.domRef.controls.progressContainer
             .addEventListener(eventOn, playerInstance.drawTimelinePreview.bind(playerInstance), false);
-        document.getElementById(playerInstance.videoPlayerId + '_fluid_controls_progress_container')
+        playerInstance.domRef.controls.progressContainer
             .addEventListener(eventOff, function (event) {
-                const progress = document.getElementById(playerInstance.videoPlayerId + '_fluid_controls_progress_container');
+                const progress = playerInstance.domRef.controls.progressContainer;
                 if (typeof event.clientX !== 'undefined' && progress.contains(document.elementFromPoint(event.clientX, event.clientY))) {
                     //False positive (Chrome bug when fast click causes leave event)
                     return;
                 }
-                document.getElementById(playerInstance.videoPlayerId + '_fluid_timeline_preview_container').style.display = 'none';
-                document.getElementById(playerInstance.videoPlayerId + '_fluid_timeline_preview_container_shadow').style.display = 'none';
+                playerInstance.domRef.controls.previewContainer.style.display = 'none';
+                playerInstance.domRef.controls.previewContainerShadow.style.display = 'none';
             }, false);
         playerInstance.generateTimelinePreviewTags();
 

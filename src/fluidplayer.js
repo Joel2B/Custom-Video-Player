@@ -1089,8 +1089,8 @@ const fluidPlayerClass = function () {
             progressContainer.firstChild.nextSibling.firstChild.removeAttribute('style');
 
             if (!self.showTimeOnHover) {
-                document.getElementById(self.videoPlayerId + '_fluid_timeline_preview_container').style.display = 'none';
-                document.getElementById(self.videoPlayerId + '_fluid_timeline_preview_container_shadow').style.display = 'none';
+                self.domRef.controls.previewContainer.style.display = 'none';
+                self.domRef.controls.previewContainerShadow.style.display = 'none';
             } else {
                 progressContainer.parentNode.lastChild.style.visibility = 'hidden';
             }
