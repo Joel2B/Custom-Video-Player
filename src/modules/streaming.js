@@ -18,7 +18,7 @@ export default function (playerInstance, options) {
             case 'application/dash+xml': // MPEG-DASH
                 if (!playerInstance.dashScriptLoaded && (!window.dashjs || window.dashjs.isDefaultSubject)) {
                     playerInstance.dashScriptLoaded = true;
-                    $script('https://cdn.dashjs.org/latest/dash.mediaplayer.min.js', function () {
+                    $script('https://cdn.dashjs.org/latest/dash.all.min.js', () => {
                         playerInstance.initialiseDash();
                     });
                 } else {
