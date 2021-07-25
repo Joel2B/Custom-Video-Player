@@ -406,7 +406,7 @@ export default function (playerInstance, options) {
             tag: 'div',
             id: playerInstance.videoPlayerId + '_fluid_control_volume_currentpos',
             className: 'fluid_control_volume_currentpos',
-            parent: controls.volumeCurrent,
+            parent: controls.currentVolume,
         });
 
         // Right container -> Volume container
