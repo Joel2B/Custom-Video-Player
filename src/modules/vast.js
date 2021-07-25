@@ -376,9 +376,9 @@ export default function (playerInstance, options) {
             divClickThrough.style.height = videoPlayer.offsetHeight + 'px';
         }
 
-        const requestFullscreenFunctionNames = playerInstance.checkFullscreenSupport('fluid_video_wrapper_' + playerInstance.videoPlayerId);
+        const requestFullscreenFunctionNames = playerInstance.checkFullscreenSupport(playerInstance.videoPlayerId + '_fluid_video_wrapper');
         const fullscreenButton = document.getElementById(playerInstance.videoPlayerId + '_fluid_control_fullscreen');
-        const menuOptionFullscreen = document.getElementById(playerInstance.videoPlayerId + 'context_option_fullscreen');
+        const menuOptionFullscreen = document.getElementById(playerInstance.videoPlayerId + '_context_option_fullscreen');
 
         if (requestFullscreenFunctionNames) {
             // this will go other way around because we already exited full screen
@@ -392,7 +392,7 @@ export default function (playerInstance, options) {
         } else {
             // TODO: I am fairly certain this fallback does not work...
             //The browser does not support the Fullscreen API, so a pseudo-fullscreen implementation is used
-            const fullscreenTag = document.getElementById('fluid_video_wrapper_' + playerInstance.videoPlayerId);
+            const fullscreenTag = playerInstance.domRef.wrapper;
 
             if (fullscreenTag.className.search(/\bpseudo_fullscreen\b/g) !== -1) {
                 fullscreenTag.className += ' pseudo_fullscreen';

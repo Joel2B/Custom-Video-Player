@@ -912,7 +912,6 @@ export default function (playerInstance, options) {
                 return;
             }
 
-            //var playerWrapper = document.getElementById('fluid_video_wrapper_' + playerInstance.videoPlayerId);
             const nonLinearAdExists = document.getElementsByClassName('fluid_nonLinear_ad')[0];
             if (!nonLinearAdExists) {
                 playerInstance.createBoard(adListId);
@@ -1120,7 +1119,7 @@ export default function (playerInstance, options) {
         playerInstance.vastOptions = null;
 
         playerInstance.setBuffering();
-        const progressbarContainer = document.getElementById(playerInstance.videoPlayerId + '_fluid_controls_progress_container');
+        const progressbarContainer = playerInstance.domRef.controls.progressContainer;
 
         if (progressbarContainer !== null) {
             const backgroundColor = (playerInstance.displayOptions.layoutControls.primaryColor) ? playerInstance.displayOptions.layoutControls.primaryColor : "white";
@@ -1185,7 +1184,7 @@ export default function (playerInstance, options) {
         divSkipButton.className = 'skip_button skip_button_disabled';
         divSkipButton.innerHTML = playerInstance.displayOptions.vastOptions.skipButtonCaption.replace('[seconds]', playerInstance.vastOptions.skipoffset);
 
-        document.getElementById('fluid_video_wrapper_' + playerInstance.videoPlayerId).appendChild(divSkipButton);
+        playerInstance.domRef.wrapper.appendChild(divSkipButton);
 
         playerInstance.domRef.player.addEventListener('timeupdate', playerInstance.decreaseSkipOffset, false);
     };
@@ -1194,7 +1193,7 @@ export default function (playerInstance, options) {
      * Ad Countdown
      */
     playerInstance.addAdCountdown = () => {
-        const videoWrapper = document.getElementById('fluid_video_wrapper_' + playerInstance.videoPlayerId);
+        const videoWrapper = playerInstance.domRef.wrapper;
         const divAdCountdown = document.createElement('div');
 
         // Create element
@@ -1253,7 +1252,7 @@ export default function (playerInstance, options) {
         adPlayingDiv.className = 'fluid_ad_playing';
         adPlayingDiv.innerText = textToShow;
 
-        document.getElementById('fluid_video_wrapper_' + playerInstance.videoPlayerId).appendChild(adPlayingDiv);
+        playerInstance.domRef.wrapper.appendChild(adPlayingDiv);
     };
 
     playerInstance.positionTextElements = (adListData) => {
@@ -1376,7 +1375,7 @@ export default function (playerInstance, options) {
 
         ctaButton.appendChild(link);
 
-        document.getElementById('fluid_video_wrapper_' + playerInstance.videoPlayerId).appendChild(ctaButton);
+        playerInstance.domRef.wrapper.appendChild(ctaButton);
     };
 
     playerInstance.removeCTAButton = () => {

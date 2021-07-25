@@ -120,13 +120,13 @@ export default function (playerInstance, options) {
         videoPlayerTag.parentNode.removeChild(newControlBar);
 
         if (playerInstance.displayOptions.layoutControls.showCardBoardJoystick && vrJoystickPanel) {
-            vrJoystickPanel.style.display = "block";
+            vrJoystickPanel.style.display = 'block';
         }
-        controlBar.classList.remove("fluid_vr_controls_container");
+        controlBar.classList.remove('fluid_vr_controls_container');
 
         // show volume control bar
         const volumeContainer = document.getElementById(playerInstance.videoPlayerId + '_fluid_control_volume_container');
-        volumeContainer.style.display = "block";
+        volumeContainer.style.display = 'block';
 
         // show all ads overlays if any
         const adCountDownTimerText = document.getElementById('ad_countdown' + playerInstance.videoPlayerId);
@@ -158,17 +158,17 @@ export default function (playerInstance, options) {
 
         // hide the joystick in VR mode
         if (playerInstance.displayOptions.layoutControls.showCardBoardJoystick && vrJoystickPanel) {
-            vrJoystickPanel.style.display = "none";
+            vrJoystickPanel.style.display = 'none';
         }
 
         // hide big play icon
         if (initialPlay) {
-            document.getElementById(playerInstance.videoPlayerId + '_fluid_initial_play').style.display = "none";
-            document.getElementById(playerInstance.videoPlayerId + '_fluid_initial_play_button').style.opacity = "1";
+            document.getElementById(playerInstance.videoPlayerId + '_fluid_initial_play').style.display = 'none';
+            document.getElementById(playerInstance.videoPlayerId + '_fluid_initial_play_button').style.opacity = '1';
         }
 
         // hide volume control bar
-        volumeContainer.style.display = "none";
+        volumeContainer.style.display = 'none';
 
     };
 
@@ -182,7 +182,7 @@ export default function (playerInstance, options) {
             node.removeAttribute('id');
         });
 
-        newControlBar.classList.add("fluid_vr2_controls_container");
+        newControlBar.classList.add('fluid_vr2_controls_container');
         playerInstance.domRef.player.parentNode.insertBefore(newControlBar, playerInstance.domRef.player.nextSibling);
         playerInstance.copyEvents(newControlBar);
         playerInstance.domRef.controls.progressContainerSecond = newControlBar.firstChild.nextSibling;
@@ -198,7 +198,7 @@ export default function (playerInstance, options) {
 
         playerInstance.vrMode = true;
 
-        controlBar.classList.add("fluid_vr_controls_container");
+        controlBar.classList.add('fluid_vr_controls_container');
 
         playerInstance.cardBoardHideDefaultControls();
         playerInstance.cardBoardCreateVRControls();
@@ -231,10 +231,9 @@ export default function (playerInstance, options) {
 
     playerInstance.cardBoardMoveTimeInfo = () => {
         const timePlaceholder = document.getElementById(playerInstance.videoPlayerId + '_fluid_control_duration');
-        const controlBar = playerInstance.domRef.controls.root;
 
-        timePlaceholder.classList.add("cardboard_time");
-        playerInstance.domRef.controls.basicPreview.before(timePlaceholder);
+        timePlaceholder.classList.add('cardboard_time');
+        playerInstance.domRef.controls.basicPreview.parentNode.insertBefore(timePlaceholder, playerInstance.domRef.controls.basicPreview);
 
         // override the time display function for this instance
         playerInstance.controlDurationUpdate = function () {
@@ -249,14 +248,14 @@ export default function (playerInstance, options) {
                 durationText = "<span class='ad_timer_prefix'>AD : </span>" + currentPlayTime + ' / ' + totalTime;
 
                 for (let i = 0; i < timePlaceholder.length; i++) {
-                    timePlaceholder[i].classList.add("ad_timer_prefix");
+                    timePlaceholder[i].classList.add('ad_timer_prefix');
                 }
 
             } else {
                 durationText = currentPlayTime + ' / ' + totalTime;
 
                 for (let i = 0; i < timePlaceholder.length; i++) {
-                    timePlaceholder[i].classList.remove("ad_timer_prefix");
+                    timePlaceholder[i].classList.remove('ad_timer_prefix');
                 }
             }
 

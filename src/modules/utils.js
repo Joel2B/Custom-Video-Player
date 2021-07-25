@@ -168,9 +168,11 @@ export default function (playerInstance, options) {
 
     playerInstance.createElement = (data, event) => {
         const elem = document.createElement(data.tag);
+
         if (typeof event === 'function') {
-            elem.addEventListener('click', event);
+            elem.addEventListener('click', event, false);
         }
+
         for (const key in data) {
             const value = data[key];
             switch (key) {
@@ -185,19 +187,44 @@ export default function (playerInstance, options) {
                     data.parent.appendChild(elem);
                     break;
                 case 'childs':
-                    for (let i = 0; i < value.length; i++) {
-                        const child = playerInstance.createElement(value[i]);
-                        elem.appendChild(child);
+                    for (const child of value) {
+                        elem.appendChild(playerInstance.createElement(child));
                     }
                     break;
                 case 'dataset':
                     elem[key][Object.keys(value)[0]] = Object.values(value)[0];
                     break;
                 case 'domRef':
-                    console.log(value, playerInstance.domRef.controls);
                     playerInstance.domRef.controls[value] = elem;
                 default:
                     elem[key] = value;
+                    break;
+            }
+        }
+        return elem;
+    }
+
+    playerInstance.createElementNS = (data) => {
+        const xmlns = 'http://www.w3.org/2000/svg';
+        const elem = document.createElementNS(xmlns, data.name)
+
+        for (const key in data) {
+            const value = data[key];
+            switch (key) {
+                case 'attr':
+                    for (const attr in value) {
+                        elem.setAttribute(attr, value[attr]);
+                    }
+                    break;
+                case 'childs':
+                    for (const child of value) {
+                        elem.appendChild(playerInstance.createElementNS(child));
+                    }
+                    break;
+                case 'parent':
+                    data.parent.appendChild(elem);
+                    break;
+                default:
                     break;
             }
         }

@@ -326,7 +326,7 @@ const fluidPlayerClass = function () {
             }
         }
 
-        self.domRef.wrapper = self.setupPlayerWrapper();
+        self.setupPlayerWrapper();
 
         playerNode.addEventListener('webkitfullscreenchange', self.recalculateAdDimensions);
         playerNode.addEventListener('fullscreenchange', self.recalculateAdDimensions);
@@ -476,7 +476,7 @@ const fluidPlayerClass = function () {
             playerNode.play();
         }
 
-        const videoWrapper = document.getElementById('fluid_video_wrapper_' + playerNode.id);
+        const videoWrapper = self.domRef.wrapper;
 
         if (!self.mobileInfo.userOs) {
             videoWrapper.addEventListener('mouseleave', self.handleMouseleave, false);
@@ -521,7 +521,7 @@ const fluidPlayerClass = function () {
     self.toggleLoader = (showLoader) => {
         self.isLoading = !!showLoader;
 
-        const loaderDiv = document.getElementById('vast_video_loading_' + self.videoPlayerId);
+        const loaderDiv = self.domRef.controls.loader;
 
         loaderDiv.style.opacity = showLoader ? '1' : '0';
     };
@@ -763,12 +763,12 @@ const fluidPlayerClass = function () {
     };
 
     self.contolVolumebarUpdate = () => {
-        const currentVolumeTag = document.getElementById(self.videoPlayerId + '_fluid_control_currentvolume');
-        const volumeposTag = document.getElementById(self.videoPlayerId + '_fluid_control_volume_currentpos');
-        const volumebarTotalWidth = document.getElementById(self.videoPlayerId + '_fluid_control_volume').clientWidth;
+        const currentVolumeTag = self.domRef.controls.currentVolume;
+        const volumeposTag = self.domRef.controls.volumeCurrentPos;
+        const volumebarTotalWidth = self.domRef.controls.volume.clientWidth;
         const volumeposTagWidth = volumeposTag.clientWidth;
         const muteButtonTag = self.domRef.player.parentNode.getElementsByClassName('fluid_control_mute');
-        const menuOptionMute = document.getElementById(self.videoPlayerId + 'context_option_mute');
+        const menuOptionMute = document.getElementById(self.videoPlayerId + '_context_option_mute');
 
         if (0 !== self.domRef.player.volume) {
             self.latestVolume = self.domRef.player.volume;
@@ -878,10 +878,10 @@ const fluidPlayerClass = function () {
 
     self.fullscreenToggle = () => {
         const videoPlayerTag = self.domRef.player;
-        const fullscreenTag = document.getElementById('fluid_video_wrapper_' + self.videoPlayerId);
-        const requestFullscreenFunctionNames = self.checkFullscreenSupport('fluid_video_wrapper_' + self.videoPlayerId);
+        const fullscreenTag = document.getElementById(self.videoPlayerId + '_fluid_video_wrapper');
+        const requestFullscreenFunctionNames = self.checkFullscreenSupport(self.videoPlayerId + '_fluid_video_wrapper');
         const fullscreenButton = videoPlayerTag.parentNode.getElementsByClassName('fluid_control_fullscreen');
-        const menuOptionFullscreen = document.getElementById(self.videoPlayerId + 'context_option_fullscreen');
+        const menuOptionFullscreen = document.getElementById(self.videoPlayerId + '_context_option_fullscreen');
 
         // Disable Theatre mode if it's on while we toggle fullscreen
         if (self.theatreMode) {
@@ -977,6 +977,7 @@ const fluidPlayerClass = function () {
         return (coordinates && (coordinates.length === 3)) ? parseInt(coordinates[0]) : 0;
     };
 
+    // firefox: when zooming to the screen and entering fullscreen mode, offsetX gives an incorrect value
     self.getEventOffsetX = (evt, el) => {
         let x = 0;
         let translateX = 0;
@@ -1005,12 +1006,11 @@ const fluidPlayerClass = function () {
 
     self.getEventOffsetY = (evt, el) => {
         let fullscreenMultiplier = 1;
-        const videoWrapper = self.findClosestParent(el, 'div[id^="fluid_video_wrapper_"]');
+        const videoWrapper = self.findClosestParent(el, 'div[id^="_fluid_video_wrapper"]');
 
         if (videoWrapper) {
-            const videoPlayerId = videoWrapper.id.replace('fluid_video_wrapper_', '');
-
-            const requestFullscreenFunctionNames = self.checkFullscreenSupport('fluid_video_wrapper_' + videoPlayerId);
+            const videoPlayerId = videoWrapper.id.replace('_fluid_video_wrapper', '');
+            const requestFullscreenFunctionNames = self.checkFullscreenSupport(videoPlayerId + '_fluid_video_wrapper');
             if (requestFullscreenFunctionNames && document[requestFullscreenFunctionNames.isFullscreen]) {
                 fullscreenMultiplier = 0;
             }
@@ -1082,11 +1082,9 @@ const fluidPlayerClass = function () {
         const onProgressbarMouseUp = event => {
             Array.from(progressContainer.childNodes).map((elem) => {
                 if (elem.className.indexOf('marker_container') == -1) {
-                    elem.style.transform = ''
+                    elem.style.removeProperty('transform');
                 }
             });
-
-            Array.from(progressContainer.childNodes).map(elem => elem.style.removeProperty('transform'));
 
             progressContainer.firstChild.nextSibling.firstChild.removeAttribute('style');
 
@@ -1323,7 +1321,7 @@ const fluidPlayerClass = function () {
                 clickedMenuButton = true;
             }
         });
-        
+
         if (!clickedMenuButton && !self.domRef.controls.optionsMenu.contains(e.target)) {
             self.closeMenu();
         }
@@ -1773,50 +1771,61 @@ const fluidPlayerClass = function () {
         const extraLinks = self.displayOptions.layoutControls.contextMenu.links;
 
         //Create own context menu
-        const divContextMenu = document.createElement('div');
-        divContextMenu.id = self.videoPlayerId + '_fluid_context_menu';
-        divContextMenu.className = 'fluid_context_menu';
-        divContextMenu.style.display = 'none';
-        divContextMenu.style.position = 'absolute';
+        const divContextMenu = self.createElement({
+            tag: 'div',
+            id: self.videoPlayerId + '_fluid_context_menu',
+            className: 'fluid_context_menu',
+            style: {
+                display: 'none',
+                position: 'absolute'
+            }
+        });
 
-        const contextMenuList = document.createElement('ul');
-        divContextMenu.appendChild(contextMenuList);
+        const contextMenuList = self.createElement({
+            tag: 'ul',
+            parent: divContextMenu
+        });
 
         if (!!extraLinks) {
-            for (const link of extraLinks) {
-                const linkItem = document.createElement('li');
-                linkItem.id = self.videoPlayerId + 'context_option_play';
-                linkItem.innerHTML = link.label;
-                linkItem.addEventListener('click', () => window.open(link.href, '_blank'), false);
-                contextMenuList.appendChild(linkItem);
+            for (const [key, link] of extraLinks.entries()) {
+                self.createElement({
+                    tag: 'li',
+                    id: self.videoPlayerId + '_context_option_extra_' + key,
+                    innerHTML: link.label,
+                    parent: contextMenuList
+                }, () => window.open(link.href, '_blank'));
             }
         }
 
         if (showDefaultControls) {
-            const menuItemPlay = document.createElement('li');
-            menuItemPlay.id = self.videoPlayerId + 'context_option_play';
-            menuItemPlay.innerHTML = self.displayOptions.captions.play;
-            menuItemPlay.addEventListener('click', () => self.playPauseToggle(), false);
-            contextMenuList.appendChild(menuItemPlay);
+            self.createElement({
+                tag: 'li',
+                id: self.videoPlayerId + '_context_option_play',
+                innerHTML: self.displayOptions.captions.play,
+                parent: contextMenuList
+            }, () => self.playPauseToggle());
 
-            const menuItemMute = document.createElement('li');
-            menuItemMute.id = self.videoPlayerId + 'context_option_mute';
-            menuItemMute.innerHTML = self.displayOptions.captions.mute;
-            menuItemMute.addEventListener('click', () => self.muteToggle(), false);
-            contextMenuList.appendChild(menuItemMute);
+            self.createElement({
+                tag: 'li',
+                id: self.videoPlayerId + '_context_option_mute',
+                innerHTML: self.displayOptions.captions.mute,
+                parent: contextMenuList
+            }, () => self.muteToggle());
 
-            const menuItemFullscreen = document.createElement('li');
-            menuItemFullscreen.id = self.videoPlayerId + 'context_option_fullscreen';
-            menuItemFullscreen.innerHTML = self.displayOptions.captions.fullscreen;
-            menuItemFullscreen.addEventListener('click', () => self.fullscreenToggle(), false);
-            contextMenuList.appendChild(menuItemFullscreen);
+            self.createElement({
+                tag: 'li',
+                id: self.videoPlayerId + '_context_option_fullscreen',
+                innerHTML: self.displayOptions.captions.fullscreen,
+                parent: contextMenuList
+            }, () => self.fullscreenToggle());
         }
 
-        const menuItemVersion = document.createElement('li');
-        menuItemVersion.id = self.videoPlayerId + 'context_option_homepage';
-        menuItemVersion.innerHTML = 'Fluid Player ' + self.version;
-        menuItemVersion.addEventListener('click', () => window.open(self.homepage, '_blank'), false)
-        contextMenuList.appendChild(menuItemVersion);
+        self.createElement({
+            tag: 'li',
+            id: self.videoPlayerId + '_context_option_homepage',
+            innerHTML: 'Fluid Player ' + self.version,
+            parent: contextMenuList
+        }, () => window.open(self.homepage, '_blank'));
 
         self.domRef.player.parentNode.insertBefore(divContextMenu, self.domRef.player.nextSibling);
 
@@ -1927,8 +1936,8 @@ const fluidPlayerClass = function () {
      * @returns Boolean
      */
     self.checkIfVolumebarIsRendered = () => {
-        const volumeposTag = document.getElementById(self.videoPlayerId + '_fluid_control_volume_currentpos');
-        const volumebarTotalWidth = document.getElementById(self.videoPlayerId + '_fluid_control_volume').clientWidth;
+        const volumeposTag = self.domRef.controls.volumeCurrentPos;
+        const volumebarTotalWidth = self.domRef.controls.volume.clientWidth;
         const volumeposTagWidth = volumeposTag.clientWidth;
 
         return volumeposTagWidth !== volumebarTotalWidth;
@@ -1960,29 +1969,29 @@ const fluidPlayerClass = function () {
     };
 
     self.setupPlayerWrapper = () => {
-        const wrapper = document.createElement('div');
-
-        wrapper.id = 'fluid_video_wrapper_' + self.videoPlayerId;
-        wrapper.className = self.isTouchDevice()
-            ? 'fluid_video_wrapper mobile'
-            : 'fluid_video_wrapper';
-
-        //Assign the height/width dimensions to the wrapper
-        if (self.displayOptions.layoutControls.fillToContainer) {
-            wrapper.style.width = '100%';
-            wrapper.style.height = '100%';
-        } else {
-            wrapper.style.height = self.domRef.player.clientHeight + 'px';
-            wrapper.style.width = self.domRef.player.clientWidth + 'px';
-        }
+        const fillToContainer = self.displayOptions.layoutControls.fillToContainer;
+        self.domRef.wrapper = self.createElement({
+            tag: 'div',
+            id: self.videoPlayerId + '_fluid_video_wrapper',
+            className: self.isTouchDevice() ? 'fluid_video_wrapper mobile' : 'fluid_video_wrapper',
+            style: {
+                //Assign the height/width dimensions to the wrapper
+                ...(fillToContainer) && {
+                    width: '100%',
+                    height: '100%'
+                },
+                ...(!fillToContainer) && {
+                    width: self.domRef.player.clientWidth + 'px',
+                    height: self.domRef.player.clientHeight + 'px'
+                },
+            },
+        });
 
         self.domRef.player.style.height = '100%';
         self.domRef.player.style.width = '100%';
 
-        self.domRef.player.parentNode.insertBefore(wrapper, self.domRef.player);
-        wrapper.appendChild(self.domRef.player);
-
-        return wrapper;
+        self.domRef.player.parentNode.insertBefore(self.domRef.wrapper, self.domRef.player);
+        self.domRef.wrapper.appendChild(self.domRef.player);
     };
 
     self.onErrorDetection = () => {
@@ -2010,7 +2019,7 @@ const fluidPlayerClass = function () {
             return;
         }
 
-        const sourceChangeButton = document.getElementById(self.videoPlayerId + '_fluid_control_video_source');
+        const sourceChangeButton = document.getElementById(self.domRef.videoSource);
         sourceChangeButton.style.display = 'inline-block';
 
         let appendSourceChange = false;
@@ -2190,7 +2199,11 @@ const fluidPlayerClass = function () {
     }
 
     self.setupClickMenuButton = () => {
-        self.domRef.controls.menuButton.addEventListener('click', () => {
+        self.trackEvent(self.domRef.player.parentNode, 'click', '.fluid_button_main_menu', () => {
+            if (self.isCurrentlyPlayingAd) {
+                return;
+            }
+            
             if (self.isMenuClosed()) {
                 self.domRef.controls.optionsMenu.classList.add('cvp_visible');
             } else {
@@ -2269,22 +2282,25 @@ const fluidPlayerClass = function () {
         if (!self.displayOptions.layoutControls.title) {
             return;
         }
-
-        const titleHolder = document.createElement('div');
-        titleHolder.id = self.videoPlayerId + '_title';
+        const titleHolder = self.createElement({
+            tag: 'div',
+            id: self.videoPlayerId + '_title',
+            className: 'fp_title',
+            innerHTML: self.displayOptions.layoutControls.title,
+            domRef: 'titleHolder'
+        });
+        
         self.domRef.player.parentNode.insertBefore(titleHolder, null);
-        titleHolder.innerHTML += self.displayOptions.layoutControls.title;
-        titleHolder.classList.add('fp_title');
     };
 
     self.hasTitle = () => {
-        const title = document.getElementById(self.videoPlayerId + '_title');
+        const title = self.domRef.controls.titleHolder;
         const titleOption = self.displayOptions.layoutControls.title;
         return title && titleOption != null;
     };
 
     self.hideTitle = () => {
-        const titleHolder = document.getElementById(self.videoPlayerId + '_title');
+        const titleHolder = self.domRef.controls.titleHolder;
 
         if (!self.hasTitle()) {
             return;
@@ -2294,7 +2310,7 @@ const fluidPlayerClass = function () {
     };
 
     self.showTitle = () => {
-        const titleHolder = document.getElementById(self.videoPlayerId + '_title');
+        const titleHolder = self.domRef.controls.titleHolder;
 
         if (!self.hasTitle()) {
             return;
@@ -2310,8 +2326,10 @@ const fluidPlayerClass = function () {
 
         // Container div for the logo
         // This is to allow for fade in and out logo_maintain_display
-        const logoHolder = document.createElement('div');
-        logoHolder.id = self.videoPlayerId + '_logo';
+        const logoHolder = self.createElement({
+            tag: 'div',
+            id: self.videoPlayerId + '_logo'
+        });
         let hideClass = 'logo_maintain_display';
         if (self.displayOptions.layoutControls.logo.hideWithControls) {
             hideClass = 'initial_controls_show';
@@ -2319,8 +2337,10 @@ const fluidPlayerClass = function () {
         logoHolder.classList.add(hideClass, 'fp_logo');
 
         // The logo itself
-        const logoImage = document.createElement('img');
-        logoImage.id = self.videoPlayerId + '_logo_image';
+        const logoImage = self.createElement({
+            tag: 'img',
+            id: self.videoPlayerId + '_logo_image'
+        });
         if (self.displayOptions.layoutControls.logo.imageUrl) {
             logoImage.src = self.displayOptions.layoutControls.logo.imageUrl;
         }
@@ -2375,14 +2395,15 @@ const fluidPlayerClass = function () {
             return;
         }
 
-        const containerDiv = document.createElement('div');
-        containerDiv.id = self.videoPlayerId + '_fluid_html_on_pause';
-        containerDiv.className = 'fluid_html_on_pause';
-        containerDiv.style.display = 'none';
-        containerDiv.innerHTML = self.displayOptions.layoutControls.htmlOnPauseBlock.html;
-        containerDiv.onclick = function (event) {
-            self.playPauseToggle();
-        };
+        const containerDiv = self.createElement({
+            tag: 'div',
+            id: self.videoPlayerId + '_fluid_html_on_pause',
+            className: 'fluid_html_on_pause',
+            innerHTML: self.displayOptions.layoutControls.htmlOnPauseBlock.html,
+            style: {
+                display: 'none'
+            }
+        }, () => self.playPauseToggle());
 
         if (self.displayOptions.layoutControls.htmlOnPauseBlock.width) {
             containerDiv.style.width = self.displayOptions.layoutControls.htmlOnPauseBlock.width + 'px';
@@ -2400,26 +2421,45 @@ const fluidPlayerClass = function () {
      */
     self.initPlayButton = () => {
         // Create the html fpr the play button
-        const containerDiv = document.createElement('div');
-        containerDiv.id = self.videoPlayerId + '_fluid_initial_play_button';
-        containerDiv.className = 'fluid_html_on_pause';
-        const backgroundColor = (self.displayOptions.layoutControls.primaryColor) ? self.displayOptions.layoutControls.primaryColor : '#333333';
-        containerDiv.innerHTML = '<div id="' + self.videoPlayerId + '_fluid_initial_play" class="fluid_initial_play" style="background-color:' + backgroundColor + '"><div id="' + self.videoPlayerId + '_fluid_state_button" class="fluid_initial_play_button"></div></div>';
-        const initPlayFunction = function () {
-            self.playPauseToggle();
-            containerDiv.removeEventListener('click', initPlayFunction);
-        };
-        containerDiv.addEventListener('click', initPlayFunction);
+        self.domRef.controls.initialPlayButtonContainer = self.createElement({
+            tag: 'div',
+            id: self.videoPlayerId + '_fluid_initial_play_button',
+            className: 'fluid_html_on_pause',
+        });
 
+        const backgroundColor = (self.displayOptions.layoutControls.primaryColor) ? self.displayOptions.layoutControls.primaryColor : '#333333';
+
+        self.domRef.controls.initialPlayButton = self.createElement({
+            tag: 'div',
+            id: self.videoPlayerId + '_fluid_initial_play',
+            className: 'fluid_initial_play',
+            style: {
+                backgroundColor: backgroundColor
+            },
+            parent: self.domRef.controls.initialPlayButtonContainer,
+        });
+
+        self.domRef.controls.stateButton = self.createElement({
+            tag: 'div',
+            id: self.videoPlayerId + '_fluid_state_button',
+            className: 'fluid_initial_play_button',
+            parent: self.domRef.controls.initialPlayButton,
+        });
+
+        const initPlayFunction = () => {
+            self.playPauseToggle();
+            self.domRef.controls.initialPlayButtonContainer.removeEventListener('click', initPlayFunction);
+        };
+        self.domRef.controls.initialPlayButtonContainer.addEventListener('click', initPlayFunction);
         // If the user has chosen to not show the play button we'll make it invisible
         // We don't hide altogether because animations might still be used
         if (!self.displayOptions.layoutControls.playButtonShowing) {
-            const initialControlsDisplay = document.getElementById(self.videoPlayerId + '_fluid_controls_container');
+            const initialControlsDisplay = self.domRef.controls.root;
             initialControlsDisplay.classList.add('initial_controls_show');
-            containerDiv.style.opacity = '0';
+            self.domRef.controls.initialPlayButtonContainer.style.opacity = '0';
         }
 
-        self.domRef.player.parentNode.insertBefore(containerDiv, null);
+        self.domRef.player.parentNode.insertBefore(self.domRef.controls.initialPlayButtonContainer, null);
     };
 
     /**
@@ -2493,7 +2533,7 @@ const fluidPlayerClass = function () {
     };
 
     self.hasControlBar = () => {
-        return !!document.getElementById(self.videoPlayerId + '_fluid_controls_container');
+        return !!self.domRef.controls.root;
     };
 
     self.isControlBarVisible = () => {
@@ -2501,7 +2541,7 @@ const fluidPlayerClass = function () {
             return false;
         }
 
-        const controlBar = document.getElementById(self.videoPlayerId + '_fluid_controls_container');
+        const controlBar = self.domRef.controls.root;
         const style = window.getComputedStyle(controlBar, null);
         return !(style.opacity === 0 || style.visibility === 'hidden');
     };
@@ -2678,34 +2718,18 @@ const fluidPlayerClass = function () {
         self.domRef.controls.speedsPage.append(childs);
     };
 
-    self.setPlaybackSpeedAtStatup
-
-    self.openCloseVideoPlaybackRate = () => {
-        const sourceChangeList = document.getElementById(self.videoPlayerId + '_fluid_control_video_playback_rate');
-
-        if (self.isCurrentlyPlayingAd || 'none' !== sourceChangeList.style.display) {
-            sourceChangeList.style.display = 'none';
-            return;
-        }
-
-        sourceChangeList.style.display = 'block';
-        const mouseOut = function () {
-            sourceChangeList.removeEventListener('mouseleave', mouseOut);
-            sourceChangeList.style.display = 'none';
-        };
-        sourceChangeList.addEventListener('mouseleave', mouseOut);
-    };
-
     self.createDownload = () => {
-        const downloadOption = document.getElementById(self.videoPlayerId + '_fluid_control_download');
+        const downloadOption = self.domRef.controls.download;
         if (!self.displayOptions.layoutControls.allowDownload) {
             return;
         }
         downloadOption.style.display = 'inline-block';
 
-        let downloadClick = document.createElement('a');
-        downloadClick.id = self.videoPlayerId + '_download';
-        downloadClick.onclick = function (e) {
+        let downloadClick = self.createElement({
+            tag: 'a',
+            id: self.videoPlayerId + '_download',
+            domRef: 'downloadClick'
+        }, (e) => {
             const linkItem = this;
 
             if (typeof e.stopImmediatePropagation !== 'undefined') {
@@ -2716,12 +2740,12 @@ const fluidPlayerClass = function () {
                 linkItem.download = '';
                 linkItem.href = '';
             }, 100);
-        };
+        });
 
         downloadOption.appendChild(downloadClick);
 
         downloadOption.addEventListener('click', function () {
-            const downloadItem = document.getElementById(self.videoPlayerId + '_download');
+            const downloadItem = self.domRef.controls.downloadClick;
             downloadItem.download = self.originalSrc;
             downloadItem.href = self.originalSrc;
             downloadClick.click();
@@ -2774,7 +2798,7 @@ const fluidPlayerClass = function () {
     };
 
     self.defaultTheatre = () => {
-        const videoWrapper = document.getElementById('fluid_video_wrapper_' + self.videoPlayerId);
+        const videoWrapper = self.domRef.wrapper;
 
         if (self.theatreMode) {
             videoWrapper.classList.remove('fluid_theatre_mode');
@@ -2969,14 +2993,15 @@ const fluidPlayerClass = function () {
 
         // We create the HTML block from scratch if it doesn't already exist
         if (!htmlBlock) {
-            const containerDiv = document.createElement('div');
-            containerDiv.id = self.videoPlayerId + '_fluid_html_on_pause';
-            containerDiv.className = 'fluid_html_on_pause';
-            containerDiv.style.display = 'none';
-            containerDiv.innerHTML = passedHtml.html;
-            containerDiv.onclick = function () {
-                self.playPauseToggle();
-            };
+            const containerDiv = self.createElement({
+                tag: 'div',
+                id: self.videoPlayerId + '_fluid_html_on_pause',
+                className: 'fluid_html_on_pause',
+                innerHTML: passedHtml.html,
+                style: {
+                    display: 'none'
+                }
+            }, () => self.playPauseToggle());
 
             if (passedHtml.width) {
                 containerDiv.style.width = passedHtml.width + 'px';
@@ -3002,7 +3027,7 @@ const fluidPlayerClass = function () {
     };
 
     self.toggleControlBar = (show) => {
-        const controlBar = document.getElementById(self.videoPlayerId + 'fluid_controls_container');
+        const controlBar = self.domRef.controls.root;
 
         if (show) {
             controlBar.className += ' initial_controls_show';
@@ -3125,7 +3150,7 @@ const fluidPlayerClass = function () {
             self.destructors[i].bind(this)();
         }
 
-        const container = document.getElementById('fluid_video_wrapper_' + self.videoPlayerId);
+        const container = self.domRef.wrapper;
 
         if (!container) {
             console.warn('Unable to remove wrapper element for Fluid Player instance - element not found ' + self.videoPlayerId);
