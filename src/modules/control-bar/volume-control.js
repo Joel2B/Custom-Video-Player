@@ -13,9 +13,9 @@ export default function (self) {
 
         if (0 !== self.domRef.player.volume) {
             self.latestVolume = self.domRef.player.volume;
-            self.setLocalStorage('mute', false, 30)
+            self.setLocalStorage('mute', false, 30);
         } else {
-            self.setLocalStorage('mute', true, 30)
+            self.setLocalStorage('mute', true, 30);
         }
 
         if (self.domRef.player.volume && !self.domRef.player.muted) {

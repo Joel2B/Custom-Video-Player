@@ -83,24 +83,8 @@ export default function (self, options) {
         }
     };
 
-    self.updateViewQualityLevels = () => {
-        const previousLevel = document.querySelector('.cvp_quality .cvp_active');
-        if (previousLevel) {
-            previousLevel.classList.remove('cvp_active');
-        }
-
-        if (!self.inSubMenu) {
-            self.restartMenuLater();
-        }
-
-        const currentLevel = document.querySelector(`[data-level='${self.currentQualityLevel}']`)
-        currentLevel.classList.add('cvp_active');
-
-        self.domRef.controls.qualitySelector.lastChild.textContent = currentLevel.firstChild.textContent;
-    }
-
     self.selectQualityLevel = (e) => {
-        const levelSelect = Number(e.target.dataset.level);
+        let levelSelect = Number(e.target.dataset.level);
         if (levelSelect == self.currentQualityLevel) {
             return;
         }
@@ -118,11 +102,131 @@ export default function (self, options) {
             self.hlsPlayer.currentLevel = levelSelect;
         } else {
             self.setBuffering();
-            self.setVideoSource(self.domRef.player.querySelectorAll('source')[levelSelect].src);
+            self.setVideoSource(self.videoSources[levelSelect].src);
         }
 
         self.setLocalStorage('forceQualityLevel', levelSelect, 30);
         self.closeMenu();
+    };
+
+    self.insertQualityLevels = (data) => {
+        let levels = [];
+        let defaultQualityLevel = 0;
+        let defaultTitle;
+
+        for (const [index, level] of data.entries()) {
+            self.hightLevelOptions += 26;
+
+            let info = [];
+            let title;
+
+            if (level.title != undefined) {
+                title = level.title;
+            } else if (level.height != undefined) {
+                title = level.height + 'p';
+            } else {
+                title = index;
+            }
+
+            if (index == defaultQualityLevel) {
+                defaultTitle = title;
+            }
+
+            let qualityLevel = title.match(/\d/g);
+            qualityLevel = Number(qualityLevel != null ? qualityLevel.join('') : false);
+            if (qualityLevel !== false && qualityLevel >= 720 || level.isHD === true) {
+                info.push({
+                    tag: 'span',
+                    className: 'hd',
+                    textContent: 'HD',
+                });
+            }
+
+            if (self.hlsPlayer) {
+                const bitrate = (level.bitrate / 1000).toFixed();
+                info.push({
+                    tag: 'span',
+                    className: 'kbps',
+                    textContent: `${bitrate} kbps`,
+                });
+            }
+
+            levels.push(self.createElement({
+                tag: 'li',
+                textContent: title,
+                dataset: { level: index },
+                childs: info,
+            }, (e) => {
+                self.selectQualityLevel(e);
+            }));
+        }
+
+        levels.reverse();
+        if (self.hlsPlayer) {
+            self.hightLevelOptions += 26;
+            levels.push(self.createElement({
+                tag: 'li',
+                className: 'cvp_active',
+                textContent: 'Auto',
+                dataset: { level: -1 },
+            }, (e) => {
+                self.selectQualityLevel(e);
+            }));
+        }
+
+        self.domRef.controls.levelsPage.append(...levels);
+
+        if (!self.hlsPlayer) {
+            self.domRef.controls.qualitySelector.lastChild.textContent = defaultTitle;
+            self.domRef.controls.levelsPage.firstChild.classList.add('cvp_active');
+        }
+    };
+
+    self.updateViewQualityLevels = () => {
+        const previousLevel = document.querySelector('.cvp_quality .cvp_active');
+        if (previousLevel) {
+            previousLevel.classList.remove('cvp_active');
+        }
+
+        if (!self.inSubMenu) {
+            self.restartMenuLater();
+        }
+
+        const currentLevel = document.querySelector(`[data-level='${self.currentQualityLevel}']`)
+        currentLevel.classList.add('cvp_active');
+
+        self.domRef.controls.qualitySelector.lastChild.textContent = currentLevel.firstChild.textContent;
+    }
+
+    self.applyQualityLevel = (data) => {
+        let level = self.getLocalStorage('forceQualityLevel');
+        if (level === false || level == -1 || !self.displayOptions.layoutControls.persistentSettings.quality) {
+            if (self.hlsPlayer) {
+                self.domRef.controls.levelsPage.lastChild.classList.add('cvp_active');
+            } else {
+                self.currentQualityLevel = 0;
+                self.updateViewQualityLevels();
+            }
+            return;
+        }
+
+        level = Number(level);
+        if (level >= data.length) {
+            level = data.length - 1;
+        }
+
+        if (self.hlsPlayer) {
+            self.hlsPlayer.startLevel = level;
+            self.hlsPlayer.nextLevel = level;
+        }
+
+        if (!self.hlsPlayer) {
+            self.setBuffering();
+            self.setVideoSource(data[level].src);
+        }
+
+        self.currentQualityLevel = level;
+        self.updateViewQualityLevels();
     };
 
     self.initialiseHls = () => {
@@ -190,70 +294,12 @@ export default function (self, options) {
             })
 
             hls.on(Hls.Events.MANIFEST_LOADED, (e, data) => {
-                let level = self.getLocalStorage('forceQualityLevel');
-                if (level === false || level == -1 || !self.displayOptions.layoutControls.persistentSettings.quality) {
-                    self.domRef.controls.levelsPage.lastChild.classList.add('cvp_active');
-                    return;
-                }
-
-                level = Number(level);
-                if (level >= data.levels.length) {
-                    level = data.levels.length - 1;
-                }
-
-                self.hlsPalayer.startLevel = level;
-                self.hlsPlayer.nextLevel = level;
-
-                self.currentQualityLevel = level;
-                self.updateViewQualityLevels();
+                self.applyQualityLevel(data.levels);
             });
 
             hls.on(Hls.Events.MANIFEST_PARSED, (e, data) => {
                 console.log('MANIFEST_PARSED', data)
-
-                let levels = []
-
-                for (const [index, level] of data.levels.entries()) {
-                    let info = [];
-                    self.hightLevelOptions += 26;
-                    const height = level.height;
-                    const bitrate = (level.bitrate / 1000).toFixed();
-
-                    if (height >= 720) {
-                        info.push({
-                            tag: 'span',
-                            className: 'hd',
-                            textContent: 'HD',
-                        });
-                    }
-
-                    info.push({
-                        tag: 'span',
-                        className: 'kbps',
-                        textContent: `${bitrate} kbps`,
-                    });
-
-                    levels.push(self.createElement({
-                        tag: 'li',
-                        textContent: `${height}p`,
-                        dataset: { level: index },
-                        childs: info,
-                    }, (e) => {
-                        self.selectQualityLevel(e);
-                    }));
-                }
-
-                levels.reverse();
-                levels.push(self.createElement({
-                    tag: 'li',
-                    className: 'cvp_active',
-                    textContent: 'Auto',
-                    dataset: { level: -1 },
-                }, (e) => {
-                    self.selectQualityLevel(e);
-                }));
-
-                self.domRef.controls.levelsPage.append(...levels);
+                self.insertQualityLevels(data.levels);
             });
 
             hls.on(Hls.Events.ERROR, (e, data) => {
@@ -277,7 +323,6 @@ export default function (self, options) {
             });
 
             self.displayOptions.modules.onAfterInitHls(hls);
-
 
             if (!self.firstPlayLaunched && self.getLocalStorage('autoPlay')) {
                 self.domRef.player.play();

@@ -1,8 +1,6 @@
 'use strict';
 
 // Player modules
-
-
 import ControlBar from './modules/control-bar/control-bar';
 import Controls from './modules/control-bar/controls';
 import Download from './modules/control-bar/download';
@@ -227,8 +225,8 @@ const playerClass = function () {
         self.mobileInfo = self.getMobileOs();
         self.events = {};
         self.widthOptionsMenu = 185;
-        self.hightOptionsMenu = 108;
-        self.hightLevelOptions = 64;
+        self.hightOptionsMenu = 109;
+        self.hightLevelOptions = 67;
         self.currentQualityLevel = -1;
         self.inSubMenu = false;
         self.updateInterval = null;
@@ -439,6 +437,8 @@ const playerClass = function () {
         self.displayOptions.layoutControls.playerInitCallback();
 
         self.setupMenu();
+
+        self.sourcesInVideoTag();
 
         self.createSubtitles();
 
@@ -806,6 +806,33 @@ const playerClass = function () {
             self.playMainVideoWhenVastFails(401);
         }
     };
+
+    self.sourcesInVideoTag = () => {
+        const sourcesList = self.domRef.player.querySelectorAll('source');
+        if (sourcesList.length <= 1) {
+            return;
+        }
+
+        const sources = [];
+        for (const source of sourcesList) {
+            if (source.src) {
+                const getTheType = source.src.split('.').pop();
+                if (self.mobileInfo.userOs === 'iOS' && getTheType === 'mkv') {
+                    continue;
+                }
+                sources.push({
+                    title: source.title,
+                    src: source.src,
+                    isHD: source.getAttribute('data-fluid-hd') != null
+                });
+            }
+        }
+
+        sources.reverse();
+        self.videoSources = sources;
+        self.insertQualityLevels(sources);
+        self.applyQualityLevel(sources);
+    }
 
     self.setVideoSource = (url) => {
         if (self.mobileInfo.userOs === 'iOS' && url.indexOf('.mkv') > 0) {

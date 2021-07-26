@@ -38,7 +38,7 @@ export default function (self) {
                 self.domRef.controls.speedSelector,
                 self.domRef.controls.speedsPage,
                 110,
-                165
+                171
             );
         });
     }

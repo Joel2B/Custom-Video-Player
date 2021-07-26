@@ -10,7 +10,7 @@ export default function (self) {
             innerHTML: self.displayOptions.layoutControls.title,
             domRef: 'titleHolder'
         });
-        
+
         self.domRef.player.parentNode.insertBefore(titleHolder, null);
     };
 

@@ -32,7 +32,7 @@ export default function (self) {
 
         // Set correct variables
         self.theatreMode = !self.theatreMode;
-        self.setlocalStorage('theatre', self.theatreMode, 30);
+        self.setLocalStorage('theatre', self.theatreMode, 30);
 
         // Trigger theatre event
         const theatreEvent = (self.theatreMode) ? 'theatreModeOn' : 'theatreModeOff';

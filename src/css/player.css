@@ -830,7 +830,11 @@ _:-ms-lang(x),
     overflow: hidden;
 }
 
-.cvp_options_menu.cvp_level2 .cvp_main_page>ul {
+.cvp_switches > div {
+    height: 27px;
+}
+
+.cvp_options_menu.cvp_level2 .cvp_main_page > ul {
     opacity: 0;
     pointer-events: none;
     transform: translate(-100px, 0);
@@ -860,6 +864,7 @@ _:-ms-lang(x),
 }
 
 .cvp_options_menu ul li {
+    height: 26px;
     color: #ccc;
     line-height: 25px;
     margin: 0;
