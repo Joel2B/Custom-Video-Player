@@ -154,7 +154,7 @@ module.exports = (env, argv) => {
         devtool: wpMode === 'development' ? 'source-map' : false,
         plugins,
         entry: {
-            fluidplayer: './src/browser.js'
+            player: './src/browser.js'
         },
         optimization: {
             minimize: wpMode !== 'development',

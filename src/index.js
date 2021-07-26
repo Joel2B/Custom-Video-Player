@@ -29,6 +29,6 @@ if ('undefined' === typeof FP_DEBUG) {
 }
 
 import './polyfills';
-import fluidPlayerInitializer from './fluidplayer.js';
+import playerInitializer from './player.js';
 
-export default fluidPlayerInitializer;
+export default playerInitializer;

@@ -3,16 +3,16 @@
  * You SHOULD NOT import this file except if you plan to build browser distribution of Fluid Player.
  */
 
-import fluidPlayerInitializer from './index';
+import playerInitializer from './index';
 
 // Import CSS automatically in browser builds.
-import './css/fluidplayer.css';
+import './css/player.css';
 
 if (window) {
     /**
      * Register public interface.
      */
     if (!window.fluidPlayer) {
-        window.fluidPlayer = fluidPlayerInitializer;
+        window.fluidPlayer = playerInitializer;
     }
 }

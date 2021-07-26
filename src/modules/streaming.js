@@ -9,41 +9,41 @@ if (typeof window !== 'undefined' && !window.dashjs) {
     };
 }
 
-export default function (playerInstance, options) {
+export default function (self, options) {
     const $script = require('scriptjs');
 
-    playerInstance.initialiseStreamers = () => {
-        playerInstance.detachStreamers();
-        switch (playerInstance.displayOptions.layoutControls.mediaType) {
+    self.initialiseStreamers = () => {
+        self.detachStreamers();
+        switch (self.displayOptions.layoutControls.mediaType) {
             case 'application/dash+xml': // MPEG-DASH
-                if (!playerInstance.dashScriptLoaded && (!window.dashjs || window.dashjs.isDefaultSubject)) {
-                    playerInstance.dashScriptLoaded = true;
+                if (!self.dashScriptLoaded && (!window.dashjs || window.dashjs.isDefaultSubject)) {
+                    self.dashScriptLoaded = true;
                     $script('https://cdn.dashjs.org/latest/dash.all.min.js', () => {
-                        playerInstance.initialiseDash();
+                        self.initialiseDash();
                     });
                 } else {
-                    playerInstance.initialiseDash();
+                    self.initialiseDash();
                 }
                 break;
             case 'application/x-mpegurl': // HLS
-                if (!playerInstance.hlsScriptLoaded && !window.Hls) {
-                    playerInstance.hlsScriptLoaded = true;
+                if (!self.hlsScriptLoaded && !window.Hls) {
+                    self.hlsScriptLoaded = true;
                     $script('https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js', () => {
-                        playerInstance.initialiseHls();
+                        self.initialiseHls();
                     });
                 } else {
-                    playerInstance.initialiseHls();
+                    self.initialiseHls();
                 }
                 break;
         }
     };
 
-    playerInstance.initialiseDash = () => {
+    self.initialiseDash = () => {
         if (typeof (window.MediaSource || window.WebKitMediaSource) === 'function') {
             // If false we want to override the autoPlay, as it comes from postRoll
-            const playVideo = !playerInstance.autoplayAfterAd
-                ? playerInstance.autoplayAfterAd
-                : playerInstance.displayOptions.layoutControls.autoPlay;
+            const playVideo = !self.autoplayAfterAd
+                ? self.autoplayAfterAd
+                : self.displayOptions.layoutControls.autoPlay;
 
             const defaultOptions = {
                 'debug': {
@@ -54,75 +54,78 @@ export default function (playerInstance, options) {
             };
 
             const dashPlayer = dashjs.MediaPlayer().create();
-            const options = playerInstance.displayOptions.modules.configureDash(defaultOptions);
+            const options = self.displayOptions.modules.configureDash(defaultOptions);
 
             dashPlayer.updateSettings(options);
 
-            playerInstance.displayOptions.modules.onBeforeInitDash(dashPlayer);
+            self.displayOptions.modules.onBeforeInitDash(dashPlayer);
 
-            dashPlayer.initialize(playerInstance.domRef.player, playerInstance.originalSrc, playVideo);
+            dashPlayer.initialize(self.domRef.player, self.originalSrc, playVideo);
 
             dashPlayer.on('streamInitializing', () => {
-                playerInstance.toggleLoader(true);
+                self.toggleLoader(true);
             });
 
             dashPlayer.on('canPlay', () => {
-                playerInstance.toggleLoader(false);
+                self.toggleLoader(false);
             });
 
             dashPlayer.on('playbackPlaying', () => {
-                playerInstance.toggleLoader(false);
+                self.toggleLoader(false);
             });
 
-            playerInstance.displayOptions.modules.onAfterInitDash(dashPlayer);
+            self.displayOptions.modules.onAfterInitDash(dashPlayer);
 
-            playerInstance.dashPlayer = dashPlayer;
+            self.dashPlayer = dashPlayer;
         } else {
-            playerInstance.nextSource();
+            self.nextSource();
             console.log('[FP_WARNING] Media type not supported by this browser using DASH.js. (application/dash+xml)');
         }
     };
 
-    playerInstance.updateViewQualityLevels = () => {
+    self.updateViewQualityLevels = () => {
         const previousLevel = document.querySelector('.cvp_quality .cvp_active');
         if (previousLevel) {
             previousLevel.classList.remove('cvp_active');
         }
 
-        if (!playerInstance.inSubMenu) {
-            playerInstance.restartMenuLater();
+        if (!self.inSubMenu) {
+            self.restartMenuLater();
         }
 
-        const currentLevel = document.querySelector(`[data-level='${playerInstance.currentQualityLevel}']`)
+        const currentLevel = document.querySelector(`[data-level='${self.currentQualityLevel}']`)
         currentLevel.classList.add('cvp_active');
 
-        playerInstance.domRef.controls.qualitySelector.lastChild.textContent = currentLevel.firstChild.textContent;
+        self.domRef.controls.qualitySelector.lastChild.textContent = currentLevel.firstChild.textContent;
     }
 
-    playerInstance.selectQualityLevel = (e) => {
+    self.selectQualityLevel = (e) => {
         const levelSelect = Number(e.target.dataset.level);
-        if (levelSelect == playerInstance.currentQualityLevel) {
+        if (levelSelect == self.currentQualityLevel) {
             return;
         }
 
-        playerInstance.inSubMenu = false;
+        self.inSubMenu = false;
+        self.currentQualityLevel = levelSelect;
+        self.updateViewQualityLevels();
 
-        playerInstance.currentQualityLevel = levelSelect;
-        playerInstance.updateViewQualityLevels();
-
-        // reset the "auto" label, if a level is selected
-        const auto = e.target.parentNode.lastChild;
-        if (auto.textContent != 'Auto' && playerInstance.currentQualityLevel != -1) {
-            auto.textContent = 'Auto';
+        if (self.hlsPlayer) {
+            // reset the "auto" label, if a level is selected
+            const auto = e.target.parentNode.lastChild;
+            if (auto.textContent != 'Auto' && self.currentQualityLevel != -1) {
+                auto.textContent = 'Auto';
+            }
+            self.hlsPlayer.currentLevel = levelSelect;
+        } else {
+            self.setBuffering();
+            self.setVideoSource(self.domRef.player.querySelectorAll('source')[levelSelect].src);
         }
 
-        playerInstance.closeMenu();
-
-        playerInstance.hlsPlayer.currentLevel = levelSelect;
-        playerInstance.setLocalStorage('forceQualityLevel', levelSelect, 30);
+        self.setLocalStorage('forceQualityLevel', levelSelect, 30);
+        self.closeMenu();
     };
 
-    playerInstance.initialiseHls = () => {
+    self.initialiseHls = () => {
         if (Hls.isSupported()) {
             const defaultOptions = {
                 debug: typeof FP_DEBUG !== 'undefined' && FP_DEBUG === true,
@@ -153,33 +156,33 @@ export default function (playerInstance, options) {
                 abrBandWidthUpFactor: 0.5,
             };
 
-            playerInstance.displayOptions.modules.onBeforeInitHls(hls);
+            self.displayOptions.modules.onBeforeInitHls(hls);
 
-            const options = playerInstance.displayOptions.modules.configureHls(defaultOptions);
+            const options = self.displayOptions.modules.configureHls(defaultOptions);
             const hls = new Hls(options);
 
-            playerInstance.hlsPlayer = hls;
+            self.hlsPlayer = hls;
 
-            hls.attachMedia(playerInstance.domRef.player);
+            hls.attachMedia(self.domRef.player);
 
             hls.on(Hls.Events.MEDIA_ATTACHED, () => {
-                hls.loadSource(playerInstance.originalSrc);
+                hls.loadSource(self.originalSrc);
             })
 
             hls.on(Hls.Events.LEVEL_SWITCHED, (e, data) => {
-                if (playerInstance.currentQualityLevel != -1) {
+                if (self.currentQualityLevel != -1) {
                     return;
                 }
 
-                playerInstance.currentQualityLevel = -1;
-                playerInstance.updateViewQualityLevels();
+                self.currentQualityLevel = -1;
+                self.updateViewQualityLevels();
 
                 const autoLevel = document.querySelector(`[data-level='-1']`);
                 const levelSwitched = document.querySelector(`[data-level='${data.level}']`).firstChild.textContent;
                 const text = `Auto (${levelSwitched})`;
 
                 autoLevel.textContent = text;
-                playerInstance.domRef.controls.qualitySelector.lastChild.textContent = text;
+                self.domRef.controls.qualitySelector.lastChild.textContent = text;
             })
 
             hls.on(Hls.Events.LEVEL_SWITCHING, (e, data) => {
@@ -187,13 +190,9 @@ export default function (playerInstance, options) {
             })
 
             hls.on(Hls.Events.MANIFEST_LOADED, (e, data) => {
-                let level = playerInstance.getLocalStorage('forceQualityLevel');
-                if (level === false || level == -1) {
-                    // const previousLevel = document.querySelector('.cvp_quality .cvp_active');
-                    // if (previousLevel) {
-                    //     previousLevel.classList.remove('cvp_active');
-                    // }
-                    playerInstance.domRef.controls.levelsPage.lastChild.classList.add('cvp_active');
+                let level = self.getLocalStorage('forceQualityLevel');
+                if (level === false || level == -1 || !self.displayOptions.layoutControls.persistentSettings.quality) {
+                    self.domRef.controls.levelsPage.lastChild.classList.add('cvp_active');
                     return;
                 }
 
@@ -202,11 +201,11 @@ export default function (playerInstance, options) {
                     level = data.levels.length - 1;
                 }
 
-                playerInstance.hlsPlayer.startLevel = level;
-                playerInstance.hlsPlayer.nextLevel = level;
+                self.hlsPalayer.startLevel = level;
+                self.hlsPlayer.nextLevel = level;
 
-                playerInstance.currentQualityLevel = level;
-                playerInstance.updateViewQualityLevels();
+                self.currentQualityLevel = level;
+                self.updateViewQualityLevels();
             });
 
             hls.on(Hls.Events.MANIFEST_PARSED, (e, data) => {
@@ -216,7 +215,7 @@ export default function (playerInstance, options) {
 
                 for (const [index, level] of data.levels.entries()) {
                     let info = [];
-                    playerInstance.hightLevelOptions += 26;
+                    self.hightLevelOptions += 26;
                     const height = level.height;
                     const bitrate = (level.bitrate / 1000).toFixed();
 
@@ -234,27 +233,27 @@ export default function (playerInstance, options) {
                         textContent: `${bitrate} kbps`,
                     });
 
-                    levels.push(playerInstance.createElement({
+                    levels.push(self.createElement({
                         tag: 'li',
                         textContent: `${height}p`,
                         dataset: { level: index },
                         childs: info,
                     }, (e) => {
-                        playerInstance.selectQualityLevel(e);
+                        self.selectQualityLevel(e);
                     }));
                 }
 
                 levels.reverse();
-                levels.push(playerInstance.createElement({
+                levels.push(self.createElement({
                     tag: 'li',
                     className: 'cvp_active',
                     textContent: 'Auto',
                     dataset: { level: -1 },
                 }, (e) => {
-                    playerInstance.selectQualityLevel(e);
+                    self.selectQualityLevel(e);
                 }));
 
-                playerInstance.domRef.controls.levelsPage.append(...levels);
+                self.domRef.controls.levelsPage.append(...levels);
             });
 
             hls.on(Hls.Events.ERROR, (e, data) => {
@@ -271,31 +270,31 @@ export default function (playerInstance, options) {
                             break;
                         default:
                             // cannot recover
-                            playerInstance.recoverError();
+                            self.recoverError();
                             break;
                     }
                 }
             });
 
-            playerInstance.displayOptions.modules.onAfterInitHls(hls);
+            self.displayOptions.modules.onAfterInitHls(hls);
 
 
-            if (!playerInstance.firstPlayLaunched && playerInstance.getLocalStorage('autoPlay')) {
-                playerInstance.domRef.player.play();
+            if (!self.firstPlayLaunched && self.getLocalStorage('autoPlay')) {
+                self.domRef.player.play();
             }
         } else {
-            playerInstance.nextSource();
+            self.nextSource();
             console.log('[FP_WARNING] Media type not supported by this browser using HLS.js. (application/x-mpegURL)');
         }
     };
 
-    playerInstance.detachStreamers = () => {
-        if (playerInstance.dashPlayer) {
-            playerInstance.dashPlayer.reset();
-            playerInstance.dashPlayer = false;
-        } else if (playerInstance.hlsPlayer) {
-            playerInstance.hlsPlayer.detachMedia();
-            playerInstance.hlsPlayer = false;
+    self.detachStreamers = () => {
+        if (self.dashPlayer) {
+            self.dashPlayer.reset();
+            self.dashPlayer = false;
+        } else if (self.hlsPlayer) {
+            self.hlsPlayer.detachMedia();
+            self.hlsPlayer = false;
         }
     };
 }

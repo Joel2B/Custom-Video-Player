@@ -1,59 +1,59 @@
 // VAST support module
 'use strict';
-export default function (playerInstance, options) {
-    playerInstance.getClickThroughUrlFromLinear = (linear) => {
+export default function (self, options) {
+    self.getClickThroughUrlFromLinear = (linear) => {
         const videoClicks = linear.getElementsByTagName('VideoClicks');
 
         if (videoClicks.length) { //There should be exactly 1 node
             const clickThroughs = videoClicks[0].getElementsByTagName('ClickThrough');
 
             if (clickThroughs.length) {
-                return playerInstance.extractNodeData(clickThroughs[0]);
+                return self.extractNodeData(clickThroughs[0]);
             }
         }
 
         return false;
     };
 
-    playerInstance.getVastAdTagUriFromWrapper = (xmlResponse) => {
+    self.getVastAdTagUriFromWrapper = (xmlResponse) => {
         const wrapper = xmlResponse.getElementsByTagName('Wrapper');
 
         if (typeof wrapper !== 'undefined' && wrapper.length) {
             const vastAdTagURI = wrapper[0].getElementsByTagName('VASTAdTagURI');
 
             if (vastAdTagURI.length) {
-                return playerInstance.extractNodeData(vastAdTagURI[0]);
+                return self.extractNodeData(vastAdTagURI[0]);
             }
         }
 
         return false;
     };
 
-    playerInstance.hasInLine = (xmlResponse) => {
+    self.hasInLine = (xmlResponse) => {
         const inLine = xmlResponse.getElementsByTagName('InLine');
         return ((typeof inLine !== 'undefined') && inLine.length);
     };
 
-    playerInstance.hasVastAdTagUri = (xmlResponse) => {
+    self.hasVastAdTagUri = (xmlResponse) => {
         const vastAdTagURI = xmlResponse.getElementsByTagName('VASTAdTagURI');
         return ((typeof vastAdTagURI !== 'undefined') && vastAdTagURI.length);
     };
 
-    playerInstance.getClickThroughUrlFromNonLinear = (nonLinear) => {
+    self.getClickThroughUrlFromNonLinear = (nonLinear) => {
         let result = '';
         const nonLinears = nonLinear.getElementsByTagName('NonLinear');
 
         if (nonLinears.length) {//There should be exactly 1 node
             const nonLinearClickThrough = nonLinear.getElementsByTagName('NonLinearClickThrough');
             if (nonLinearClickThrough.length) {
-                result = playerInstance.extractNodeData(nonLinearClickThrough[0]);
+                result = self.extractNodeData(nonLinearClickThrough[0]);
             }
         }
 
         return result;
     };
 
-    playerInstance.getTrackingFromLinear = (linear) => {
+    self.getTrackingFromLinear = (linear) => {
         const trackingEvents = linear.getElementsByTagName('TrackingEvents');
 
         if (trackingEvents.length) {//There should be no more than one node
@@ -63,27 +63,27 @@ export default function (playerInstance, options) {
         return [];
     };
 
-    playerInstance.getDurationFromLinear = (linear) => {
+    self.getDurationFromLinear = (linear) => {
         const duration = linear.getElementsByTagName('Duration');
 
         if (duration.length && (typeof duration[0].childNodes[0] !== 'undefined')) {
-            const nodeDuration = playerInstance.extractNodeData(duration[0]);
-            return playerInstance.convertTimeStringToSeconds(nodeDuration);
+            const nodeDuration = self.extractNodeData(duration[0]);
+            return self.convertTimeStringToSeconds(nodeDuration);
         }
 
         return false;
     };
 
-    playerInstance.getDurationFromNonLinear = (tag) => {
+    self.getDurationFromNonLinear = (tag) => {
         let result = 0;
         const nonLinear = tag.getElementsByTagName('NonLinear');
         if (nonLinear.length && (typeof nonLinear[0].getAttribute('minSuggestedDuration') !== 'undefined')) {
-            result = playerInstance.convertTimeStringToSeconds(nonLinear[0].getAttribute('minSuggestedDuration'));
+            result = self.convertTimeStringToSeconds(nonLinear[0].getAttribute('minSuggestedDuration'));
         }
         return result;
     };
 
-    playerInstance.getDimensionFromNonLinear = (tag) => {
+    self.getDimensionFromNonLinear = (tag) => {
         const result = { 'width': null, 'height': null };
         const nonLinear = tag.getElementsByTagName('NonLinear');
 
@@ -99,7 +99,7 @@ export default function (playerInstance, options) {
         return result;
     };
 
-    playerInstance.getCreativeTypeFromStaticResources = (tag) => {
+    self.getCreativeTypeFromStaticResources = (tag) => {
         let result = '';
         const nonLinears = tag.getElementsByTagName('NonLinear');
 
@@ -110,7 +110,7 @@ export default function (playerInstance, options) {
         return result.toLowerCase();
     };
 
-    playerInstance.getMediaFilesFromLinear = (linear) => {
+    self.getMediaFilesFromLinear = (linear) => {
         const mediaFiles = linear.getElementsByTagName('MediaFiles');
 
         if (mediaFiles.length) {//There should be exactly 1 MediaFiles node
@@ -120,7 +120,7 @@ export default function (playerInstance, options) {
         return [];
     };
 
-    playerInstance.getStaticResourcesFromNonLinear = (linear) => {
+    self.getStaticResourcesFromNonLinear = (linear) => {
         let result = [];
         const nonLinears = linear.getElementsByTagName('NonLinear');
 
@@ -131,7 +131,7 @@ export default function (playerInstance, options) {
         return result;
     };
 
-    playerInstance.extractNodeData = (parentNode) => {
+    self.extractNodeData = (parentNode) => {
         let contentAsString = "";
         for (let n = 0; n < parentNode.childNodes.length; n++) {
             const child = parentNode.childNodes[n];
@@ -144,20 +144,20 @@ export default function (playerInstance, options) {
         return contentAsString.replace(/(^\s+|\s+$)/g, '');
     };
 
-    playerInstance.getAdParametersFromLinear = (linear) => {
+    self.getAdParametersFromLinear = (linear) => {
         const adParameters = linear.getElementsByTagName('AdParameters');
         let adParametersData = null;
 
         if (adParameters.length) {
-            adParametersData = playerInstance.extractNodeData(adParameters[0]);
+            adParametersData = self.extractNodeData(adParameters[0]);
         }
 
         return adParametersData;
     };
 
-    playerInstance.getMediaFileListFromLinear = (linear) => {
+    self.getMediaFileListFromLinear = (linear) => {
         const mediaFileList = [];
-        const mediaFiles = playerInstance.getMediaFilesFromLinear(linear);
+        const mediaFiles = self.getMediaFilesFromLinear(linear);
 
         if (!mediaFiles.length) {
             return mediaFileList;
@@ -173,7 +173,7 @@ export default function (playerInstance, options) {
 
             // get all the attributes of media file
             mediaFileList.push({
-                'src': playerInstance.extractNodeData(mediaFiles[n]),
+                'src': self.extractNodeData(mediaFiles[n]),
                 'type': mediaFiles[n].getAttribute('type'),
                 'apiFramework': mediaFiles[n].getAttribute('apiFramework'),
                 'codec': mediaFiles[n].getAttribute('codec'),
@@ -190,35 +190,35 @@ export default function (playerInstance, options) {
         return mediaFileList;
     };
 
-    playerInstance.getIconClickThroughFromLinear = (linear) => {
+    self.getIconClickThroughFromLinear = (linear) => {
         const iconClickThrough = linear.getElementsByTagName('IconClickThrough');
 
         if (iconClickThrough.length) {
-            return playerInstance.extractNodeData(iconClickThrough[0]);
+            return self.extractNodeData(iconClickThrough[0]);
         }
 
         return '';
     };
 
-    playerInstance.getStaticResourceFromNonLinear = (linear) => {
+    self.getStaticResourceFromNonLinear = (linear) => {
         let fallbackStaticResource;
-        const staticResources = playerInstance.getStaticResourcesFromNonLinear(linear);
+        const staticResources = self.getStaticResourcesFromNonLinear(linear);
 
         for (let i = 0; i < staticResources.length; i++) {
             if (!staticResources[i].getAttribute('type')) {
-                fallbackStaticResource = playerInstance.extractNodeData(staticResources[i]);
+                fallbackStaticResource = self.extractNodeData(staticResources[i]);
             }
 
-            if (staticResources[i].getAttribute('type') === playerInstance.displayOptions.staticResource) {
-                return playerInstance.extractNodeData(staticResources[i]);
+            if (staticResources[i].getAttribute('type') === self.displayOptions.staticResource) {
+                return self.extractNodeData(staticResources[i]);
             }
         }
 
         return fallbackStaticResource;
     };
 
-    playerInstance.registerTrackingEvents = (creativeLinear, tmpOptions) => {
-        const trackingEvents = playerInstance.getTrackingFromLinear(creativeLinear);
+    self.registerTrackingEvents = (creativeLinear, tmpOptions) => {
+        const trackingEvents = self.getTrackingFromLinear(creativeLinear);
         let eventType = '';
         let oneEventOffset = 0;
 
@@ -248,7 +248,7 @@ export default function (playerInstance, options) {
                         tmpOptions.tracking[eventType] = [];
                     }
 
-                    oneEventOffset = playerInstance.convertTimeStringToSeconds(trackingEvents[i].getAttribute('offset'));
+                    oneEventOffset = self.convertTimeStringToSeconds(trackingEvents[i].getAttribute('offset'));
 
                     if (typeof tmpOptions.tracking[eventType][oneEventOffset] === 'undefined') {
                         tmpOptions.tracking[eventType][oneEventOffset] = {
@@ -267,7 +267,7 @@ export default function (playerInstance, options) {
         }
     };
 
-    playerInstance.registerClickTracking = (clickTrackingTag, tmpOptions) => {
+    self.registerClickTracking = (clickTrackingTag, tmpOptions) => {
         if (!clickTrackingTag || !clickTrackingTag.length) {
             return;
         }
@@ -282,18 +282,18 @@ export default function (playerInstance, options) {
 
     };
 
-    playerInstance.registerImpressionEvents = (impressionTags, tmpOptions) => {
+    self.registerImpressionEvents = (impressionTags, tmpOptions) => {
         if (!impressionTags.length) {
             return;
         }
 
         for (let i = 0; i < impressionTags.length; i++) {
-            const impressionEvent = playerInstance.extractNodeData(impressionTags[i]);
+            const impressionEvent = self.extractNodeData(impressionTags[i]);
             tmpOptions.impression.push(impressionEvent);
         }
     };
 
-    playerInstance.registerErrorEvents = (errorTags, tmpOptions) => {
+    self.registerErrorEvents = (errorTags, tmpOptions) => {
         if ((typeof errorTags !== 'undefined') &&
             (errorTags !== null) &&
             (errorTags.length === 1) && //Only 1 Error tag is expected
@@ -302,19 +302,19 @@ export default function (playerInstance, options) {
         }
     };
 
-    playerInstance.announceError = (code) => {
-        if (typeof playerInstance.vastOptions.errorUrl === 'undefined' || !playerInstance.vastOptions.errorUrl) {
+    self.announceError = (code) => {
+        if (typeof self.vastOptions.errorUrl === 'undefined' || !self.vastOptions.errorUrl) {
             return;
         }
 
         const parsedCode = typeof code !== 'undefined' ? parseInt(code) : 900;
-        const errorUrl = playerInstance.vastOptions.errorUrl.replace('[ERRORCODE]', parsedCode);
+        const errorUrl = self.vastOptions.errorUrl.replace('[ERRORCODE]', parsedCode);
 
         //Send the error request
-        playerInstance.callUris([errorUrl]);
+        self.callUris([errorUrl]);
     };
 
-    playerInstance.getClickTrackingEvents = (linear) => {
+    self.getClickTrackingEvents = (linear) => {
         const result = [];
 
         const videoClicks = linear.getElementsByTagName('VideoClicks');
@@ -331,14 +331,14 @@ export default function (playerInstance, options) {
         }
 
         for (let i = 0; i < clickTracking.length; i++) {
-            const clickTrackingEvent = playerInstance.extractNodeData(clickTracking[i]);
+            const clickTrackingEvent = self.extractNodeData(clickTracking[i]);
             result.push(clickTrackingEvent);
         }
 
         return result;
     };
 
-    playerInstance.getNonLinearClickTrackingEvents = (nonLinear) => {
+    self.getNonLinearClickTrackingEvents = (nonLinear) => {
         const result = [];
         const nonLinears = nonLinear.getElementsByTagName('NonLinear');
 
@@ -353,7 +353,7 @@ export default function (playerInstance, options) {
         }
 
         for (let i = 0; i < clickTracking.length; i++) {
-            const NonLinearClickTracking = playerInstance.extractNodeData(clickTracking[i]);
+            const NonLinearClickTracking = self.extractNodeData(clickTracking[i]);
             result.push(NonLinearClickTracking);
         }
 
@@ -361,83 +361,83 @@ export default function (playerInstance, options) {
     };
 
     // TODO: ???
-    playerInstance.callUris = (uris) => {
+    self.callUris = (uris) => {
         for (let i = 0; i < uris.length; i++) {
             new Image().src = uris[i];
         }
     };
 
-    playerInstance.recalculateAdDimensions = () => {
-        const videoPlayer = document.getElementById(playerInstance.videoPlayerId);
-        const divClickThrough = document.getElementById('vast_clickthrough_layer_' + playerInstance.videoPlayerId);
+    self.recalculateAdDimensions = () => {
+        const videoPlayer = document.getElementById(self.videoPlayerId);
+        const divClickThrough = document.getElementById('vast_clickthrough_layer_' + self.videoPlayerId);
 
         if (divClickThrough) {
             divClickThrough.style.width = videoPlayer.offsetWidth + 'px';
             divClickThrough.style.height = videoPlayer.offsetHeight + 'px';
         }
 
-        const requestFullscreenFunctionNames = playerInstance.checkFullscreenSupport(playerInstance.videoPlayerId + '_fluid_video_wrapper');
-        const fullscreenButton = document.getElementById(playerInstance.videoPlayerId + '_fluid_control_fullscreen');
-        const menuOptionFullscreen = document.getElementById(playerInstance.videoPlayerId + '_context_option_fullscreen');
+        const requestFullscreenFunctionNames = self.checkFullscreenSupport(self.videoPlayerId + '_fluid_video_wrapper');
+        const fullscreenButton = document.getElementById(self.videoPlayerId + '_fluid_control_fullscreen');
+        const menuOptionFullscreen = document.getElementById(self.videoPlayerId + '_context_option_fullscreen');
 
         if (requestFullscreenFunctionNames) {
             // this will go other way around because we already exited full screen
             if (document[requestFullscreenFunctionNames.isFullscreen] === null) {
                 // Exit fullscreen
-                playerInstance.fullscreenOff(fullscreenButton, menuOptionFullscreen);
+                self.fullscreenOff(fullscreenButton, menuOptionFullscreen);
             } else {
                 // Go fullscreen
-                playerInstance.fullscreenOn(fullscreenButton, menuOptionFullscreen);
+                self.fullscreenOn(fullscreenButton, menuOptionFullscreen);
             }
         } else {
             // TODO: I am fairly certain this fallback does not work...
             //The browser does not support the Fullscreen API, so a pseudo-fullscreen implementation is used
-            const fullscreenTag = playerInstance.domRef.wrapper;
+            const fullscreenTag = self.domRef.wrapper;
 
             if (fullscreenTag.className.search(/\bpseudo_fullscreen\b/g) !== -1) {
                 fullscreenTag.className += ' pseudo_fullscreen';
-                playerInstance.fullscreenOn(fullscreenButton, menuOptionFullscreen);
+                self.fullscreenOn(fullscreenButton, menuOptionFullscreen);
             } else {
                 fullscreenTag.className = fullscreenTag.className.replace(/\bpseudo_fullscreen\b/g, '');
-                playerInstance.fullscreenOff(fullscreenButton, menuOptionFullscreen);
+                self.fullscreenOff(fullscreenButton, menuOptionFullscreen);
             }
         }
     };
 
-    playerInstance.prepareVast = (roll) => {
-        let list = playerInstance.findRoll(roll);
+    self.prepareVast = (roll) => {
+        let list = self.findRoll(roll);
 
         for (let i = 0; i < list.length; i++) {
             const adListId = list[i];
 
-            if (!(playerInstance.adList[adListId].vastLoaded !== true && playerInstance.adList[adListId].error !== true)) {
+            if (!(self.adList[adListId].vastLoaded !== true && self.adList[adListId].error !== true)) {
                 continue;
             }
 
-            playerInstance.processVastWithRetries(playerInstance.adList[adListId]);
-            playerInstance.domRef.player.addEventListener('adId_' + adListId, playerInstance[roll]);
+            self.processVastWithRetries(self.adList[adListId]);
+            self.domRef.player.addEventListener('adId_' + adListId, self[roll]);
         }
     };
 
 
-    playerInstance.playMainVideoWhenVastFails = (errorCode) => {
-        playerInstance.debugMessage('playMainVideoWhenVastFails called');
-        playerInstance.domRef.player.removeEventListener('loadedmetadata', playerInstance.switchPlayerToVastMode);
-        playerInstance.domRef.player.pause();
-        playerInstance.toggleLoader(false);
-        playerInstance.displayOptions.vastOptions.vastAdvanced.noVastVideoCallback();
+    self.playMainVideoWhenVastFails = (errorCode) => {
+        self.debugMessage('playMainVideoWhenVastFails called');
+        self.domRef.player.removeEventListener('loadedmetadata', self.switchPlayerToVastMode);
+        self.domRef.player.pause();
+        self.toggleLoader(false);
+        self.displayOptions.vastOptions.vastAdvanced.noVastVideoCallback();
 
-        if (!playerInstance.vastOptions || typeof playerInstance.vastOptions.errorUrl === 'undefined') {
-            playerInstance.announceLocalError(errorCode);
+        if (!self.vastOptions || typeof self.vastOptions.errorUrl === 'undefined') {
+            self.announceLocalError(errorCode);
         } else {
-            playerInstance.announceError(errorCode);
+            self.announceError(errorCode);
         }
 
-        playerInstance.switchToMainVideo();
+        self.switchToMainVideo();
     };
 
     // TODO: ???
-    playerInstance.switchPlayerToVastMode = () => {
+    self.switchPlayerToVastMode = () => {
     };
 
     /**
@@ -447,7 +447,7 @@ export default function (playerInstance, options) {
      * @param tmpOptions
      * @param callBack
      */
-    playerInstance.processVastXml = (xmlResponse, tmpOptions, callBack) => {
+    self.processVastXml = (xmlResponse, tmpOptions, callBack) => {
         let clickTracks;
 
         if (!xmlResponse) {
@@ -458,13 +458,13 @@ export default function (playerInstance, options) {
         //Get impression tag
         const impression = xmlResponse.getElementsByTagName('Impression');
         if (impression !== null) {
-            playerInstance.registerImpressionEvents(impression, tmpOptions);
+            self.registerImpressionEvents(impression, tmpOptions);
         }
 
         //Get the error tag, if any
         const errorTags = xmlResponse.getElementsByTagName('Error');
         if (errorTags !== null) {
-            playerInstance.registerErrorEvents(errorTags, tmpOptions);
+            self.registerErrorEvents(errorTags, tmpOptions);
         }
 
         //Get Creative
@@ -477,13 +477,13 @@ export default function (playerInstance, options) {
             if ((typeof arrayCreativeLinears !== 'undefined') && (arrayCreativeLinears !== null) && arrayCreativeLinears.length) {
 
                 const creativeLinear = arrayCreativeLinears[0];
-                playerInstance.registerTrackingEvents(creativeLinear, tmpOptions);
+                self.registerTrackingEvents(creativeLinear, tmpOptions);
 
-                clickTracks = playerInstance.getClickTrackingEvents(creativeLinear);
-                playerInstance.registerClickTracking(clickTracks, tmpOptions);
+                clickTracks = self.getClickTrackingEvents(creativeLinear);
+                self.registerClickTracking(clickTracks, tmpOptions);
 
                 //Extract the Ad data if it is actually the Ad (!wrapper)
-                if (!playerInstance.hasVastAdTagUri(xmlResponse) && playerInstance.hasInLine(xmlResponse)) {
+                if (!self.hasVastAdTagUri(xmlResponse) && self.hasInLine(xmlResponse)) {
 
                     //Set initial values
                     tmpOptions.adFinished = false;
@@ -491,12 +491,12 @@ export default function (playerInstance, options) {
                     tmpOptions.vpaid = false;
 
                     //Extract the necessary data from the Linear node
-                    tmpOptions.skipoffset = playerInstance.convertTimeStringToSeconds(creativeLinear.getAttribute('skipoffset'));
-                    tmpOptions.clickthroughUrl = playerInstance.getClickThroughUrlFromLinear(creativeLinear);
-                    tmpOptions.duration = playerInstance.getDurationFromLinear(creativeLinear);
-                    tmpOptions.mediaFileList = playerInstance.getMediaFileListFromLinear(creativeLinear);
-                    tmpOptions.adParameters = playerInstance.getAdParametersFromLinear(creativeLinear);
-                    tmpOptions.iconClick = playerInstance.getIconClickThroughFromLinear(creativeLinear);
+                    tmpOptions.skipoffset = self.convertTimeStringToSeconds(creativeLinear.getAttribute('skipoffset'));
+                    tmpOptions.clickthroughUrl = self.getClickThroughUrlFromLinear(creativeLinear);
+                    tmpOptions.duration = self.getDurationFromLinear(creativeLinear);
+                    tmpOptions.mediaFileList = self.getMediaFileListFromLinear(creativeLinear);
+                    tmpOptions.adParameters = self.getAdParametersFromLinear(creativeLinear);
+                    tmpOptions.iconClick = self.getIconClickThroughFromLinear(creativeLinear);
 
                     if (tmpOptions.adParameters) {
                         tmpOptions.vpaid = true;
@@ -509,25 +509,25 @@ export default function (playerInstance, options) {
             if ((typeof arrayCreativeNonLinears !== 'undefined') && (arrayCreativeNonLinears !== null) && arrayCreativeNonLinears.length) {
 
                 const creativeNonLinear = arrayCreativeNonLinears[0];
-                playerInstance.registerTrackingEvents(creativeNonLinear, tmpOptions);
+                self.registerTrackingEvents(creativeNonLinear, tmpOptions);
 
-                clickTracks = playerInstance.getNonLinearClickTrackingEvents(creativeNonLinear);
-                playerInstance.registerClickTracking(clickTracks, tmpOptions);
+                clickTracks = self.getNonLinearClickTrackingEvents(creativeNonLinear);
+                self.registerClickTracking(clickTracks, tmpOptions);
 
                 //Extract the Ad data if it is actually the Ad (!wrapper)
-                if (!playerInstance.hasVastAdTagUri(xmlResponse) && playerInstance.hasInLine(xmlResponse)) {
+                if (!self.hasVastAdTagUri(xmlResponse) && self.hasInLine(xmlResponse)) {
 
                     //Set initial values
                     tmpOptions.adType = 'nonLinear';
                     tmpOptions.vpaid = false;
 
                     //Extract the necessary data from the NonLinear node
-                    tmpOptions.clickthroughUrl = playerInstance.getClickThroughUrlFromNonLinear(creativeNonLinear);
-                    tmpOptions.duration = playerInstance.getDurationFromNonLinear(creativeNonLinear); // VAST version < 4.0
-                    tmpOptions.dimension = playerInstance.getDimensionFromNonLinear(creativeNonLinear); // VAST version < 4.0
-                    tmpOptions.staticResource = playerInstance.getStaticResourceFromNonLinear(creativeNonLinear);
-                    tmpOptions.creativeType = playerInstance.getCreativeTypeFromStaticResources(creativeNonLinear);
-                    tmpOptions.adParameters = playerInstance.getAdParametersFromLinear(creativeNonLinear);
+                    tmpOptions.clickthroughUrl = self.getClickThroughUrlFromNonLinear(creativeNonLinear);
+                    tmpOptions.duration = self.getDurationFromNonLinear(creativeNonLinear); // VAST version < 4.0
+                    tmpOptions.dimension = self.getDimensionFromNonLinear(creativeNonLinear); // VAST version < 4.0
+                    tmpOptions.staticResource = self.getStaticResourceFromNonLinear(creativeNonLinear);
+                    tmpOptions.creativeType = self.getCreativeTypeFromStaticResources(creativeNonLinear);
+                    tmpOptions.adParameters = self.getAdParametersFromLinear(creativeNonLinear);
 
                     if (tmpOptions.adParameters) {
                         tmpOptions.vpaid = true;
@@ -537,7 +537,7 @@ export default function (playerInstance, options) {
             }
 
             //Extract the Ad data if it is actually the Ad (!wrapper)
-            if (!playerInstance.hasVastAdTagUri(xmlResponse) && playerInstance.hasInLine(xmlResponse)) {
+            if (!self.hasVastAdTagUri(xmlResponse) && self.hasInLine(xmlResponse)) {
                 if (typeof tmpOptions.mediaFileList !== 'undefined' || typeof tmpOptions.staticResource !== 'undefined') {
                     callBack(true, tmpOptions);
                 } else {
@@ -556,14 +556,14 @@ export default function (playerInstance, options) {
      * @param adListId
      */
 
-    playerInstance.processVastWithRetries = (vastObj) => {
+    self.processVastWithRetries = (vastObj) => {
         let vastTag = vastObj.vastTag;
         const adListId = vastObj.id;
 
         const handleVastResult = function (pass, tmpOptions) {
-            if (pass && typeof tmpOptions !== 'undefined' && tmpOptions.vpaid && !playerInstance.displayOptions.vastOptions.allowVPAID) {
+            if (pass && typeof tmpOptions !== 'undefined' && tmpOptions.vpaid && !self.displayOptions.vastOptions.allowVPAID) {
                 pass = false;
-                playerInstance.announceLocalError('103', 'VPAID not allowed, so skipping this VAST tag.')
+                self.announceLocalError('103', 'VPAID not allowed, so skipping this VAST tag.')
             }
 
             if (pass) {
@@ -571,52 +571,52 @@ export default function (playerInstance, options) {
                 if (tmpOptions.adType === 'linear') {
 
                     if ((typeof tmpOptions.iconClick !== 'undefined') && (tmpOptions.iconClick !== null) && tmpOptions.iconClick.length) {
-                        playerInstance.adList[adListId].landingPage = tmpOptions.iconClick;
+                        self.adList[adListId].landingPage = tmpOptions.iconClick;
                     }
 
-                    const selectedMediaFile = playerInstance.getSupportedMediaFileObject(tmpOptions.mediaFileList);
+                    const selectedMediaFile = self.getSupportedMediaFileObject(tmpOptions.mediaFileList);
                     if (selectedMediaFile) {
-                        playerInstance.adList[adListId].mediaType = selectedMediaFile.mediaType;
+                        self.adList[adListId].mediaType = selectedMediaFile.mediaType;
                     }
 
                 }
 
-                playerInstance.adList[adListId].adType = tmpOptions.adType ? tmpOptions.adType : 'unknown';
-                playerInstance.adList[adListId].vastLoaded = true;
-                playerInstance.adPool[adListId] = Object.assign({}, tmpOptions);
+                self.adList[adListId].adType = tmpOptions.adType ? tmpOptions.adType : 'unknown';
+                self.adList[adListId].vastLoaded = true;
+                self.adPool[adListId] = Object.assign({}, tmpOptions);
 
                 const event = document.createEvent('Event');
 
                 event.initEvent('adId_' + adListId, false, true);
-                playerInstance.domRef.player.dispatchEvent(event);
-                playerInstance.displayOptions.vastOptions.vastAdvanced.vastLoadedCallback();
+                self.domRef.player.dispatchEvent(event);
+                self.displayOptions.vastOptions.vastAdvanced.vastLoadedCallback();
 
-                if (playerInstance.hasTitle()) {
-                    const title = document.getElementById(playerInstance.videoPlayerId + '_title');
+                if (self.hasTitle()) {
+                    const title = document.getElementById(self.videoPlayerId + '_title');
                     title.style.display = 'none';
                 }
 
             } else {
                 // when vast failed
-                playerInstance.announceLocalError('101');
+                self.announceLocalError('101');
 
                 if (vastObj.hasOwnProperty('fallbackVastTags') && vastObj.fallbackVastTags.length > 0) {
                     vastTag = vastObj.fallbackVastTags.shift();
-                    playerInstance.processUrl(vastTag, handleVastResult);
+                    self.processUrl(vastTag, handleVastResult);
                 } else {
                     if (vastObj.roll === 'preRoll') {
-                        playerInstance.preRollFail(vastObj);
+                        self.preRollFail(vastObj);
                     }
-                    playerInstance.adList[adListId].error = true;
+                    self.adList[adListId].error = true;
                 }
             }
         };
 
-        playerInstance.processUrl(vastTag, handleVastResult);
+        self.processUrl(vastTag, handleVastResult);
     };
 
 
-    playerInstance.processUrl = (vastTag, callBack) => {
+    self.processUrl = (vastTag, callBack) => {
         const numberOfRedirects = 0;
 
         const tmpOptions = {
@@ -627,7 +627,7 @@ export default function (playerInstance, options) {
             vastLoaded: false
         };
 
-        playerInstance.resolveVastTag(
+        self.resolveVastTag(
             vastTag,
             numberOfRedirects,
             tmpOptions,
@@ -635,7 +635,7 @@ export default function (playerInstance, options) {
         );
     };
 
-    playerInstance.resolveVastTag = (vastTag, numberOfRedirects, tmpOptions, callBack) => {
+    self.resolveVastTag = (vastTag, numberOfRedirects, tmpOptions, callBack) => {
         if (!vastTag || vastTag === '') {
             callBack(false);
             return;
@@ -676,33 +676,33 @@ export default function (playerInstance, options) {
                 return;
             }
 
-            playerInstance.inLineFound = playerInstance.hasInLine(xmlResponse);
+            self.inLineFound = self.hasInLine(xmlResponse);
 
-            if (!playerInstance.inLineFound && playerInstance.hasVastAdTagUri(xmlResponse)) {
+            if (!self.inLineFound && self.hasVastAdTagUri(xmlResponse)) {
 
-                const vastAdTagUri = playerInstance.getVastAdTagUriFromWrapper(xmlResponse);
+                const vastAdTagUri = self.getVastAdTagUriFromWrapper(xmlResponse);
                 if (vastAdTagUri) {
-                    playerInstance.resolveVastTag(vastAdTagUri, numberOfRedirects, tmpOptions, callBack);
+                    self.resolveVastTag(vastAdTagUri, numberOfRedirects, tmpOptions, callBack);
                 } else {
                     callBack(false);
                     return;
                 }
             }
 
-            if (numberOfRedirects > playerInstance.displayOptions.vastOptions.maxAllowedVastTagRedirects && !playerInstance.inLineFound) {
+            if (numberOfRedirects > self.displayOptions.vastOptions.maxAllowedVastTagRedirects && !self.inLineFound) {
                 callBack(false);
                 return;
             }
 
-            playerInstance.processVastXml(xmlResponse, tmpOptions, callBack);
+            self.processVastXml(xmlResponse, tmpOptions, callBack);
         };
 
-        if (numberOfRedirects <= playerInstance.displayOptions.vastOptions.maxAllowedVastTagRedirects) {
+        if (numberOfRedirects <= self.displayOptions.vastOptions.maxAllowedVastTagRedirects) {
 
-            playerInstance.sendRequest(
+            self.sendRequest(
                 vastTag,
                 true,
-                playerInstance.displayOptions.vastOptions.vastTimeout,
+                self.displayOptions.vastOptions.vastTimeout,
                 handleXmlHttpReq
             );
         }
@@ -710,7 +710,7 @@ export default function (playerInstance, options) {
         numberOfRedirects++;
     };
 
-    playerInstance.setVastList = () => {
+    self.setVastList = () => {
         const ads = {};
         const adGroupedByRolls = { preRoll: [], postRoll: [], midRoll: [], onPauseRoll: [] };
         const def = {
@@ -740,42 +740,42 @@ export default function (playerInstance, options) {
             let hasError = false;
 
             if (!item.vastTag) {
-                playerInstance.announceLocalError(102, '"vastTag" property is missing from adList.');
+                self.announceLocalError(102, '"vastTag" property is missing from adList.');
                 hasError = true;
             }
 
             if (!item.roll) {
-                playerInstance.announceLocalError(102, '"roll" is missing from adList.');
+                self.announceLocalError(102, '"roll" is missing from adList.');
                 hasError = true;
             }
 
-            if (playerInstance.availableRolls.indexOf(item.roll) === -1) {
-                playerInstance.announceLocalError(102, 'Only ' + playerInstance.availableRolls.join(',') + ' rolls are supported.');
+            if (self.availableRolls.indexOf(item.roll) === -1) {
+                self.announceLocalError(102, 'Only ' + self.availableRolls.join(',') + ' rolls are supported.');
                 hasError = true;
             }
 
-            if (item.size && playerInstance.supportedNonLinearAd.indexOf(item.size) === -1) {
-                playerInstance.announceLocalError(102, 'Only ' + playerInstance.supportedNonLinearAd.join(',') + ' size are supported.');
+            if (item.size && self.supportedNonLinearAd.indexOf(item.size) === -1) {
+                self.announceLocalError(102, 'Only ' + self.supportedNonLinearAd.join(',') + ' size are supported.');
                 hasError = true;
             }
 
             return hasError;
         };
 
-        if (playerInstance.displayOptions.vastOptions.hasOwnProperty('adList')) {
+        if (self.displayOptions.vastOptions.hasOwnProperty('adList')) {
 
-            for (let key in playerInstance.displayOptions.vastOptions.adList) {
+            for (let key in self.displayOptions.vastOptions.adList) {
 
-                let adItem = playerInstance.displayOptions.vastOptions.adList[key];
+                let adItem = self.displayOptions.vastOptions.adList[key];
 
                 if (validateRequiredParams(adItem)) {
-                    playerInstance.announceLocalError(102, 'Wrong adList parameters.');
+                    self.announceLocalError(102, 'Wrong adList parameters.');
                     continue;
                 }
                 const id = 'ID' + idPart;
 
                 ads[id] = Object.assign({}, def);
-                ads[id] = Object.assign(ads[id], playerInstance.displayOptions.vastOptions.adList[key]);
+                ads[id] = Object.assign(ads[id], self.displayOptions.vastOptions.adList[key]);
                 if (adItem.roll == 'midRoll') {
                     ads[id].error = validateVastList('midRoll', adItem);
                 }
@@ -799,23 +799,23 @@ export default function (playerInstance, options) {
             }
         });
 
-        playerInstance.adGroupedByRolls = adGroupedByRolls;
-        playerInstance.adList = ads;
+        self.adGroupedByRolls = adGroupedByRolls;
+        self.adList = ads;
     };
 
-    playerInstance.onVastAdEnded = (event) => {
+    self.onVastAdEnded = (event) => {
         if (event) {
             event.stopImmediatePropagation();
         }
         //"this" is the HTML5 video tag, because it disptches the "ended" event
-        playerInstance.deleteVastAdElements();
-        playerInstance.checkForNextAd();
+        self.deleteVastAdElements();
+        self.checkForNextAd();
     };
 
-    playerInstance.vastLogoBehaviour = (vastPlaying) => {
-        if (!playerInstance.displayOptions.layoutControls.logo.showOverAds) {
-            const logoHolder = document.getElementById(playerInstance.videoPlayerId + '_logo');
-            const logoImage = document.getElementById(playerInstance.videoPlayerId + '_logo_image');
+    self.vastLogoBehaviour = (vastPlaying) => {
+        if (!self.displayOptions.layoutControls.logo.showOverAds) {
+            const logoHolder = document.getElementById(self.videoPlayerId + '_logo');
+            const logoImage = document.getElementById(self.videoPlayerId + '_logo_image');
 
             if (!logoHolder || !logoImage) {
                 return;
@@ -825,12 +825,12 @@ export default function (playerInstance, options) {
         }
     };
 
-    playerInstance.deleteVastAdElements = () => {
-        playerInstance.removeClickthrough();
-        playerInstance.removeSkipButton();
-        playerInstance.removeAdCountdown();
-        playerInstance.removeAdPlayingText();
-        playerInstance.removeCTAButton();
-        playerInstance.vastLogoBehaviour(false);
+    self.deleteVastAdElements = () => {
+        self.removeClickthrough();
+        self.removeSkipButton();
+        self.removeAdCountdown();
+        self.removeAdPlayingText();
+        self.removeCTAButton();
+        self.vastLogoBehaviour(false);
     };
 }

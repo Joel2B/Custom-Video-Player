@@ -1,10 +1,10 @@
 'use strict';
-export default function (playerInstance, options) {
-    playerInstance.subtitleFetchParse = (subtitleItem) => {
-        playerInstance.sendRequest(
+export default function (self, options) {
+    self.subtitleFetchParse = (subtitleItem) => {
+        self.sendRequest(
             subtitleItem.url,
             true,
-            playerInstance.displayOptions.vastOptions.vastTimeout,
+            self.displayOptions.vastOptions.vastTimeout,
             function () {
                 const convertVttRawData = function (vttRawData) {
                     if (!(
@@ -54,26 +54,26 @@ export default function (playerInstance, options) {
                 };
                 parser.parse(textResponse);
                 parser.flush();
-                playerInstance.subtitlesData = cues;
+                self.subtitlesData = cues;
 
             }
         );
     };
 
-    playerInstance.createSubtitlesSwitch = () => {
+    self.createSubtitlesSwitch = () => {
         const subtitlesOff = 'OFF';
-        playerInstance.subtitlesData = [];
+        self.subtitlesData = [];
 
-        if (!playerInstance.displayOptions.layoutControls.subtitlesEnabled) {
+        if (!self.displayOptions.layoutControls.subtitlesEnabled) {
             // No other video subtitles
-            document.getElementById(playerInstance.videoPlayerId + '_fluid_control_subtitles').style.display = 'none';
+            document.getElementById(self.videoPlayerId + '_fluid_control_subtitles').style.display = 'none';
             return;
         }
 
         const tracks = [];
         tracks.push({ 'label': subtitlesOff, 'url': 'na', 'lang': subtitlesOff });
 
-        const tracksList = playerInstance.domRef.player.querySelectorAll('track');
+        const tracksList = self.domRef.player.querySelectorAll('track');
 
         [].forEach.call(tracksList, function (track) {
             if (track.kind === 'metadata' && track.src) {
@@ -81,23 +81,23 @@ export default function (playerInstance, options) {
             }
         });
 
-        playerInstance.subtitlesTracks = tracks;
-        const subtitlesChangeButton = document.getElementById(playerInstance.videoPlayerId + '_fluid_control_subtitles');
+        self.subtitlesTracks = tracks;
+        const subtitlesChangeButton = document.getElementById(self.videoPlayerId + '_fluid_control_subtitles');
         subtitlesChangeButton.style.display = 'inline-block';
         let appendSubtitleChange = false;
 
         const subtitlesChangeList = document.createElement('div');
-        subtitlesChangeList.id = playerInstance.videoPlayerId + '_fluid_control_subtitles_list';
+        subtitlesChangeList.id = self.videoPlayerId + '_fluid_control_subtitles_list';
         subtitlesChangeList.className = 'fluid_subtitles_list';
         subtitlesChangeList.style.display = 'none';
 
         let firstSubtitle = true;
-        playerInstance.subtitlesTracks.forEach(function (subtitle) {
+        self.subtitlesTracks.forEach(function (subtitle) {
 
             const subtitleSelected = (firstSubtitle) ? "subtitle_selected" : "";
             firstSubtitle = false;
             const subtitlesChangeDiv = document.createElement('div');
-            subtitlesChangeDiv.id = 'subtitle_' + playerInstance.videoPlayerId + '_' + subtitle.label;
+            subtitlesChangeDiv.id = 'subtitle_' + self.videoPlayerId + '_' + subtitle.label;
             subtitlesChangeDiv.className = 'fluid_subtitle_list_item';
             subtitlesChangeDiv.innerHTML = '<span class="subtitle_button_icon ' + subtitleSelected + '"></span>' + subtitle.label;
 
@@ -112,16 +112,16 @@ export default function (playerInstance, options) {
 
                 subtitleChangedTo.firstChild.className += ' subtitle_selected';
 
-                playerInstance.subtitlesTracks.forEach(function (subtitle) {
+                self.subtitlesTracks.forEach(function (subtitle) {
                     if (subtitle.label === subtitleChangedTo.innerText.replace(/(\r\n\t|\n|\r\t)/gm, "")) {
                         if (subtitle.label === subtitlesOff) {
-                            playerInstance.subtitlesData = [];
+                            self.subtitlesData = [];
                         } else {
-                            playerInstance.subtitleFetchParse(subtitle);
+                            self.subtitleFetchParse(subtitle);
                         }
                     }
                 });
-                playerInstance.openCloseSubtitlesSwitch();
+                self.openCloseSubtitlesSwitch();
 
             });
 
@@ -133,39 +133,39 @@ export default function (playerInstance, options) {
         if (appendSubtitleChange) {
             subtitlesChangeButton.appendChild(subtitlesChangeList);
             subtitlesChangeButton.addEventListener('click', function () {
-                playerInstance.openCloseSubtitlesSwitch();
+                self.openCloseSubtitlesSwitch();
             });
         } else {
             // Didn't give any subtitle options
-            document.getElementById(playerInstance.videoPlayerId + '_fluid_control_subtitles').style.display = 'none';
+            document.getElementById(self.videoPlayerId + '_fluid_control_subtitles').style.display = 'none';
         }
 
         //attach subtitles to show based on time
         //this function is for rendering of subtitles when content is playing
         const videoPlayerSubtitlesUpdate = function () {
-            playerInstance.renderSubtitles();
+            self.renderSubtitles();
         };
 
-        playerInstance.domRef.player.addEventListener('timeupdate', videoPlayerSubtitlesUpdate);
+        self.domRef.player.addEventListener('timeupdate', videoPlayerSubtitlesUpdate);
     };
 
-    playerInstance.renderSubtitles = () => {
-        const videoPlayer = playerInstance.domRef.player;
+    self.renderSubtitles = () => {
+        const videoPlayer = self.domRef.player;
 
         //if content is playing then no subtitles
         let currentTime = Math.floor(videoPlayer.currentTime);
         let subtitlesAvailable = false;
-        let subtitlesContainer = document.getElementById(playerInstance.videoPlayerId + '_fluid_subtitles_container');
+        let subtitlesContainer = document.getElementById(self.videoPlayerId + '_fluid_subtitles_container');
 
-        if (playerInstance.isCurrentlyPlayingAd) {
+        if (self.isCurrentlyPlayingAd) {
             subtitlesContainer.innerHTML = '';
             return;
         }
 
-        for (let i = 0; i < playerInstance.subtitlesData.length; i++) {
-            if (currentTime >= (playerInstance.subtitlesData[i].startTime) && currentTime <= (playerInstance.subtitlesData[i].endTime)) {
+        for (let i = 0; i < self.subtitlesData.length; i++) {
+            if (currentTime >= (self.subtitlesData[i].startTime) && currentTime <= (self.subtitlesData[i].endTime)) {
                 subtitlesContainer.innerHTML = '';
-                subtitlesContainer.appendChild(WebVTT.convertCueToDOMTree(window, playerInstance.subtitlesData[i].text));
+                subtitlesContainer.appendChild(WebVTT.convertCueToDOMTree(window, self.subtitlesData[i].text));
                 subtitlesAvailable = true;
             }
         }
@@ -175,10 +175,10 @@ export default function (playerInstance, options) {
         }
     };
 
-    playerInstance.openCloseSubtitlesSwitch = () => {
-        const subtitleChangeList = document.getElementById(playerInstance.videoPlayerId + '_fluid_control_subtitles_list');
+    self.openCloseSubtitlesSwitch = () => {
+        const subtitleChangeList = document.getElementById(self.videoPlayerId + '_fluid_control_subtitles_list');
 
-        if (playerInstance.isCurrentlyPlayingAd) {
+        if (self.isCurrentlyPlayingAd) {
             subtitleChangeList.style.display = 'none';
             return;
         }
@@ -195,19 +195,19 @@ export default function (playerInstance, options) {
         }
     };
 
-    playerInstance.createSubtitles = () => {
+    self.createSubtitles = () => {
         const divSubtitlesContainer = document.createElement('div');
-        divSubtitlesContainer.id = playerInstance.videoPlayerId + '_fluid_subtitles_container';
+        divSubtitlesContainer.id = self.videoPlayerId + '_fluid_subtitles_container';
         divSubtitlesContainer.className = 'fluid_subtitles_container';
-        playerInstance.domRef.player.parentNode.insertBefore(divSubtitlesContainer, playerInstance.domRef.player.nextSibling);
+        self.domRef.player.parentNode.insertBefore(divSubtitlesContainer, self.domRef.player.nextSibling);
 
-        if (!playerInstance.displayOptions.layoutControls.subtitlesEnabled) {
+        if (!self.displayOptions.layoutControls.subtitlesEnabled) {
             return;
         }
 
         import(/* webpackChunkName: "vttjs" */ 'videojs-vtt.js').then((it) => {
             window.WebVTT = it.WebVTT;
-            playerInstance.createSubtitlesSwitch();
+            self.createSubtitlesSwitch();
         });
     };
 }

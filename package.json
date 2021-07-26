@@ -5,8 +5,8 @@
   "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack --mode=production && uglifyjs dist/fluidplayer.min.js -o dist/fluidplayer.min.js -c -m",
-    "build-obf": "webpack --mode=production --env=obf=true && uglifyjs dist/fluidplayer.min.js -o dist/fluidplayer.min.js -c -m",
+    "build": "webpack --mode=production && uglifyjs dist/player.min.js -o dist/player.min.js -c -m",
+    "build-obf": "webpack --mode=production --env=obf=true && uglifyjs dist/player.min.js -o dist/player.min.js -c -m",
     "build-cdn": "webpack --mode=production --dist=current && webpack --mode=production --dist=versioned",
     "build-dev": "webpack --mode=development",
     "build-dev-debug": "webpack --mode=development --debug",
