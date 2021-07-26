@@ -374,21 +374,7 @@ const playerClass = function () {
         }
 
         // Overriding the default options
-        for (let key in options) {
-            if (!options.hasOwnProperty(key)) {
-                continue;
-            }
-            if (typeof options[key] == 'object') {
-                for (let subKey in options[key]) {
-                    if (!options[key].hasOwnProperty(subKey)) {
-                        continue;
-                    }
-                    self.displayOptions[key][subKey] = options[key][subKey];
-                }
-            } else {
-                self.displayOptions[key] = options[key];
-            }
-        }
+        self.overrideOptions(self.displayOptions, options)
 
         self.setupPlayerWrapper();
 
@@ -573,6 +559,19 @@ const playerClass = function () {
         } catch (_ignored) {
         }
     };
+
+    self.overrideOptions = (opt1, opt2) => {
+        for (let key in opt2) {
+            if (!opt1.hasOwnProperty(key)) {
+                continue;
+            }
+            if (typeof opt2[key] == 'object') {
+                self.overrideOptions(opt1[key], opt2[key]);
+            } else {
+                opt1[key] = opt2[key];
+            }
+        }
+    }
 
     self.getCurrentVideoDuration = () => {
         if (self.domRef.player) {
