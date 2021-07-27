@@ -1,11 +1,16 @@
 export default function (self) {
     self.restartMenu = () => {
-        self.domRef.controls.menuBackground.style.width = `${self.widthOptionsMenu}px`;
-        self.domRef.controls.menuBackground.style.height = `${self.hightOptionsMenu}px`;
-        self.domRef.controls.mainPage.style.width = `${self.widthOptionsMenu}px`;
+        self.domRef.controls.menuBackground.style.width = `${self.menu.width}px`;
+        self.domRef.controls.menuBackground.style.height = `${self.menu.height}px`;
+        self.domRef.controls.mainPage.style.width = `${self.menu.width}px`;
+        self.domRef.controls.mainPage.style.height = `${self.menu.height}px`;
         self.domRef.controls.optionsMenu.classList.remove('cvp_level2');
-        self.domRef.controls.levelsPage.classList.add('hide');
-        self.domRef.controls.speedsPage.classList.add('hide');
+        if (self.isEnabledModule('qualityLevels')) {
+            self.domRef.controls.levelsPage.classList.add('hide');
+        }
+        if (self.isEnabledModule('playbackRate')) {
+            self.domRef.controls.speedsPage.classList.add('hide');
+        }
     }
 
     self.restartMenuLater = () => {
@@ -24,7 +29,7 @@ export default function (self) {
         }
 
         self.domRef.controls.optionsMenu.classList.remove('cvp_visible');
-        self.inSubMenu = false;
+        self.menu.inSubmenu = false;
         self.restartMenuLater();
     }
 
@@ -46,7 +51,7 @@ export default function (self) {
     self.setupClickMenuHeader = () => {
         self.domRef.controls.menuHeader.addEventListener('click', () => {
             self.restartMenu();
-            self.inSubMenu = false;
+            self.menu.inSubmenu = false;
         });
     }
 
@@ -56,15 +61,22 @@ export default function (self) {
         self.domRef.controls.menuBackground.style.width = `${width}px`;
         self.domRef.controls.menuBackground.style.height = `${height}px`;
         self.domRef.controls.menuHeader.textContent = option.firstChild.textContent;
-        self.inSubMenu = true;
+        self.menu.inSubmenu = true;
     }
 
     self.setupMenu = () => {
+        if (self.menu.enabledModules == 0) {
+            return;
+        }
         self.domRef.player.parentNode.insertBefore(self.domRef.controls.optionsMenu, null);
         self.setupClickMenuButton();
         self.setupClickMenuHeader();
         self.setupAutoPlay();
         self.setupPlaybackRates();
         self.setupQualityLevels();
+    };
+
+    self.isEnabledModule = (module) => {
+        return self.displayOptions.layoutControls.menu[module] ? true : false
     };
 }

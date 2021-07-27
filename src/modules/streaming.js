@@ -85,18 +85,18 @@ export default function (self, options) {
 
     self.selectQualityLevel = (e) => {
         let levelSelect = Number(e.target.dataset.level);
-        if (levelSelect == self.currentQualityLevel) {
+        if (levelSelect == self.menu.qualityLevels.current) {
             return;
         }
 
-        self.inSubMenu = false;
-        self.currentQualityLevel = levelSelect;
+        self.menu.inSubmenu = false;
+        self.menu.qualityLevels.current = levelSelect;
         self.updateViewQualityLevels();
 
         if (self.hlsPlayer) {
             // reset the "auto" label, if a level is selected
             const auto = e.target.parentNode.lastChild;
-            if (auto.textContent != 'Auto' && self.currentQualityLevel != -1) {
+            if (auto.textContent != 'Auto' && self.menu.qualityLevels.current != -1) {
                 auto.textContent = 'Auto';
             }
             self.hlsPlayer.currentLevel = levelSelect;
@@ -110,12 +110,15 @@ export default function (self, options) {
     };
 
     self.insertQualityLevels = (data) => {
+        if (!self.isEnabledModule('qualityLevels')) {
+            return;
+        }
         let levels = [];
         let defaultQualityLevel = 0;
         let defaultTitle;
 
         for (const [index, level] of data.entries()) {
-            self.hightLevelOptions += 26;
+            self.menu.qualityLevels.height += 26;
 
             let info = [];
             let title;
@@ -163,7 +166,7 @@ export default function (self, options) {
 
         levels.reverse();
         if (self.hlsPlayer) {
-            self.hightLevelOptions += 26;
+            self.menu.qualityLevels.height += 26;
             levels.push(self.createElement({
                 tag: 'li',
                 className: 'cvp_active',
@@ -188,23 +191,26 @@ export default function (self, options) {
             previousLevel.classList.remove('cvp_active');
         }
 
-        if (!self.inSubMenu) {
+        if (!self.menu.inSubmenu) {
             self.restartMenuLater();
         }
 
-        const currentLevel = document.querySelector(`[data-level='${self.currentQualityLevel}']`)
+        const currentLevel = document.querySelector(`[data-level='${self.menu.qualityLevels.current}']`)
         currentLevel.classList.add('cvp_active');
 
         self.domRef.controls.qualitySelector.lastChild.textContent = currentLevel.firstChild.textContent;
     }
 
     self.applyQualityLevel = (data) => {
+        if (!self.isEnabledModule('qualityLevels')) {
+            return;
+        }
         let level = self.getLocalStorage('forceQualityLevel');
         if (level === false || level == -1 || !self.displayOptions.layoutControls.persistentSettings.quality) {
             if (self.hlsPlayer) {
                 self.domRef.controls.levelsPage.lastChild.classList.add('cvp_active');
             } else {
-                self.currentQualityLevel = 0;
+                self.menu.qualityLevels.current = 0;
                 self.updateViewQualityLevels();
             }
             return;
@@ -225,7 +231,7 @@ export default function (self, options) {
             self.setVideoSource(data[level].src);
         }
 
-        self.currentQualityLevel = level;
+        self.menu.qualityLevels.current = level;
         self.updateViewQualityLevels();
     };
 
@@ -274,11 +280,11 @@ export default function (self, options) {
             })
 
             hls.on(Hls.Events.LEVEL_SWITCHED, (e, data) => {
-                if (self.currentQualityLevel != -1) {
+                if (self.menu.qualityLevels.current != -1) {
                     return;
                 }
 
-                self.currentQualityLevel = -1;
+                self.menu.qualityLevels.current = -1;
                 self.updateViewQualityLevels();
 
                 const autoLevel = document.querySelector(`[data-level='-1']`);

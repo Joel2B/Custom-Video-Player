@@ -187,13 +187,7 @@ export default function (self, options) {
             parent: controls.rightContainer,
         });
 
-        // Right container -> Main menu button
-        self.createElement({
-            tag: 'div',
-            id: self.videoPlayerId + '_fluid_control_menu_btn',
-            className: 'fluid_button fluid_button_main_menu',
-            parent: controls.rightContainer
-        });
+
 
         // Right container -> Menu
         controls.optionsMenu = self.createElement({
@@ -202,62 +196,19 @@ export default function (self, options) {
             className: 'cvp_options_menu',
         });
 
-        // Right container -> Menu -> background
-        controls.menuBackground = self.createElement({
-            tag: 'div',
-            className: 'cvp_background cvp_animated',
-            style: {
-                width: `${self.widthOptionsMenu}px`,
-                height: `${self.hightOptionsMenu}px`,
-            },
-            parent: controls.optionsMenu
-        });
-
-        // Right container -> Menu -> background -> main container
-        controls.mainPage = self.createElement({
-            tag: 'div',
-            className: 'cvp_main_page cvp_alternative',
-            style: {
-                width: `${self.widthOptionsMenu}px`,
-                height: `${self.hightOptionsMenu}px`,
-            },
-            parent: controls.menuBackground
-        });
-
-        // Right container -> Menu -> background -> menu header
-        self.createElement({
-            tag: 'div',
-            className: 'cvp_header',
-            parent: controls.mainPage
-        });
-
-        // Right container -> Menu -> background -> icon
-        self.createElement({
-            tag: 'div',
-            className: 'cvp_icon',
-            parent: controls.mainPage
-        });
-
-        // Right container -> Menu -> background -> switch container
-        controls.switchContainer = self.createElement({
-            tag: 'ul',
-            className: 'cvp_switches',
-            parent: controls.mainPage
-        });
-
-        self.modules = {
+        const modules = {
             switches: [
                 {
                     name: 'hotspots',
                     enabled: self.getLocalStorage('hotspots'),
                     domRef: 'hotspots',
-                    show: false
+                    show: self.isEnabledModule('hotspots')
                 },
                 {
                     name: 'autoplay',
                     enabled: self.getLocalStorage('autoPlay'),
                     domRef: 'autoPlay',
-                    show: true
+                    show: self.isEnabledModule('autoPlay')
                 }
             ],
             selectors: [
@@ -265,27 +216,29 @@ export default function (self, options) {
                     name: 'speed',
                     defaultValue: (self.getLocalStorage('playbackRate') == 1 || self.getLocalStorage('playbackRate') === false) ? 'Normal' : self.getLocalStorage('playbackRate'),
                     domRef: 'speedsPage',
-                    show: true
+                    show: self.isEnabledModule('playbackRate')
                 },
                 {
                     name: 'quality',
                     defaultValue: 'Auto',
                     domRef: 'levelsPage',
-                    show: true
+                    show: self.isEnabledModule('qualityLevels')
                 }
             ]
-        }
+        };
 
         // Right container -> Menu -> background -> swtiches
-        for (const module of self.modules.switches) {
+        const menu_options = [];
+        for (const module of modules.switches) {
             if (!module.show) {
                 continue;
             }
-            self.createElement({
+            self.menu.height += 27;
+            self.menu.enabledModules++;
+            const option = {
                 tag: 'div',
                 className: `cvp_switch cvp_${module.name} ${module.enabled ? 'cvp_enabled' : ''}`,
                 textContent: module.name.charAt(0).toUpperCase() + module.name.slice(1),
-                parent: controls.switchContainer,
                 domRef: module.domRef,
                 childs: [
                     {
@@ -307,20 +260,22 @@ export default function (self, options) {
                         className: 'cvp_icon ' + ((module.name == 'hotspots') ? 'cvp_icon_info' : '')
                     },
                 ]
-            });
+            };
+            menu_options.push(option);
         }
 
         // Right container -> Menu -> background -> selection options && pages
         let options_list = [];
-        for (const module of self.modules.selectors) {
+        for (const module of modules.selectors) {
             if (!module.show) {
                 continue;
             }
-            self.createElement({
+            self.menu.height += 27;
+            self.menu.enabledModules++;
+            const option = {
                 tag: 'div',
                 className: `cvp_selector cvp_${module.name}`,
                 textContent: module.name.charAt(0).toUpperCase() + module.name.slice(1),
-                parent: controls.switchContainer,
                 domRef: `${module.name}Selector`,
                 childs: [
                     {
@@ -333,8 +288,8 @@ export default function (self, options) {
                         textContent: module.defaultValue
                     },
                 ]
-            });
-
+            };
+            menu_options.push(option);
             options_list.push({
                 tag: 'ul',
                 className: `cvp_options_list cvp_${module.name} hide`,
@@ -342,24 +297,78 @@ export default function (self, options) {
             });
         }
 
-        // Right container -> Menu -> background -> subpages
-        self.createElement({
-            tag: 'div',
-            className: 'cvp_sub_page',
-            parent: controls.menuBackground,
-            childs: [
-                {
-                    tag: 'div',
-                    className: 'cvp_header',
-                    domRef: 'menuHeader'
+        if (self.menu.enabledModules != 0) {
+            // Right container -> Menu -> background
+            controls.menuBackground = self.createElement({
+                tag: 'div',
+                className: 'cvp_background cvp_animated',
+                style: {
+                    width: `${self.menu.width}px`,
+                    height: `${self.menu.height}px`,
                 },
-                {
-                    tag: 'div',
-                    className: 'cvp_content',
-                    childs: options_list
-                }
-            ]
-        });
+                parent: controls.optionsMenu
+            });
+
+            // Right container -> Menu -> background -> main container
+            controls.mainPage = self.createElement({
+                tag: 'div',
+                className: 'cvp_main_page cvp_alternative',
+                style: {
+                    width: `${self.menu.width}px`,
+                    height: `${self.menu.height}px`,
+                },
+                parent: controls.menuBackground
+            });
+
+            // Right container -> Menu -> background -> menu header
+            self.createElement({
+                tag: 'div',
+                className: 'cvp_header',
+                parent: controls.mainPage
+            });
+
+            // Right container -> Menu -> background -> icon
+            self.createElement({
+                tag: 'div',
+                className: 'cvp_icon',
+                parent: controls.mainPage
+            });
+
+            // Right container -> Menu -> background -> switch container
+            controls.switchContainer = self.createElement({
+                tag: 'ul',
+                className: 'cvp_switches',
+                parent: controls.mainPage,
+                childs: menu_options
+            });
+
+            // Right container -> Menu -> background -> subpages
+            self.createElement({
+                tag: 'div',
+                className: 'cvp_sub_page',
+                parent: controls.menuBackground,
+                childs: [
+                    {
+                        tag: 'div',
+                        className: 'cvp_header',
+                        domRef: 'menuHeader'
+                    },
+                    {
+                        tag: 'div',
+                        className: 'cvp_content',
+                        childs: options_list
+                    }
+                ]
+            });
+
+            // Right container -> Main menu button
+            self.createElement({
+                tag: 'div',
+                id: self.videoPlayerId + '_fluid_control_menu_btn',
+                className: 'fluid_button fluid_button_main_menu',
+                parent: controls.rightContainer
+            });
+        }
 
         // Right container -> Playback rate
         controls.playbackRate = self.createElement({

@@ -1,11 +1,14 @@
 export default function (self) {
     self.setupQualityLevels = () => {
+        if (!self.isEnabledModule('qualityLevels')) {
+            return;
+        }
         self.domRef.controls.qualitySelector.addEventListener('click', () => {
             self.openSubMenu(
                 self.domRef.controls.qualitySelector,
                 self.domRef.controls.levelsPage,
-                115,
-                self.hightLevelOptions
+                self.menu.qualityLevels.width,
+                self.menu.qualityLevels.height
             );
         });
     }

@@ -224,11 +224,17 @@ const playerClass = function () {
         self.fluidPseudoPause = false;
         self.mobileInfo = self.getMobileOs();
         self.events = {};
-        self.widthOptionsMenu = 185;
-        self.hightOptionsMenu = 109;
-        self.hightLevelOptions = 67;
-        self.currentQualityLevel = -1;
-        self.inSubMenu = false;
+        self.menu = {
+            enabledModules: 0,
+            inSubmenu: false,
+            width: 185,
+            height: 28,
+            qualityLevels: {
+                width: 115,
+                height: 67,
+                current: -1
+            }
+        }
         self.updateInterval = null;
         self.updateRefreshInterval = 60;
 
@@ -244,18 +250,22 @@ const playerClass = function () {
                 playPauseAnimation: false,
                 closeButtonCaption: 'Close', // Remove?
                 fillToContainer: false,
-                autoPlay: false,
                 preload: 'auto',
                 mute: false,
                 loop: null,
                 keyboardControl: true,
                 allowDownload: false,
-                playbackRateEnabled: false,
-                subtitlesEnabled: false,
                 showCardBoardView: false,
                 showCardBoardJoystick: false,
                 allowTheatre: true,
                 doubleclickFullscreen: true,
+                menu: {
+                    autoPlay: true,
+                    playbackRate: true,
+                    qualityLevels: true,
+                    hotspots: false,
+                    subtitles: false,
+                },
                 theatreSettings: {
                     width: '100%',
                     height: '60%',
@@ -515,7 +525,7 @@ const playerClass = function () {
             }
         };
 
-        if (!!self.getLocalStorage('autoPlay') && !self.dashScriptLoaded && !self.hlsScriptLoaded) {
+        if (self.getLocalStorage('autoPlay') && self.isEnabledModule('autoPlay') && !self.dashScriptLoaded && !self.hlsScriptLoaded) {
             //There is known issue with Safari 11+, will prevent autoPlay, so we wont try
             const browserVersion = self.getBrowserVersion();
 

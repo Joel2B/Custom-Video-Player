@@ -32,6 +32,9 @@ export default function (self) {
     };
 
     self.setupPlaybackRates = () => {
+        if (!self.isEnabledModule('playbackRate')) {
+            return;
+        }
         self.createPlaybackList();
         self.domRef.controls.speedSelector.addEventListener('click', () => {
             self.openSubMenu(
@@ -41,10 +44,10 @@ export default function (self) {
                 171
             );
         });
-    }
+    },
 
     self.setPlaybackSpeed = (speed) => {
-        if (self.isCurrentlyPlayingAd) {
+        if (self.isCurrentlyPlayingAd || !self.isEnabledModule('playbackRate')) {
             return;
         }
         self.domRef.player.playbackRate = speed;
@@ -52,6 +55,9 @@ export default function (self) {
     };
 
     self.applyPlaybackSpeed = () => {
+        if (!self.isEnabledModule('playbackRate')) {
+            return;
+        }
         const currentSpeed = self.getLocalStorage('playbackRate');
         if (currentSpeed === false) {
             return;

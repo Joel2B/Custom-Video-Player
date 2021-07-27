@@ -27,6 +27,9 @@
     var instance = fluidPlayer('fluid-player-e2e-case', {
         layoutControls: {
             primaryColor: "#dd2e44",
+            menu: {
+                playbackRate: true,
+            },
             timelinePreview: {
                 file: 'static/thumbnails.vtt',
                 type: 'VTT'
@@ -43,7 +46,6 @@
             },
             fillToControls: true,
             posterImage: 'static/video-thumbnail.jpg',
-            playbackRateEnabled: true,
             allowDownload: true,
             autoPlay: false,
             playButtonShowing: true,
