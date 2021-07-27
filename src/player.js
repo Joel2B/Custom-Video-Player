@@ -23,6 +23,7 @@ import QualityLevels from './modules/menu/quality-levels';
 import Browser from './modules/utils/browser';
 import Dom from './modules/utils/dom';
 import Events from './modules/utils/events';
+import Media from './modules/utils/media';
 import Request from './modules/utils/request';
 import Storage from './modules/utils/storage';
 import Time from './modules/utils/time';
@@ -66,6 +67,7 @@ const FP_MODULES = [
     Browser,
     Dom,
     Events,
+    Media,
     Request,
     Storage,
     Time,
@@ -839,9 +841,8 @@ const playerClass = function () {
 
         const sources = [];
         for (const source of sourcesList) {
-            if (source.src) {
-                const getTheType = source.src.split('.').pop();
-                if (self.mobileInfo.userOs === 'iOS' && getTheType === 'mkv') {
+            if (source.src && source.type) {
+                if (self.mobileInfo.userOs === 'iOS' && self.isMKV(source.src)) {
                     continue;
                 }
                 sources.push({
@@ -859,7 +860,7 @@ const playerClass = function () {
     }
 
     self.setVideoSource = (url) => {
-        if (self.mobileInfo.userOs === 'iOS' && url.indexOf('.mkv') > 0) {
+        if (self.mobileInfo.userOs === 'iOS' && self.isMKV(url)) {
             console.log('[FP_ERROR] .mkv files not supported by iOS devices.');
             return false;
         }
