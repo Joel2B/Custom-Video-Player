@@ -123,12 +123,12 @@ export default function (self, options) {
             let info = [];
             let title;
 
-            if (level.title != undefined) {
+            if (level.title != undefined && level.title != '') {
                 title = level.title;
-            } else if (level.height != undefined) {
+            } else if (level.height != undefined && level.height != '') {
                 title = level.height + 'p';
             } else {
-                title = index;
+                title = `Level ${index}`;
             }
 
             if (index == defaultQualityLevel) {
