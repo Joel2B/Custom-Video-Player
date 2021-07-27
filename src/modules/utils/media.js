@@ -4,6 +4,6 @@ export default function (self) {
     }
 
     self.isMKV = (url) => {
-        return url.includes('.mkv') ? true : false;
+        return url.includes('.mkv');
     }
 }
