@@ -17,17 +17,12 @@ export default function (self) {
 
                 previousSpeed.classList.remove('cvp_active');
                 document.querySelector(`[data-speed='${selectedSpeed.dataset.speed}']`).classList.add('cvp_active');
+                self.domRef.controls.speedSelector.lastChild.textContent = selectedSpeed.firstChild.textContent;
+                self.setPlaybackSpeed(selectedSpeed.dataset.speed);
 
                 self.closeMenu();
-
-                self.domRef.controls.speedSelector.lastChild.textContent = selectedSpeed.firstChild.textContent;
-
-                self.restartMenuLater();
-
-                self.setPlaybackSpeed(selectedSpeed.dataset.speed);
             }))
         }
-
         self.domRef.controls.speedsPage.append(childs);
     };
 
@@ -40,8 +35,8 @@ export default function (self) {
             self.openSubMenu(
                 self.domRef.controls.speedSelector,
                 self.domRef.controls.speedsPage,
-                110,
-                171
+                self.menu.playbackRate.width,
+                self.menu.playbackRate.height
             );
         });
     },

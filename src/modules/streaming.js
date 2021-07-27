@@ -118,7 +118,7 @@ export default function (self, options) {
         let defaultTitle;
 
         for (const [index, level] of data.entries()) {
-            self.menu.qualityLevels.height += 26;
+            self.menu.qualityLevels.height += self.menu.qualityLevels.option.height;
 
             let info = [];
             let title;
@@ -166,7 +166,7 @@ export default function (self, options) {
 
         levels.reverse();
         if (self.hlsPlayer) {
-            self.menu.qualityLevels.height += 26;
+            self.menu.qualityLevels.height += self.menu.qualityLevels.option.height;
             levels.push(self.createElement({
                 tag: 'li',
                 className: 'cvp_active',

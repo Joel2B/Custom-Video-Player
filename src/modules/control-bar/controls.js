@@ -187,8 +187,6 @@ export default function (self, options) {
             parent: controls.rightContainer,
         });
 
-
-
         // Right container -> Menu
         controls.optionsMenu = self.createElement({
             tag: 'div',
@@ -233,7 +231,7 @@ export default function (self, options) {
             if (!module.show) {
                 continue;
             }
-            self.menu.height += 27;
+            self.menu.height += self.menu.option.height;
             self.menu.enabledModules++;
             const option = {
                 tag: 'div',
@@ -270,7 +268,7 @@ export default function (self, options) {
             if (!module.show) {
                 continue;
             }
-            self.menu.height += 27;
+            self.menu.height += self.menu.option.height;
             self.menu.enabledModules++;
             const option = {
                 tag: 'div',

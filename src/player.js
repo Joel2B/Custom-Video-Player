@@ -227,12 +227,24 @@ const playerClass = function () {
         self.menu = {
             enabledModules: 0,
             inSubmenu: false,
+            option: {
+                height: 27,
+                width: 0
+            },
             width: 185,
             height: 28,
             qualityLevels: {
+                option: {
+                    height: 26,
+                    width: 0
+                },
                 width: 115,
                 height: 67,
                 current: -1
+            },
+            playbackRate: {
+                width: 110,
+                height: 171,
             }
         }
         self.updateInterval = null;

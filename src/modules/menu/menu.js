@@ -27,7 +27,6 @@ export default function (self) {
         if (self.isMenuClosed()) {
             return;
         }
-
         self.domRef.controls.optionsMenu.classList.remove('cvp_visible');
         self.menu.inSubmenu = false;
         self.restartMenuLater();
@@ -39,7 +38,6 @@ export default function (self) {
             if (self.isCurrentlyPlayingAd) {
                 return;
             }
-
             if (self.isMenuClosed()) {
                 self.domRef.controls.optionsMenu.classList.add('cvp_visible');
             } else {
