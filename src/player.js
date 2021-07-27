@@ -831,6 +831,9 @@ const playerClass = function () {
     self.sourcesInVideoTag = () => {
         const sourcesList = self.domRef.player.querySelectorAll('source');
         if (sourcesList.length <= 1) {
+            if (!self.isHLS(sourcesList[0].src) && self.isEnabledModule('qualityLevels')) {
+                self.removeOption('qualitySelector');
+            }
             return;
         }
 

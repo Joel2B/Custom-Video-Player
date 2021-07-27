@@ -77,4 +77,10 @@ export default function (self) {
     self.isEnabledModule = (module) => {
         return self.displayOptions.layoutControls.menu[module] ? true : false
     };
+
+    self.removeOption = (option) => {
+        self.domRef.controls[option].remove();
+        self.menu.height -= self.menu.option.height;
+        self.restartMenu();
+    }
 }
