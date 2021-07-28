@@ -16,7 +16,7 @@ export default function (self) {
     self.restartMenuLater = () => {
         setTimeout(() => {
             self.restartMenu();
-        }, 200);
+        }, 250);
     }
 
     self.isMenuClosed = () => {
@@ -31,7 +31,6 @@ export default function (self) {
         self.menu.inSubmenu = false;
         self.restartMenuLater();
     }
-
 
     self.setupClickMenuButton = () => {
         self.trackEvent(self.domRef.player.parentNode, 'click', '.fluid_button_main_menu', () => {
