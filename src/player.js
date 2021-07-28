@@ -41,8 +41,8 @@ import Logo from './modules/logo';
 import MeasureFPS from './modules/measure-fps';
 import PersistentSettings from './modules/persistent-settings';
 import Streaming from './modules/streaming';
-import subtitles from './modules/subtitles';
-import title from './modules/title';
+import Subtitles from './modules/subtitles';
+import Title from './modules/title';
 
 const FP_MODULES = [
     ControlBar,
@@ -85,8 +85,8 @@ const FP_MODULES = [
     MeasureFPS,
     PersistentSettings,
     Streaming,
-    subtitles,
-    title
+    Subtitles,
+    Title
 ];
 
 // Determine build mode
@@ -251,6 +251,7 @@ const playerClass = function () {
         }
         self.updateInterval = null;
         self.updateRefreshInterval = 60;
+        self.multipleVideoSources = false;
 
         //Default options
         self.displayOptions = {
@@ -495,7 +496,6 @@ const playerClass = function () {
                         console.error('[FP_ERROR] Playback error', error);
                         const isAbortError = (typeof error.name !== 'undefined' && error.name === 'AbortError');
                         // Ignore abort errors which caused for example Safari or autoplay functions
-                        // (example: interrupted by a new load request)
                         // (example: interrupted by a new load request)
                         if (isAbortError) {
                             // Ignore AbortError error reporting
@@ -832,12 +832,18 @@ const playerClass = function () {
 
     self.sourcesInVideoTag = () => {
         const sourcesList = self.domRef.player.querySelectorAll('source');
-        if (sourcesList.length <= 1) {
+        if (sourcesList.length == 0) {
+            return;
+        }
+
+        if (sourcesList.length == 1) {
             if (!self.isHLS(sourcesList[0].src) && self.isEnabledModule('qualityLevels')) {
                 self.removeOption('qualitySelector');
             }
             return;
         }
+
+        self.multipleVideoSources = true;
 
         const sources = [];
         for (const source of sourcesList) {
@@ -856,13 +862,27 @@ const playerClass = function () {
         sources.reverse();
         self.videoSources = sources;
         self.insertQualityLevels(sources);
-        self.applyQualityLevel(sources);
+
+        if (self.multipleVideoSources) {
+            const interval = setInterval(() => {
+                if (window.Hls || window.dashjs.MediaPlayer) {
+                    self.applyQualityLevel(sources);
+                    clearInterval(interval);
+                }
+            }, 100);
+        } else {
+            self.applyQualityLevel(sources);
+        }
     }
 
     self.setVideoSource = (url) => {
         if (self.mobileInfo.userOs === 'iOS' && self.isMKV(url)) {
             console.log('[FP_ERROR] .mkv files not supported by iOS devices.');
             return false;
+        }
+
+        if (url == self.originalSrc) {
+            return;
         }
 
         if (self.isCurrentlyPlayingAd) {
@@ -922,7 +942,7 @@ const playerClass = function () {
      * Play button in the middle when the video loads
      */
     self.initPlayButton = () => {
-        // Create the html fpr the play button
+        // Create the html for the play button
         self.domRef.controls.initialPlayButtonContainer = self.createElement({
             tag: 'div',
             id: self.videoPlayerId + '_fluid_initial_play_button',
@@ -1262,7 +1282,6 @@ const playerInitializer = function (target, options) {
 
     return publicInstance;
 }
-
 
 if (FP_DEVELOPMENT_MODE) {
     console.log('Fluid Player - Development Build' + (FP_RUNTIME_DEBUG ? ' (in debug mode)' : ''));

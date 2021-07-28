@@ -93,7 +93,7 @@ export default function (self, options) {
         self.menu.qualityLevels.current = levelSelect;
         self.updateViewQualityLevels();
 
-        if (self.hlsPlayer) {
+        if (self.hlsPlayer && !self.multipleVideoSources) {
             // reset the "auto" label, if a level is selected
             const auto = e.target.parentNode.lastChild;
             if (auto.textContent != 'Auto' && self.menu.qualityLevels.current != -1) {
@@ -221,12 +221,10 @@ export default function (self, options) {
             level = data.length - 1;
         }
 
-        if (self.hlsPlayer) {
+        if (self.hlsPlayer && !self.multipleVideoSources) {
             self.hlsPlayer.startLevel = level;
             self.hlsPlayer.nextLevel = level;
-        }
-
-        if (!self.hlsPlayer) {
+        } else {
             self.setBuffering();
             self.setVideoSource(data[level].src);
         }
@@ -280,7 +278,7 @@ export default function (self, options) {
             })
 
             hls.on(Hls.Events.LEVEL_SWITCHED, (e, data) => {
-                if (self.menu.qualityLevels.current != -1) {
+                if (self.menu.qualityLevels.current != -1 || self.multipleVideoSources) {
                     return;
                 }
 
@@ -299,13 +297,19 @@ export default function (self, options) {
                 console.log('LEVEL_SWITCHING', data)
             })
 
-            hls.on(Hls.Events.MANIFEST_LOADED, (e, data) => {
-                self.applyQualityLevel(data.levels);
-            });
-
             hls.on(Hls.Events.MANIFEST_PARSED, (e, data) => {
                 console.log('MANIFEST_PARSED', data)
+                if (data.levels.length == 1 && !self.multipleVideoSources && self.isEnabledModule('qualityLevels')) {
+                    self.removeOption('qualitySelector');
+                    return;
+                }
+
+                if (self.multipleVideoSources) {
+                    return;
+                }
+
                 self.insertQualityLevels(data.levels);
+                self.applyQualityLevel(data.levels);
             });
 
             hls.on(Hls.Events.ERROR, (e, data) => {
