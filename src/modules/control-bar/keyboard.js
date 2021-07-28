@@ -57,7 +57,7 @@ export default function (self, options) {
                 break;
         }
 
-        if (options.development && (keyCode == 188 || keyCode == 190)) {
+        if (process.env.NODE_ENV === 'development' && (keyCode == 188 || keyCode == 190)) {
             console.log(`
             key: ( ${keyCode == 188 ? ',' : '.'} ),
             current frame: ${frame},

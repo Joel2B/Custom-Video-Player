@@ -293,12 +293,19 @@ export default function (self, options) {
                 self.domRef.controls.qualitySelector.lastChild.textContent = text;
             })
 
-            hls.on(Hls.Events.LEVEL_SWITCHING, (e, data) => {
-                console.log('LEVEL_SWITCHING', data)
-            })
+            if (process.env.NODE_ENV === 'development') {
+                hls.on(Hls.Events.LEVEL_SWITCHING, (e, data) => {
+                    console.log('LEVEL_SWITCHING', data)
+                });
+                hls.on(Hls.Events.LEVEL_SWITCHED, (e, data) => {
+                    console.log('LEVEL_SWITCHED', data)
+                });
+            }
 
             hls.on(Hls.Events.MANIFEST_PARSED, (e, data) => {
-                console.log('MANIFEST_PARSED', data)
+                if (process.env.NODE_ENV === 'development') {
+                    console.log('MANIFEST_PARSED', data)
+                }
                 if (data.levels.length == 1 && !self.multipleVideoSources && self.isEnabledModule('qualityLevels')) {
                     self.removeOption('qualitySelector');
                     return;

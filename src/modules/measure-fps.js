@@ -16,7 +16,7 @@ export default function (self, options) {
             self.countRegularFPS = 0;
         }
 
-        if (options.development) {
+        if (process.env.NODE_ENV === 'development') {
             console.log(`
             averageFPS: ${Math.round(self.totalFPS / self.countCheckFPS)},
             currentFrameRate: ${self.currentFrameRate}, 
