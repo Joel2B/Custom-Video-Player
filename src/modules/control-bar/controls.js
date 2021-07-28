@@ -212,7 +212,11 @@ export default function (self, options) {
             selectors: [
                 {
                     name: 'speed',
-                    defaultValue: (self.getLocalStorage('playbackRate') == 1 || self.getLocalStorage('playbackRate') === false) ? 'Normal' : self.getLocalStorage('playbackRate'),
+                    defaultValue: (
+                        !self.displayOptions.layoutControls.persistentSettings.speed
+                        || self.getLocalStorage('playbackRate') == 1
+                        || self.getLocalStorage('playbackRate') === false
+                    ) ? 'Normal' : self.getLocalStorage('playbackRate'),
                     domRef: 'speedsPage',
                     show: self.isEnabledModule('playbackRate')
                 },
