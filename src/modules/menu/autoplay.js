@@ -7,6 +7,7 @@ export default function (self, options) {
             if (self.domRef.controls.autoPlay.className.indexOf('cvp_enabled') != -1) {
                 self.domRef.controls.autoPlay.classList.remove('cvp_enabled');
                 self.setLocalStorage('autoPlay', false, 30);
+                self.applyVolume();
             } else {
                 self.domRef.controls.autoPlay.classList.add('cvp_enabled');
                 self.setLocalStorage('autoPlay', true, 30);

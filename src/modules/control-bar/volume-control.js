@@ -11,11 +11,13 @@ export default function (self) {
         const muteButtonTag = self.domRef.player.parentNode.getElementsByClassName('fluid_control_mute');
         const menuOptionMute = document.getElementById(self.videoPlayerId + '_context_option_mute');
 
-        if (0 !== self.domRef.player.volume) {
-            self.latestVolume = self.domRef.player.volume;
-            self.setLocalStorage('mute', false, 30);
-        } else {
-            self.setLocalStorage('mute', true, 30);
+        if (!self.getLocalStorage('autoPlay')) {
+            if (0 !== self.domRef.player.volume) {
+                self.latestVolume = self.domRef.player.volume;
+                self.setLocalStorage('mute', false, 30);
+            } else {
+                self.setLocalStorage('mute', true, 30);
+            }
         }
 
         if (self.domRef.player.volume && !self.domRef.player.muted) {
@@ -131,4 +133,20 @@ export default function (self) {
         self.latestVolume = latestVolume;
         self.setLocalStorage('volume', latestVolume, 30)
     };
+
+    self.applyVolume = () => {
+        if (self.getLocalStorage('volume') == false) {
+            return;
+        }
+
+        if (self.getLocalStorage('volume') === 1 && !self.getLocalStorage('mute')) {
+            self.setVolume(self.getLocalStorage('volume'));
+            self.domRef.player.muted = false;
+        } else if (self.getLocalStorage('mute')) {
+            self.setMute();
+        } else {
+            self.setVolume(self.getLocalStorage('volume'));
+            self.domRef.player.muted = false;
+        }
+    }
 }

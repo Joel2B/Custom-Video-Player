@@ -13,11 +13,17 @@ export default function (self) {
         self.setLocalStorage('mute', self.domRef.player.muted, 30);
     };
 
+    self.setMute = () => {
+        self.domRef.player.volume = 0;
+        self.domRef.player.muted = true;
+    };
+
     self.initMute = () => {
         if (self.displayOptions.layoutControls.mute !== true) {
-            return;
+            if (!self.getLocalStorage('autoPlay')) {
+                return;
+            }
         }
-
-        self.domRef.player.volume = 0;
+        self.setMute();
     };
 }

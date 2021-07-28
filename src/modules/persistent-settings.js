@@ -1,12 +1,9 @@
 export default function (self) {
     self.setPersistentSettings = () => {
-        if (self.displayOptions.layoutControls.persistentSettings.volume
-            && self.getLocalStorage('volume') !== false) {
-                self.setVolume(self.getLocalStorage('volume'));
-
-            if (self.getLocalStorage('mute')) {
-                self.muteToggle();
-            }
+        if (!self.displayOptions.layoutControls.mute
+            && !self.getLocalStorage('autoPlay')
+            && self.displayOptions.layoutControls.persistentSettings.volume) {
+            self.applyVolume();
         }
 
         if (self.displayOptions.layoutControls.persistentSettings.speed) {
