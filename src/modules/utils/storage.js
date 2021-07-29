@@ -7,13 +7,13 @@ export default function (self, options) {
             storage.removeItem(test);
             return true;
         } catch (error) {
-            return false;
+            return;
         }
     }
 
     self.setLocalStorage = (key, value, days) => {
         if (!self.storageAvailable()) {
-            return false;
+            return;
         }
         const data = {
             value: value,
@@ -24,23 +24,19 @@ export default function (self, options) {
 
     self.getLocalStorage = (key) => {
         if (!self.storageAvailable()) {
-            return false;
+            return;
         }
-        let data = localStorage.getItem(key);
-        if (!data) {
-            return false;
-        }
-        data = JSON.parse(data);
-        if (data.value == undefined || data.expire < new Date().getTime() / 1000) {
+        let data = JSON.parse(localStorage.getItem(key));
+        if (!data || data.expire < new Date().getTime() / 1000) {
             localStorage.removeItem(key);
-            return false;
+            return;
         }
         return data.value;
     }
 
     self.removeLocalStorage = (key) => {
         if (!self.storageAvailable()) {
-            return false;
+            return;
         }
         localStorage.removeItem(key);
     }
