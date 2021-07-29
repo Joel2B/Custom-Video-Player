@@ -19,11 +19,14 @@ export default function (self) {
     };
 
     self.initMute = () => {
-        if (self.displayOptions.layoutControls.mute !== true) {
-            if (!self.getLocalStorage('autoPlay')) {
-                return;
-            }
+        if (!self.displayOptions.layoutControls.mute) {
+            return;
         }
+
+        if (self.getLocalStorage('volume') != undefined) {
+            return;
+        }
+
         self.setMute();
     };
 }

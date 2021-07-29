@@ -28,7 +28,6 @@ export default function (self) {
             if (menuOptionMute !== null) {
                 menuOptionMute.innerHTML = self.displayOptions.captions.mute;
             }
-
         } else {
             for (let i = 0; i < muteButtonTag.length; i++) {
                 muteButtonTag[i].className = muteButtonTag[i].className.replace(/\bfluid_button_volume\b/g, 'fluid_button_mute');
@@ -135,18 +134,21 @@ export default function (self) {
     };
 
     self.applyVolume = () => {
-        if (self.getLocalStorage('volume') == false) {
+        if (self.getLocalStorage('volume') == undefined) {
+            if (self.getLocalStorage('autoPlay') || self.displayOptions.layoutControls.autoPlay) {
+                self.muteToggle();
+            }
             return;
         }
 
-        if (self.getLocalStorage('volume') === 1 && !self.getLocalStorage('mute')) {
+        if (self.getLocalStorage('volume') == 1 && !self.getLocalStorage('mute')) {
             self.setVolume(self.getLocalStorage('volume'));
             self.domRef.player.muted = false;
-        } else if (self.getLocalStorage('mute')) {
-            self.setMute();
+        } else if (self.getLocalStorage('volume') != 1) {
+            self.setVolume(self.getLocalStorage('volume'));
+            self.domRef.player.muted = false;
         } else {
-            self.setVolume(self.getLocalStorage('volume'));
-            self.domRef.player.muted = false;
+            self.setMute();
         }
     }
 }

@@ -43,7 +43,7 @@ export default function (self, options) {
             // If false we want to override the autoPlay, as it comes from postRoll
             const playVideo = !self.autoplayAfterAd
                 ? self.autoplayAfterAd
-                : self.displayOptions.layoutControls.autoPlay;
+                : self.applyAutoPlay();
 
             const defaultOptions = {
                 'debug': {
@@ -206,8 +206,8 @@ export default function (self, options) {
             return;
         }
         let level = self.getLocalStorage('forceQualityLevel');
-        if (level === false || level == -1 || !self.displayOptions.layoutControls.persistentSettings.quality) {
-            if (self.hlsPlayer) {
+        if (level == undefined || level == -1 || !self.displayOptions.layoutControls.persistentSettings.quality) {
+            if (self.hlsPlayer && !self.multipleVideoSources) {
                 self.domRef.controls.levelsPage.lastChild.classList.add('cvp_active');
             } else {
                 self.menu.qualityLevels.current = 0;
@@ -341,7 +341,7 @@ export default function (self, options) {
 
             self.displayOptions.modules.onAfterInitHls(hls);
 
-            if (!self.firstPlayLaunched && self.getLocalStorage('autoPlay')) {
+            if (!self.firstPlayLaunched && self.applyAutoPlay()) {
                 self.domRef.player.play();
             }
         } else {

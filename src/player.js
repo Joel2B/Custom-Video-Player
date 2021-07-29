@@ -265,6 +265,7 @@ const playerClass = function () {
                 playPauseAnimation: false,
                 closeButtonCaption: 'Close', // Remove?
                 fillToContainer: false,
+                autoPlay: false,
                 preload: 'auto',
                 mute: false,
                 loop: null,
@@ -539,7 +540,7 @@ const playerClass = function () {
             }
         };
 
-        if (self.getLocalStorage('autoPlay') && self.isEnabledModule('autoPlay') && !self.dashScriptLoaded && !self.hlsScriptLoaded) {
+        if (self.applyAutoPlay() && !self.dashScriptLoaded && !self.hlsScriptLoaded) {
             //There is known issue with Safari 11+, will prevent autoPlay, so we wont try
             const browserVersion = self.getBrowserVersion();
 

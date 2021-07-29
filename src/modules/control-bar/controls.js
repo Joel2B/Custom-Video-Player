@@ -204,7 +204,7 @@ export default function (self, options) {
                 },
                 {
                     name: 'autoplay',
-                    enabled: self.getLocalStorage('autoPlay'),
+                    enabled: self.getLocalStorage('autoPlay') != undefined ? self.getLocalStorage('autoPlay') : self.displayOptions.layoutControls.autoPlay,
                     domRef: 'autoPlay',
                     show: self.isEnabledModule('autoPlay')
                 }
@@ -214,8 +214,8 @@ export default function (self, options) {
                     name: 'speed',
                     defaultValue: (
                         !self.displayOptions.layoutControls.persistentSettings.speed
+                        || !self.getLocalStorage('playbackRate')
                         || self.getLocalStorage('playbackRate') == 1
-                        || self.getLocalStorage('playbackRate') === false
                     ) ? 'Normal' : self.getLocalStorage('playbackRate'),
                     domRef: 'speedsPage',
                     show: self.isEnabledModule('playbackRate')

@@ -54,7 +54,7 @@ export default function (self) {
             return;
         }
         const currentSpeed = self.getLocalStorage('playbackRate');
-        if (currentSpeed === false) {
+        if (!currentSpeed) {
             return;
         }
 
