@@ -17,6 +17,10 @@ export default function (self, options) {
 
     // TODO: refactor this
     self.applyAutoPlay = () => {
+        if (!self.isEnabledModule('autoPlay')) {
+            return;
+        }
+
         if (self.displayOptions.layoutControls.autoPlay && self.getLocalStorage('autoPlay') == undefined) {
             self.setMute();
             return true;
