@@ -850,11 +850,17 @@ const playerClass = function () {
 
         self.multipleVideoSources = true;
 
+        let firstStreamingSource = false;
         const sources = [];
-        for (const source of sourcesList) {
+        for (const [index, source] of sourcesList.entries()) {
             if (source.src && source.type) {
                 if (self.mobileInfo.userOs === 'iOS' && self.isMKV(source.src)) {
                     continue;
+                }
+                if (index == 0) {
+                    if (self.isHLS(source.src) || self.isDASH(source.src)) {
+                        firstStreamingSource = true;
+                    }
                 }
                 sources.push({
                     title: source.title,
@@ -868,7 +874,7 @@ const playerClass = function () {
         self.videoSources = sources;
         self.insertQualityLevels(sources);
 
-        if (self.multipleVideoSources) {
+        if (firstStreamingSource) {
             const interval = setInterval(() => {
                 if (window.Hls || window.dashjs.MediaPlayer) {
                     self.applyQualityLevel(sources);
