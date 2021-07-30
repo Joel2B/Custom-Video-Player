@@ -68,6 +68,7 @@ export default function (self) {
         self.domRef.player.parentNode.insertBefore(self.domRef.controls.optionsMenu, null);
         self.setupClickMenuButton();
         self.setupClickMenuHeader();
+        self.setupLoop();
         self.setupAutoPlay();
         self.setupPlaybackRates();
         self.setupQualityLevels();

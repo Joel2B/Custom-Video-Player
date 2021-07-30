@@ -207,6 +207,12 @@ export default function (self, options) {
                     enabled: self.getLocalStorage('autoPlay') != undefined ? self.getLocalStorage('autoPlay') : self.displayOptions.layoutControls.autoPlay,
                     domRef: 'autoPlay',
                     show: self.isEnabledModule('autoPlay')
+                },
+                {
+                    name: 'loop',
+                    enabled: self.getLocalStorage('loop') != undefined ? self.getLocalStorage('loop') : self.displayOptions.layoutControls.loop,
+                    domRef: 'loop',
+                    show: self.isEnabledModule('loop')
                 }
             ],
             selectors: [

@@ -16,6 +16,7 @@ import VolumeControl from './modules/control-bar/volume-control';
 
 import Autoplay from './modules/menu/autoplay';
 import ContextMenu from './modules/menu/context-menu';
+import Loop from './modules/menu/loop';
 import Menu from './modules/menu/menu';
 import PlaybackRate from './modules/menu/playback-rate';
 import QualityLevels from './modules/menu/quality-levels';
@@ -60,6 +61,7 @@ const FP_MODULES = [
 
     Autoplay,
     ContextMenu,
+    Loop,
     Menu,
     PlaybackRate,
     QualityLevels,
@@ -268,7 +270,7 @@ const playerClass = function () {
                 autoPlay: false,
                 preload: 'auto',
                 mute: false,
-                loop: null,
+                loop: false,
                 keyboardControl: true,
                 allowDownload: false,
                 showCardBoardView: false,
@@ -276,6 +278,7 @@ const playerClass = function () {
                 allowTheatre: true,
                 doubleclickFullscreen: true,
                 menu: {
+                    loop: false,
                     autoPlay: true,
                     playbackRate: true,
                     qualityLevels: true,
@@ -631,7 +634,7 @@ const playerClass = function () {
             clearInterval(self.timer);
         }
 
-        if (!!self.displayOptions.layoutControls.loop) {
+        if (self.applyLoop()) {
             self.switchToMainVideo();
             self.playPauseToggle();
         }
@@ -1060,7 +1063,7 @@ const playerClass = function () {
     };
 
     self.initLoop = () => {
-        self.domRef.player.loop = !!self.displayOptions.layoutControls.loop;
+        self.domRef.player.loop = self.applyLoop();
     };
 
     self.setBuffering = () => {
