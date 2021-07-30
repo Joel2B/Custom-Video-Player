@@ -590,11 +590,12 @@ const playerClass = function () {
 
     self.overrideOptions = (opt1, opt2) => {
         for (let key in opt2) {
-            if (!opt1.hasOwnProperty(key)) {
-                continue;
-            }
             if (typeof opt2[key] == 'object') {
-                self.overrideOptions(opt1[key], opt2[key]);
+                if (Object.keys(opt1[key]).length === 0) {
+                    opt1[key] = opt2[key];
+                } else {
+                    self.overrideOptions(opt1[key], opt2[key]);
+                }
             } else {
                 opt1[key] = opt2[key];
             }
