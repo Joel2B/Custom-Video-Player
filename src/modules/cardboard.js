@@ -285,7 +285,7 @@ export default function (self, options) {
         self.vrPanorama = new PANOLENS.VideoPanorama('', {
             videoElement: self.domRef.player,
             autoplay: self.displayOptions.layoutControls.autoPlay,
-            loop: applyLoop()
+            loop: self.applyLoop()
         });
 
         self.vrViewer = new PANOLENS.Viewer({
