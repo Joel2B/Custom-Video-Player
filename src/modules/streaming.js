@@ -186,7 +186,7 @@ export default function (self, options) {
     };
 
     self.updateViewQualityLevels = () => {
-        const previousLevel = document.querySelector('.cvp_quality .cvp_active');
+        const previousLevel = self.domRef.wrapper.querySelector('.cvp_quality .cvp_active');
         if (previousLevel) {
             previousLevel.classList.remove('cvp_active');
         }
@@ -195,7 +195,7 @@ export default function (self, options) {
             self.restartMenuLater();
         }
 
-        const currentLevel = document.querySelector(`[data-level='${self.menu.qualityLevels.current}']`)
+        const currentLevel = self.domRef.wrapper.querySelector(`[data-level='${self.menu.qualityLevels.current}']`)
         currentLevel.classList.add('cvp_active');
 
         self.domRef.controls.qualitySelector.lastChild.textContent = currentLevel.firstChild.textContent;
@@ -285,8 +285,8 @@ export default function (self, options) {
                 self.menu.qualityLevels.current = -1;
                 self.updateViewQualityLevels();
 
-                const autoLevel = document.querySelector(`[data-level='-1']`);
-                const levelSwitched = document.querySelector(`[data-level='${data.level}']`).firstChild.textContent;
+                const autoLevel = self.domRef.wrapper.querySelector('[data-level="-1"]');
+                const levelSwitched = self.domRef.wrapper.querySelector(`[data-level='${data.level}']`).firstChild.textContent;
                 const text = `Auto (${levelSwitched})`;
 
                 autoLevel.textContent = text;
