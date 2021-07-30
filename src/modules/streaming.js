@@ -114,8 +114,6 @@ export default function (self, options) {
             return;
         }
         let levels = [];
-        let defaultQualityLevel = 0;
-        let defaultTitle;
 
         for (const [index, level] of data.entries()) {
             self.menu.qualityLevels.height += self.menu.qualityLevels.option.height;
@@ -129,10 +127,6 @@ export default function (self, options) {
                 title = level.height + 'p';
             } else {
                 title = `Level ${index}`;
-            }
-
-            if (index == defaultQualityLevel) {
-                defaultTitle = title;
             }
 
             let qualityLevel = title.match(/\d/g);
@@ -178,11 +172,6 @@ export default function (self, options) {
         }
 
         self.domRef.controls.levelsPage.append(...levels);
-
-        if (!self.hlsPlayer) {
-            self.domRef.controls.qualitySelector.lastChild.textContent = defaultTitle;
-            self.domRef.controls.levelsPage.firstChild.classList.add('cvp_active');
-        }
     };
 
     self.updateViewQualityLevels = () => {
@@ -210,7 +199,7 @@ export default function (self, options) {
             if (self.hlsPlayer && !self.multipleVideoSources) {
                 self.domRef.controls.levelsPage.lastChild.classList.add('cvp_active');
             } else {
-                self.menu.qualityLevels.current = 0;
+                self.menu.qualityLevels.current = data.length - 1;
                 self.updateViewQualityLevels();
             }
             return;
