@@ -42,6 +42,10 @@ export default function (self, options) {
     }
 
     self.checkFPSInterval = () => {
+        if (self.isCurrentlyPlayingAd) {
+            return;
+        }
+
         clearInterval(self.fpsTimer);
         const isFirefoxAndroid = self.mobileInfo.userOs == false
             && self.mobileInfo.userOs === 'Android'
