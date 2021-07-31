@@ -242,6 +242,10 @@ export default function (self, options) {
         for (let i = 0; i < progressbarContainer.length; i++) {
             progressbarContainer[i].style.backgroundColor = self.displayOptions.layoutControls.adProgressColor;
         }
+        const progressCurrentMarker = self.domRef.player.parentNode.getElementsByClassName('fluid_controls_currentpos');
+        for (let i = 0; i < progressCurrentMarker.length; i++) {
+            progressCurrentMarker[i].style.backgroundColor = self.displayOptions.layoutControls.adProgressColor;
+        }
 
         self.toggleLoader(false);
     };

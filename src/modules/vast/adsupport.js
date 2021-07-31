@@ -58,6 +58,10 @@ export default function (self, options) {
                 for (let i = 0; i < progressbarContainer.length; i++) {
                     progressbarContainer[i].style.backgroundColor = self.displayOptions.layoutControls.adProgressColor;
                 }
+                const progressCurrentMarker = self.domRef.player.parentNode.getElementsByClassName('fluid_controls_currentpos');
+                for (let i = 0; i < progressCurrentMarker.length; i++) {
+                    progressCurrentMarker[i].style.backgroundColor = self.displayOptions.layoutControls.adProgressColor;
+                }
 
                 self.toggleLoader(false);
                 self.adList[adListId].played = true;
@@ -105,6 +109,10 @@ export default function (self, options) {
                 const progressbarContainer = self.domRef.player.parentNode.getElementsByClassName('fluid_controls_currentprogress');
                 for (let i = 0; i < progressbarContainer.length; i++) {
                     progressbarContainer[i].style.backgroundColor = self.displayOptions.layoutControls.adProgressColor;
+                }
+                const progressCurrentMarker = self.domRef.player.parentNode.getElementsByClassName('fluid_controls_currentpos');
+                for (let i = 0; i < progressCurrentMarker.length; i++) {
+                    progressCurrentMarker[i].style.backgroundColor = self.displayOptions.layoutControls.adProgressColor;
                 }
 
                 if (self.displayOptions.vastOptions.adText || self.adList[adListId].adText) {
@@ -1122,12 +1130,15 @@ export default function (self, options) {
         const progressbarContainer = self.domRef.controls.progressContainer;
 
         if (progressbarContainer !== null) {
-            const backgroundColor = (self.displayOptions.layoutControls.primaryColor) ? self.displayOptions.layoutControls.primaryColor : "white";
+            const backgroundColor = (self.displayOptions.layoutControls.primaryColor) ? self.displayOptions.layoutControls.primaryColor : '#f00';
 
             const currentProgressBar = self.domRef.player.parentNode.getElementsByClassName('fluid_controls_currentprogress');
-
             for (let i = 0; i < currentProgressBar.length; i++) {
                 currentProgressBar[i].style.backgroundColor = backgroundColor;
+            }
+            const progressCurrentMarker = self.domRef.player.parentNode.getElementsByClassName('fluid_controls_currentpos');
+            for (let i = 0; i < progressCurrentMarker.length; i++) {
+                progressCurrentMarker[i].style.backgroundColor = backgroundColor;
             }
         }
 

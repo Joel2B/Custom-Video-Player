@@ -92,7 +92,7 @@ export default function (self) {
                 }
             });
 
-            progressContainer.firstChild.nextSibling.firstChild.removeAttribute('style');
+            progressContainer.firstChild.nextSibling.firstChild.style.removeProperty('transform');
 
             if (!self.showTimeOnHover) {
                 self.domRef.controls.previewContainer.style.display = 'none';

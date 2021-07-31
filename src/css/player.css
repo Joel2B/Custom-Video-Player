@@ -1241,7 +1241,6 @@ _:-ms-lang(x),
     border-radius: 6.5px;
     top: -6.5px;
     right: -6.5px;
-    background-color: red;
 }
 
 .fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_right .fluid_control_volume_container .fluid_control_volume .fluid_control_currentvolume .fluid_control_volume_currentpos {

@@ -122,6 +122,9 @@ export default function (self, options) {
             id: self.videoPlayerId + '_vast_control_currentpos',
             className: 'fluid_controls_currentpos',
             parent: controls.progressMarkerContainer,
+            style: {
+                backgroundColor: options.primaryColor
+            }
         });
 
         // Progress container -> Buffered indicator

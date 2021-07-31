@@ -719,7 +719,7 @@ const playerClass = function () {
             displayVolumeBar: self.checkShouldDisplayVolumeBar(),
             primaryColor: self.displayOptions.layoutControls.primaryColor
                 ? self.displayOptions.layoutControls.primaryColor
-                : 'red',
+                : '#f00',
             controlForwardBackward: !!self.displayOptions.layoutControls.controlForwardBackward.show
         });
 
