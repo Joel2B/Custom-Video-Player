@@ -36,6 +36,10 @@ export default function (self) {
                     self.fullscreenToggle();
                     event.preventDefault();
                     break;
+                case 84:// t
+                    self.theatreToggle();
+                    event.preventDefault();
+                    break;
                 case 13://Enter
                 case 32://Space
                 case 75:// k
