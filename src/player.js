@@ -254,6 +254,7 @@ const playerClass = function () {
         self.updateInterval = null;
         self.updateRefreshInterval = 60;
         self.multipleVideoSources = false;
+        self.playButtonTimer = null;
 
         //Default options
         self.displayOptions = {
@@ -768,7 +769,6 @@ const playerClass = function () {
 
         self.setVideoPreload();
 
-
         self.createDownload();
 
         if (!!self.displayOptions.layoutControls.controlForwardBackward.show) {
@@ -993,6 +993,12 @@ const playerClass = function () {
         }
 
         self.domRef.player.parentNode.insertBefore(self.domRef.controls.initialPlayButtonContainer, null);
+    
+        self.domRef.controls.initialPlayButton.addEventListener('click', () => {
+            self.domRef.controls.initialPlayButton.style.cursor = 'default';
+            self.playPauseToggle();
+        }, false);
+        self.domRef.controls.initialPlayButton.addEventListener('dblclick', self.fullscreenToggle);
     };
 
     /**

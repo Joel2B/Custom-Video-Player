@@ -73,21 +73,24 @@ export default function (self) {
             return;
         }
 
+        self.domRef.controls.initialPlayButton.classList.remove('transform-active');
+
         if (play) {
-            document.getElementById(self.videoPlayerId + '_fluid_state_button').classList.remove('fluid_initial_pause_button');
-            document.getElementById(self.videoPlayerId + '_fluid_state_button').classList.add('fluid_initial_play_button');
+            self.domRef.controls.stateButton.classList.remove('fluid_initial_pause_button');
+            self.domRef.controls.stateButton.classList.add('fluid_initial_play_button');
         } else {
-            document.getElementById(self.videoPlayerId + '_fluid_state_button').classList.remove('fluid_initial_play_button');
-            document.getElementById(self.videoPlayerId + '_fluid_state_button').classList.add('fluid_initial_pause_button');
+            self.domRef.controls.stateButton.classList.remove('fluid_initial_play_button');
+            self.domRef.controls.stateButton.classList.add('fluid_initial_pause_button');
         }
 
-        document.getElementById(self.videoPlayerId + '_fluid_initial_play').classList.add('transform-active');
-        setTimeout(
-            function () {
-                document.getElementById(self.videoPlayerId + '_fluid_initial_play').classList.remove('transform-active');
-            },
-            800
-        );
+        setTimeout(() => {
+            self.domRef.controls.initialPlayButton.classList.add('transform-active');
+        }, 50);
+
+        clearTimeout(self.playButtonTimer);
+        self.playButtonTimer = setTimeout(() => {
+            self.domRef.controls.initialPlayButton.classList.remove('transform-active');
+        }, 800);
     };
 
     self.initialPlay = () => {
