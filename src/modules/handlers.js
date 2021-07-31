@@ -38,6 +38,7 @@ export default function (self) {
                     break;
                 case 13://Enter
                 case 32://Space
+                case 75:// k
                     self.playPauseToggle();
                     event.preventDefault();
                     break;
