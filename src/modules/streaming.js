@@ -223,7 +223,11 @@ export default function (self, options) {
     };
 
     self.initialiseHls = () => {
-        if (Hls.isSupported()) {
+        if (self.domRef.player.canPlayType('application/vnd.apple.mpegurl')) {
+            if (!self.multipleVideoSources && self.isEnabledModule('qualityLevels')) {
+                self.removeOption('qualitySelector');
+            }
+        } else if (Hls.isSupported()) {
             const defaultOptions = {
                 debug: typeof FP_DEBUG !== 'undefined' && FP_DEBUG === true,
                 // autoStartLoad: i,

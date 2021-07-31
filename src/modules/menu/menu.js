@@ -79,7 +79,11 @@ export default function (self) {
     };
 
     self.removeOption = (option) => {
+        if (self.domRef.controls[option] == null) {
+            return;
+        }
         self.domRef.controls[option].remove();
+        self.domRef.controls[option] = null;
         self.menu.height -= self.menu.option.height;
         self.restartMenu();
     }
