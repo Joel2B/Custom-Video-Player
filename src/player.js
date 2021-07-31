@@ -41,6 +41,7 @@ import HtmlOnPause from './modules/html-on-pause';
 import Logo from './modules/logo';
 import MeasureFPS from './modules/measure-fps';
 import PersistentSettings from './modules/persistent-settings';
+import Shortcuts from './modules/shortcuts';
 import Streaming from './modules/streaming';
 import Subtitles from './modules/subtitles';
 import Title from './modules/title';
@@ -86,6 +87,7 @@ const FP_MODULES = [
     Logo,
     MeasureFPS,
     PersistentSettings,
+    Shortcuts,
     Streaming,
     Subtitles,
     Title
@@ -371,6 +373,7 @@ const playerClass = function () {
                 fullscreen: 'Fullscreen',
                 subtitles: 'Subtitles',
                 exitFullscreen: 'Exit Fullscreen',
+                shortcutsInfo: 'Keyboard Shortcuts'
             },
             debug: FP_RUNTIME_DEBUG,
             modules: {
@@ -453,6 +456,8 @@ const playerClass = function () {
         self.displayOptions.layoutControls.playerInitCallback();
 
         self.setupMenu();
+
+        self.setupShortcuts();
 
         self.sourcesInVideoTag();
 

@@ -6,7 +6,7 @@ export default function (self) {
         const extraLinks = self.displayOptions.layoutControls.contextMenu.links;
 
         //Create own context menu
-        const divContextMenu = self.createElement({
+        self.domRef.contextMenu = self.createElement({
             tag: 'div',
             id: self.videoPlayerId + '_fluid_context_menu',
             className: 'fluid_context_menu',
@@ -18,7 +18,7 @@ export default function (self) {
 
         const contextMenuList = self.createElement({
             tag: 'ul',
-            parent: divContextMenu
+            parent: self.domRef.contextMenu
         });
 
         if (!!extraLinks) {
@@ -49,6 +49,13 @@ export default function (self) {
 
             self.createElement({
                 tag: 'li',
+                id: self.videoPlayerId + '_context_option_shortcuts_info',
+                innerHTML: self.displayOptions.captions.shortcutsInfo,
+                parent: contextMenuList
+            }, () => self.openShortcuts());
+
+            self.createElement({
+                tag: 'li',
                 id: self.videoPlayerId + '_context_option_fullscreen',
                 innerHTML: self.displayOptions.captions.fullscreen,
                 parent: contextMenuList
@@ -62,21 +69,21 @@ export default function (self) {
             parent: contextMenuList
         }, () => window.open(self.homepage, '_blank'));
 
-        self.domRef.player.parentNode.insertBefore(divContextMenu, self.domRef.player.nextSibling);
+        self.domRef.player.parentNode.insertBefore(self.domRef.contextMenu, self.domRef.player.nextSibling);
 
         //Disable the default context menu
         playerWrapper.addEventListener('contextmenu', e => {
             e.preventDefault();
 
-            divContextMenu.style.left = self.getEventOffsetX(e, self.domRef.player) + 'px';
-            divContextMenu.style.top = self.getEventOffsetY(e, self.domRef.player) + 'px';
-            divContextMenu.style.display = 'block';
+            self.domRef.contextMenu.style.left = self.getEventOffsetX(e, self.domRef.player) + 'px';
+            self.domRef.contextMenu.style.top = self.getEventOffsetY(e, self.domRef.player) + 'px';
+            self.domRef.contextMenu.style.display = 'block';
         }, false);
 
         //Hide the context menu on clicking elsewhere
         document.addEventListener('click', e => {
             if ((e.target !== self.domRef.player) || e.button !== 2) {
-                divContextMenu.style.display = 'none';
+                self.domRef.contextMenu.style.display = 'none';
             }
         }, false);
     };

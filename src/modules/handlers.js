@@ -23,11 +23,19 @@ export default function (self) {
             self.closeMenu();
         }
 
+        if (e.target != self.domRef.controls.shortcuts 
+            && !self.domRef.controls.shortcuts.contains(e.target)
+            && !self.domRef.contextMenu.contains(e.target)) {
+            self.closeShortcuts();
+        }
+
         if (self.captureKey) {
             return;
         }
 
         self.captureKey = event => {
+            self.closeShortcuts();
+
             event.stopPropagation();
             const keyCode = event.keyCode;
 
