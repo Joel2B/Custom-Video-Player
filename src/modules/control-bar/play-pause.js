@@ -21,7 +21,7 @@ export default function (self) {
         const fpLogo = document.getElementById(self.videoPlayerId + '_logo');
 
         const initialPlay = document.getElementById(self.videoPlayerId + '_fluid_initial_play');
-        if (initialPlay) {
+        if (initialPlay && !self.multipleVideoSources) {
             document.getElementById(self.videoPlayerId + '_fluid_initial_play').style.display = 'none';
             document.getElementById(self.videoPlayerId + '_fluid_initial_play_button').style.opacity = '1';
         }
@@ -126,6 +126,11 @@ export default function (self) {
     };
 
     self.playPauseToggle = () => {
+        if (self.multipleVideoSources) {
+            self.domRef.controls.initialPlayButton.style.display = 'none';
+            self.domRef.controls.initialPlayButton.style.cursor = 'default';
+        }
+
         const isFirstStart = !self.firstPlayLaunched;
         const preRolls = self.findRoll('preRoll');
 
