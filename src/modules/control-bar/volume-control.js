@@ -98,8 +98,13 @@ export default function (self) {
 
         if (volume < 0.05) {
             volume = 0;
+            self.domRef.player.muted = true;
         } else if (volume > 0.95) {
             volume = 1;
+        }
+
+        if (self.domRef.player.muted && volume > 0) {
+            self.domRef.player.muted = false;
         }
 
         self.setVolume(volume);
