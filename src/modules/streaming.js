@@ -313,6 +313,10 @@ export default function (self, options) {
             });
 
             hls.on(Hls.Events.ERROR, (e, data) => {
+                if (self.isCurrentlyPlayingAd) {
+                    return;
+                }
+
                 if (data.fatal) {
                     switch (data.type) {
                         case Hls.ErrorTypes.NETWORK_ERROR:
