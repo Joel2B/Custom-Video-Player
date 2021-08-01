@@ -987,7 +987,13 @@ const playerClass = function () {
         const initPlayFunction = () => {
             self.playPauseToggle();
             self.domRef.controls.initialPlayButtonContainer.removeEventListener('click', initPlayFunction);
-        };
+
+            self.domRef.controls.initialPlayButton.addEventListener('click', () => {
+                self.domRef.controls.initialPlayButton.style.cursor = 'default';
+                self.playPauseToggle();
+                self.domRef.controls.initialPlayButton.addEventListener('dblclick', self.fullscreenToggle);
+            });
+        }
         self.domRef.controls.initialPlayButtonContainer.addEventListener('click', initPlayFunction);
         // If the user has chosen to not show the play button we'll make it invisible
         // We don't hide altogether because animations might still be used
@@ -998,12 +1004,6 @@ const playerClass = function () {
         }
 
         self.domRef.player.parentNode.insertBefore(self.domRef.controls.initialPlayButtonContainer, null);
-    
-        self.domRef.controls.initialPlayButton.addEventListener('click', () => {
-            self.domRef.controls.initialPlayButton.style.cursor = 'default';
-            self.playPauseToggle();
-        }, false);
-        self.domRef.controls.initialPlayButton.addEventListener('dblclick', self.fullscreenToggle);
     };
 
     /**
