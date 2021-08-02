@@ -39,6 +39,17 @@ export default function (self) {
         self.domRef.controls.progressContainer
             .addEventListener(eventOn, event => self.onProgressbarMouseDown(event), false);
 
+        // hover progress
+        self.trackEvent(self.domRef.player.parentNode, 'mousemove', '.fluid_controls_progress_container', event => {
+            const progressContainer = self.domRef.controls.progressContainer;
+            const totalWidth = progressContainer.clientWidth;
+            const hoverX = self.getEventOffsetX(event, progressContainer);
+            const scaleX = hoverX / totalWidth;
+
+            self.domRef.controls.hoverProgress.style.transform = `scaleX(${scaleX})`;
+            self.domRef.controls.hoverProgress.style.transformOrigin = '0 0';
+        });
+
         //Set the volume controls
         document.getElementById(self.videoPlayerId + '_fluid_control_volume_container')
             .addEventListener(eventOn, event => self.onVolumeBarMouseDown(), false);

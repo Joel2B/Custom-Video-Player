@@ -1195,6 +1195,8 @@ _:-ms-lang(x),
 
 .fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container .fluid_controls_progress {
     background-color: rgba(255, 255, 255, 0.25);
+    width: 100%;
+    height: 5px;
 }
 
 .fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container .fluid_controls_buffered {
@@ -1205,13 +1207,21 @@ _:-ms-lang(x),
     z-index: -1;
 }
 
-.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container .fluid_controls_progress .fluid_controls_currentprogress {
-    height: 5px;
+.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container .fluid_controls_progress .fluid_controls_currentprogress,
+.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container .fluid_controls_progress .fluid_controls_hover_progress {
     transform: scaleX(0);
+    position: absolute;
+    width: 100%;
+    height: 5px;
 }
 
-.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container .fluid_controls_progress {
-    width: 100%;
+.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container .fluid_controls_progress .fluid_controls_currentprogress {
+    z-index: 1;
+}
+
+.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container .fluid_controls_progress .fluid_controls_hover_progress {
+    background-color: rgba(255, 255, 255, 0.3);
+    opacity: 0;
 }
 
 .fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container .fluid_controls_marker_container .fluid_controls_currentpos {
@@ -1232,6 +1242,10 @@ _:-ms-lang(x),
 .fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container:hover .fluid_controls_marker_container .fluid_controls_currentpos {
     transform: none!important;
     transition: transform .1s cubic-bezier(0,0,0.2,1);
+}
+
+.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_controls_progress_container:hover .fluid_controls_hover_progress {
+    opacity: 1;
 }
 
 .fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_timeline_preview_container {

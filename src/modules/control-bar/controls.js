@@ -108,6 +108,13 @@ export default function (self, options) {
             }
         });
 
+        // Progress container -> Progress wrapper -> Hover progress
+        controls.hoverProgress = self.createElement({
+            tag: 'div',
+            className: 'fluid_controls_hover_progress',
+            parent: controls.progressWrapper,
+        });
+
         // Progress container -> Progress wrapper -> Current progress -> Marker container
         controls.progressMarkerContainer = self.createElement({
             tag: 'div',
