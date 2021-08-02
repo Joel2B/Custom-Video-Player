@@ -257,6 +257,7 @@ const playerClass = function () {
         self.updateRefreshInterval = 60;
         self.multipleVideoSources = false;
         self.playButtonTimer = null;
+        self.useCapture = self.useCapture();
 
         //Default options
         self.displayOptions = {
@@ -570,7 +571,7 @@ const playerClass = function () {
             //On mobile mouseleave behavior does not make sense, so it's better to keep controls, once the playback starts
             //Autohide behavior on timer is a separate functionality
             self.hideControlBar();
-            videoWrapper.addEventListener('touchstart', self.showControlBar, false);
+            videoWrapper.addEventListener('touchstart', self.showControlBar, self.useCapture);
         }
 
         //Keyboard Controls
@@ -1072,7 +1073,7 @@ const playerClass = function () {
             : ['mousemove', 'mousedown', 'mouseup'];
 
         for (let i = 0; i < listenTo.length; i++) {
-            videoPlayer.addEventListener(listenTo[i], activity);
+            videoPlayer.addEventListener(listenTo[i], activity, self.useCapture);
         }
     };
 

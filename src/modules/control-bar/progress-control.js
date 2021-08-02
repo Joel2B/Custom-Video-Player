@@ -134,6 +134,8 @@ export default function (self) {
         document.addEventListener('touchend', onProgressbarMouseUp);
         document.addEventListener('mousemove', onProgressbarMouseMove);
         document.addEventListener('touchmove', onProgressbarMouseMove);
+
+        event.preventDefault();
     };
 
     self.resizeMarkerContainer = () => {

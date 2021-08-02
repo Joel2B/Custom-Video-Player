@@ -38,4 +38,8 @@ export default function (self, options) {
             }
         }
     };
+
+    self.useCapture = () => {
+        return self.isTouchDevice() ? { passive: false } : false;
+    };
 }

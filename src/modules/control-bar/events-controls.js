@@ -37,7 +37,7 @@ export default function (self) {
         const eventOn = (isMobileChecks.userOs) ? 'touchstart' : 'mousedown';
 
         self.domRef.controls.progressContainer
-            .addEventListener(eventOn, event => self.onProgressbarMouseDown(event), false);
+            .addEventListener(eventOn, event => self.onProgressbarMouseDown(event), self.useCapture);
 
         // hover progress
         self.trackEvent(self.domRef.player.parentNode, 'mousemove', '.fluid_controls_progress_container', event => {
@@ -52,7 +52,7 @@ export default function (self) {
 
         //Set the volume controls
         document.getElementById(self.videoPlayerId + '_fluid_control_volume_container')
-            .addEventListener(eventOn, event => self.onVolumeBarMouseDown(), false);
+            .addEventListener(eventOn, event => self.onVolumeBarMouseDown(), self.useCapture);
 
         self.domRef.player.addEventListener('volumechange', () => self.contolVolumebarUpdate());
 
