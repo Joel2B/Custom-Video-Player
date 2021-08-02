@@ -28,6 +28,10 @@ export default function (self) {
             return;
         }
         self.domRef.controls.optionsMenu.classList.remove('cvp_visible');
+        const menuButtons = document.getElementsByClassName('fluid_button_main_menu');
+        for (const menuButton of menuButtons) {
+            menuButton.classList.remove('cvp_rotate');
+        }
         self.menu.inSubmenu = false;
         self.restartMenuLater();
     }
@@ -38,6 +42,10 @@ export default function (self) {
                 return;
             }
             if (self.isMenuClosed()) {
+                const menuButtons = document.getElementsByClassName('fluid_button_main_menu');
+                for (const menuButton of menuButtons) {
+                    menuButton.classList.add('cvp_rotate');
+                }
                 self.domRef.controls.optionsMenu.classList.add('cvp_visible');
             } else {
                 self.closeMenu();

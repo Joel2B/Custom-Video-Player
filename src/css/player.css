@@ -1178,6 +1178,11 @@ _:-ms-lang(x),
     vertical-align: middle;
 }
 
+.cvp_rotate::before {
+    -webkit-transform: rotateZ(30deg);
+    transform: rotateZ(30deg);
+}
+
 .hide {
     display: none;
 }
@@ -1501,6 +1506,8 @@ _:-ms-lang(x),
 
 .fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_button.fluid_button_main_menu:before {
     background-position: -232px -56px;
+    height: 20px;
+    transition: transform .1s cubic-bezier(0.4,0,1,1),-webkit-transform .1s cubic-bezier(0.4,0,1,1);
 }
 
 .fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_button.fluid_button_playback_rate:before {
