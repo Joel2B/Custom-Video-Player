@@ -65,7 +65,10 @@ module.exports = (env, argv) => {
             FP_DEBUG: JSON.stringify(wpDebug),
             FP_WITH_CSS: false
         }),
-        new CleanWebpackPlugin()
+        new CleanWebpackPlugin(),
+        new webpack.optimize.LimitChunkCountPlugin({
+            maxChunks: 1, // disable creating additional chunks
+        })
     ];
 
     // Development mode builds and development server specifics
