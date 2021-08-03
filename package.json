@@ -1,7 +1,7 @@
 {
-  "name": "fluid-player",
+  "name": "custom-video-player",
   "version": "3.0.4",
-  "description": "Fluid Player is a free HTML5 video player",
+  "description": "HTML5 video player",
   "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -16,16 +16,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/fluid-player/fluid-player.git"
+    "url": "git+https://github.com/Joel2B/custom-video-player.git"
   },
-  "author": "EXOGROUP <info@exogroup.com>",
+  "author": "JoelB",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/fluid-player/fluid-player/issues"
+    "url": "https://github.com/Joel2B/custom-video-player/issues"
   },
-  "homepage": "https://fluidplayer.com",
+  "homepage": "https://embed.cf/",
   "com_fluidplayer": {
-    "cdn": "https://cdn.fluidplayer.com"
+    "cdn": "https://cdn.embed.cf"
   },
   "browserslist": [
     "> 0.25%",
