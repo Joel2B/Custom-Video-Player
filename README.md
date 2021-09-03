@@ -1,4 +1,4 @@
-# [Custom Video Player](http://embed.cf/)
+# Custom Video Player
 
 
 HTML5 Video Player, based on Fluid Player v3.0.4
@@ -16,6 +16,9 @@ HTML5 Video Player, based on Fluid Player v3.0.4
     var instance = fluidPlayer('video-player');
 </script>
 ```
+
+### Example online
+[Custom Video Player](https://watchonline.nom.es/example/)
 
 ### Build Project
 
