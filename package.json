@@ -6,13 +6,13 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack --mode=production && uglifyjs dist/player.min.js -o dist/player.min.js -c -m",
-    "build-obf": "webpack --mode=production --env=obf=true && uglifyjs dist/player.min.js -o dist/player.min.js -c -m",
-    "build-cdn": "webpack --mode=production --dist=current && webpack --mode=production --dist=versioned",
     "build-dev": "webpack --mode=development",
-    "build-dev-debug": "webpack --mode=development --debug",
+    "build-obf": "webpack --mode=production --env obf=true && uglifyjs dist/player.min.js -o dist/player.min.js -c -m",
+    "build-cdn": "webpack --mode=production --env dist=current --env obf=true && uglifyjs dist/player.min.js -o dist/player.min.js -c -m",
+    "build-dev-debug": "webpack --mode=development --env debug",
     "dev-server": "webpack-dev-server --mode=development --host 0.0.0.0",
-    "dev-server-debug": "webpack-dev-server --mode=development --debug --host 0.0.0.0",
-    "dev-server-test": "webpack-dev-server --mode=production --no-live-reload --host 0.0.0.0"
+    "dev-server-debug": "webpack-dev-server --mode=development --env debug --host 0.0.0.0",
+    "dev-server-test": "webpack-dev-server --mode=production --host 0.0.0.0"
   },
   "repository": {
     "type": "git",
@@ -23,9 +23,9 @@
   "bugs": {
     "url": "https://github.com/Joel2B/custom-video-player/issues"
   },
-  "homepage": "https://embed.cf/",
+  "homepage": "https://watchonline.nom.es",
   "com_fluidplayer": {
-    "cdn": "https://cdn.embed.cf"
+    "cdn": "https://watchonline.nom.es/player"
   },
   "browserslist": [
     "> 0.25%",
