@@ -71,7 +71,7 @@ export default function (self, options) {
     self.setupThumbnailPreviewVtt = () => {
         self.sendRequest(
             self.displayOptions.layoutControls.timelinePreview.file,
-            true,
+            false,
             self.displayOptions.vastOptions.vastTimeout,
             function () {
                 const convertVttRawData = function (vttRawData) {

@@ -3,7 +3,7 @@ export default function (self, options) {
     self.subtitleFetchParse = (subtitleItem) => {
         self.sendRequest(
             subtitleItem.url,
-            true,
+            false,
             self.displayOptions.vastOptions.vastTimeout,
             function () {
                 const convertVttRawData = function (vttRawData) {
