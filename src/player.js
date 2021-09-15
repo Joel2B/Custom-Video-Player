@@ -859,21 +859,19 @@ const playerClass = function () {
         let firstStreamingSource = false;
         const sources = [];
         for (const [index, source] of sourcesList.entries()) {
-            if (source.src && source.type) {
-                if (self.mobileInfo.userOs === 'iOS' && self.isMKV(source.src)) {
-                    continue;
-                }
-                if (index == 0) {
-                    if (self.isHLS(source.src) || self.isDASH(source.src)) {
-                        firstStreamingSource = true;
-                    }
-                }
-                sources.push({
-                    title: source.title,
-                    src: source.src,
-                    isHD: source.getAttribute('data-fluid-hd') != null
-                });
+            if (!self.isSource(source.src) || !source.type || self.mobileInfo.userOs === 'iOS' && self.isMKV(source.src)) {
+                continue;
             }
+            if (index == 0) {
+                if (self.isHLS(source.src) || self.isDASH(source.src)) {
+                    firstStreamingSource = true;
+                }
+            }
+            sources.push({
+                title: source.title,
+                src: source.src,
+                isHD: source.getAttribute('data-fluid-hd') != null
+            });
         }
 
         sources.reverse();
