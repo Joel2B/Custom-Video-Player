@@ -873,6 +873,9 @@ const playerClass = function () {
                 isHD: source.getAttribute('data-fluid-hd') != null
             });
         }
+        if (sources.length == 0) {
+            return;
+        }
 
         sources.reverse();
         self.videoSources = sources;
