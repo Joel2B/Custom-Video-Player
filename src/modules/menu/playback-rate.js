@@ -12,11 +12,11 @@ export default function (self) {
                 },
                 ...(value == 1) && { className: 'cvp_active' }
             }, (e) => {
-                const previousSpeed = document.querySelector('.cvp_speed .cvp_active');
+                const previousSpeed = self.domRef.wrapper.querySelector('.cvp_speed .cvp_active');
                 const selectedSpeed = e.target;
 
                 previousSpeed.classList.remove('cvp_active');
-                document.querySelector(`[data-speed='${selectedSpeed.dataset.speed}']`).classList.add('cvp_active');
+                self.domRef.wrapper.querySelector(`[data-speed='${selectedSpeed.dataset.speed}']`).classList.add('cvp_active');
                 self.domRef.controls.speedSelector.lastChild.textContent = selectedSpeed.firstChild.textContent;
                 self.setPlaybackSpeed(selectedSpeed.dataset.speed);
 
@@ -58,14 +58,14 @@ export default function (self) {
             return;
         }
 
-        const previousSpeed = document.querySelector('.cvp_speed .cvp_active');
+        const previousSpeed = self.domRef.wrapper.querySelector('.cvp_speed .cvp_active');
         previousSpeed.classList.remove('cvp_active');
 
         setTimeout(() => {
             self.setPlaybackSpeed(currentSpeed);
         }, 500);
 
-        const selectedSpeed = document.querySelector(`[data-speed='${currentSpeed}']`)
+        const selectedSpeed = self.domRef.wrapper.querySelector(`[data-speed='${currentSpeed}']`)
         selectedSpeed.classList.add('cvp_active');
     }
 }
