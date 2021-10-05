@@ -18,7 +18,7 @@ HTML5 Video Player, based on Fluid Player v3.0.4
 ```
 
 ### Example online
-[Custom Video Player](https://watchonline.nom.es/example/)
+[Custom Video Player](https://appsdev.cyou/xv-ph-rt/)
 
 ### Build Project
 
