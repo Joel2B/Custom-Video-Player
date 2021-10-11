@@ -23,9 +23,9 @@
   "bugs": {
     "url": "https://github.com/Joel2B/custom-video-player/issues"
   },
-  "homepage": "https://watchonline.nom.es",
+  "homepage": "https://appsdev.cyou",
   "com_fluidplayer": {
-    "cdn": "https://watchonline.nom.es/player"
+    "cdn": "https://appsdev.cyou/player"
   },
   "browserslist": [
     "> 0.25%",
