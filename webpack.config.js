@@ -7,7 +7,6 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CopyPlugin = require('copy-webpack-plugin');
 const TerserPlugin = require("terser-webpack-plugin");
 const WebpackObfuscatorPlugin = require('webpack-obfuscator');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 // Loading the current package.json - will be used to determine version etc.
 const packageJSON = require(path.resolve(__dirname, 'package.json'));
@@ -65,7 +64,6 @@ module.exports = (env, argv) => {
             FP_DEBUG: JSON.stringify(wpDebug),
             FP_WITH_CSS: false
         }),
-        new CleanWebpackPlugin(),
         new webpack.optimize.LimitChunkCountPlugin({
             maxChunks: 1, // disable creating additional chunks
         })
@@ -170,7 +168,8 @@ module.exports = (env, argv) => {
             filename: '[name].min.js',
             chunkFilename: '[name].[chunkhash].min.js',
             path: wpDistOptions.path,
-            publicPath: wpDistOptions.publicPath
+            publicPath: wpDistOptions.publicPath,
+            clean: true,
         },
         module: {
             rules: [
