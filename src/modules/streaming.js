@@ -85,11 +85,12 @@ export default function (self, options) {
 
     self.selectQualityLevel = (e) => {
         let levelSelect = Number(e.target.dataset.level);
-        if (levelSelect == self.menu.qualityLevels.current) {
+        if (levelSelect == self.menu.qualityLevels.current && !self.menu.qualityLevels.auto) {
             return;
         }
 
         self.menu.inSubmenu = false;
+        self.menu.qualityLevels.auto = false;
         self.menu.qualityLevels.current = levelSelect;
         self.updateViewQualityLevels();
 
@@ -185,9 +186,26 @@ export default function (self, options) {
         }
 
         const currentLevel = self.domRef.wrapper.querySelector(`[data-level='${self.menu.qualityLevels.current}']`)
-        currentLevel.classList.add('cvp_active');
+        let qualityLabel = currentLevel.firstChild.textContent;
 
-        self.domRef.controls.qualitySelector.lastChild.textContent = currentLevel.firstChild.textContent;
+        if (self.menu.qualityLevels.auto) {
+            qualityLabel = `Auto (${qualityLabel})`;
+            const autoLevel = self.domRef.wrapper.querySelector('[data-level="-1"]');
+            autoLevel.textContent = qualityLabel;
+            autoLevel.classList.add('cvp_active');
+        } else {
+            currentLevel.classList.add('cvp_active');
+        }
+
+        self.domRef.controls.qualitySelector.lastChild.textContent = qualityLabel;
+
+        const menuButtons = self.domRef.wrapper.querySelector('.fluid_button_main_menu');
+        const quality = Number(currentLevel.firstChild.textContent.replace(/\D/g, ''));
+        if (quality >= 720) {
+            menuButtons.classList.add('hd-quality-badge')
+        } else {
+            menuButtons.classList.remove('hd-quality-badge')
+        }
     }
 
     self.applyQualityLevel = (data) => {
@@ -218,6 +236,7 @@ export default function (self, options) {
             self.setVideoSource(data[level].src);
         }
 
+        self.menu.qualityLevels.auto = false;
         self.menu.qualityLevels.current = level;
         self.updateViewQualityLevels();
     };
@@ -271,27 +290,18 @@ export default function (self, options) {
             })
 
             hls.on(Hls.Events.LEVEL_SWITCHED, (e, data) => {
-                if (self.menu.qualityLevels.current != -1 || self.multipleVideoSources) {
+                if (self.menu.qualityLevels.current != -1 && !self.menu.qualityLevels.auto || self.multipleVideoSources) {
                     return;
                 }
 
-                self.menu.qualityLevels.current = -1;
+                self.menu.qualityLevels.auto = true;
+                self.menu.qualityLevels.current = data.level;
                 self.updateViewQualityLevels();
-
-                const autoLevel = self.domRef.wrapper.querySelector('[data-level="-1"]');
-                const levelSwitched = self.domRef.wrapper.querySelector(`[data-level='${data.level}']`).firstChild.textContent;
-                const text = `Auto (${levelSwitched})`;
-
-                autoLevel.textContent = text;
-                self.domRef.controls.qualitySelector.lastChild.textContent = text;
             })
 
             if (process.env.NODE_ENV === 'development') {
                 hls.on(Hls.Events.LEVEL_SWITCHING, (e, data) => {
                     console.log('LEVEL_SWITCHING', data)
-                });
-                hls.on(Hls.Events.LEVEL_SWITCHED, (e, data) => {
-                    console.log('LEVEL_SWITCHED', data)
                 });
             }
 

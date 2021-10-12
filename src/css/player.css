@@ -1510,6 +1510,19 @@ _:-ms-lang(x),
     transition: transform .1s cubic-bezier(0.4,0,1,1),-webkit-transform .1s cubic-bezier(0.4,0,1,1);
 }
 
+.fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_button.fluid_button_main_menu.hd-quality-badge:after {
+    content: "";
+    background: url('../static/fluid-icons.svg') no-repeat;
+    background-position: -163px -62px;
+    position: absolute;
+    top: -1px;
+    right: -6px;
+    height: 9px;
+    width: 13px;
+    background-color: #f00;
+    border-radius: 1px;
+}
+
 .fluid_video_wrapper.fluid_player_layout_default .fluid_controls_container .fluid_button.fluid_button_playback_rate:before {
     background-position: -232px -19px;
 }

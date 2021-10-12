@@ -98,7 +98,16 @@
                 transform="translate(3865,-44)"
                 xlink:href="#c"
                 id="use23"
-                style="fill:#f2c94c"
+                style="fill:#000;fill-opacity:0.6471;fill-rule:evenodd"
+                x="0"
+                y="0"
+                width="100%"
+                height="100%"/>
+            <use
+                transform="translate(3865,-44)"
+                xlink:href="#c-2"
+                id="use23-2"
+                style="fill:#fff;fill-rule:evenodd"
                 x="0"
                 y="0"
                 width="100%"
@@ -207,7 +216,11 @@
         />
         <path
             id="c"
-            d="M 1.52,4.5 C 1.52,2.961 2.632,1.71 4,1.71 H 7.2 V 0 H 4 C 1.792,0 0,2.016 0,4.5 0,6.984 1.792,9 4,9 H 7.2 V 7.29 H 4 C 2.632,7.29 1.52,6.039 1.52,4.5 Z M 4.8,5.4 h 6.4 V 3.6 H 4.8 Z M 12,0 H 8.8 V 1.71 H 12 c 1.368,0 2.48,1.251 2.48,2.79 0,1.539 -1.112,2.79 -2.48,2.79 H 8.8 V 9 H 12 C 14.208,9 16,6.984 16,4.5 16,2.016 14.208,0 12,0 Z"
+            d="M5,7 L6,7 L6,8 L5,8 L5,7 Z M10,3 L10,4 L8,4 L8,3 L10,3 Z M3,6 L3,5 L5,5 L5,6 L3,6 Z M2,7 L3,7 L3,8 L2,8 L2,7 Z M7,7 L10,7 L10,8 L7,8 L7,7 Z M10,6 L11,6 L11,7 L10,7 L10,6 Z"
+        />
+        <path
+            id="c-2"
+            d="M5,7 L5,6 L5,5 L3,5 L3,6 L3,7 L2,7 L2,2 L3,2 L3,4 L5,4 L5,2 L6,2 L6,7 L5,7 Z M11,6 L10,6 L10,7 L7,7 L7,2 L10,2 L10,3 L11,3 L11,6 Z M10,4 L10,3 L8,3 L8,4 L8,6 L10,6 L10,4 Z"
         />
         <path
             id="b"

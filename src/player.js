@@ -246,6 +246,7 @@ const playerClass = function () {
                 },
                 width: 115,
                 height: 67,
+                auto: true,
                 current: -1
             },
             playbackRate: {
