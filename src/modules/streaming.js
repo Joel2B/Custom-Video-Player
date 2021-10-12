@@ -188,7 +188,7 @@ export default function (self, options) {
         const currentLevel = self.domRef.wrapper.querySelector(`[data-level='${self.menu.qualityLevels.current}']`)
         let qualityLabel = currentLevel.firstChild.textContent;
 
-        if (self.menu.qualityLevels.auto) {
+        if (self.hlsPlayer && !self.multipleVideoSources && self.menu.qualityLevels.auto) {
             qualityLabel = `Auto (${qualityLabel})`;
             const autoLevel = self.domRef.wrapper.querySelector('[data-level="-1"]');
             autoLevel.textContent = qualityLabel;
