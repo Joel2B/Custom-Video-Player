@@ -104,6 +104,7 @@ export default function (self) {
             document.removeEventListener('mousemove', onProgressbarMouseMove);
             document.removeEventListener('touchmove', onProgressbarMouseMove);
             document.removeEventListener('mouseup', onProgressbarMouseUp);
+            document.removeEventListener('mouseleave', onProgressbarMouseUp);
             document.removeEventListener('touchend', onProgressbarMouseUp);
 
             // when you hold down and exit, and stop pressing while outside the progress bar item, the position of the progress bar returns to the beginning of the item where you stopped pressing
@@ -131,6 +132,7 @@ export default function (self) {
         };
 
         document.addEventListener('mouseup', onProgressbarMouseUp);
+        document.addEventListener('mouseleave', onProgressbarMouseUp);
         document.addEventListener('touchend', onProgressbarMouseUp);
         document.addEventListener('mousemove', onProgressbarMouseMove);
         document.addEventListener('touchmove', onProgressbarMouseMove);

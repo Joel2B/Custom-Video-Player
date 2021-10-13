@@ -94,8 +94,12 @@ export default function (self) {
         return (coordinates && (coordinates.length === 3)) ? parseInt(coordinates[0]) : 0;
     };
 
-    // firefox: when zooming to the screen and entering fullscreen mode, offsetX gives an incorrect value
+    // TODO: firefox, when zooming to the screen and entering fullscreen mode, offsetX gives an incorrect value
     self.getEventOffsetX = (evt, el) => {
+        if (!evt) {
+            return;
+        }
+
         let x = 0;
         let translateX = 0;
 
