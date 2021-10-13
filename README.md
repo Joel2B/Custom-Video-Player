@@ -1,29 +1,35 @@
 # Custom Video Player
-
-
 HTML5 Video Player, based on Fluid Player v3.0.4
 
-### how to use it
+![image](https://user-images.githubusercontent.com/58922368/137044109-df853ad2-de2d-48cc-b1cd-750a97dc3e6c.png)
 
-```HTML
+## Difference with fluid player 
+* Some errors fixed
+* Smooth animations
+* Customized timeline
+* Customized thumbnails
+* A main menu (autoplay, loop, speed, quality)
+* Forward and backward one frame
+
+## Demo
+[Custom Video Player](https://appsdev.cyou/xv-ph-rt/)
+
+## Quick setup
+```HTML<>
 <video id="video-player">
-    <source src="https://multiplatform-f.akamaihd.net/i/multi/will/bunny/big_buck_bunny_,640x360_400,640x360_700,640x360_1000,950x540_1500,.f4v.csmil/master.m3u8" type="application/x-mpegURL"/>
+    <source src="https://bitdash-a.akamaihd.net/content/MI201109210084_1/m3u8s/f08e80da-bf1d-4e3d-8899-f0f6155f6efa.m3u8" type="application/x-mpegURL"/>
 </video>
 
-<script src="player.min.js"></script>
+<script src="https://appsdev.cyou/player/v1/current/player.min.js"></script>
 
 <script>
     var instance = fluidPlayer('video-player');
 </script>
 ```
 
-### Example online
-[Custom Video Player](https://appsdev.cyou/xv-ph-rt/)
-
-### Build Project
-
+## Build Project
 1. install project dependencies: `npm install`
+2. run `npm run build-dev`
 
-### Documentation
-
-The integration and configuration of Fluid Player is fully outlined in Fluid [Player Documentation](https://docs.fluidplayer.com/)
+## Documentation
+Everything you can do in [fluidplayer](https://docs.fluidplayer.com/) you can do it here
