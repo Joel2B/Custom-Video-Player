@@ -15,7 +15,7 @@ HTML5 Video Player, based on Fluid Player v3.0.4
 [Custom Video Player](https://appsdev.cyou/xv-ph-rt/)
 
 ## Quick setup
-```HTML<>
+```HTML
 <video id="video-player">
     <source src="https://bitdash-a.akamaihd.net/content/MI201109210084_1/m3u8s/f08e80da-bf1d-4e3d-8899-f0f6155f6efa.m3u8" type="application/x-mpegURL"/>
 </video>
