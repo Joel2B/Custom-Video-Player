@@ -1,5 +1,3 @@
-'use strict';
-
 export default function (self, options) {
     self.generateCustomControlTags = (options) => {
         const controls = {};

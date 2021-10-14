@@ -1,5 +1,4 @@
 // VPAID support module
-'use strict';
 export default function (self, options) {
     const callbacks = {
         AdStarted: () => self.onStartVpaidAd,

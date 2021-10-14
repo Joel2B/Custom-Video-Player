@@ -1,4 +1,3 @@
-'use strict';
 export default function (self, options) {
     const $script = require('scriptjs');
 

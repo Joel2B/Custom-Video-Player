@@ -1,5 +1,3 @@
-'use strict';
-
 // Player modules
 import ControlBar from './control-bar/control-bar';
 import Controls from './control-bar/controls';

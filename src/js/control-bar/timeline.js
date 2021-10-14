@@ -1,4 +1,3 @@
-'use strict';
 export default function (self, options) {
     self.drawTimelineBasicPreview = (event) => {
         const progressContainer = self.domRef.controls.progressContainer;

@@ -1,4 +1,3 @@
-'use strict';
 export default function (self, options) {
     const VPAID_VERSION = '2.0';
 

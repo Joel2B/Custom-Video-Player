@@ -1,5 +1,4 @@
 // VAST support module
-'use strict';
 export default function (self, options) {
     self.getClickThroughUrlFromLinear = (linear) => {
         const videoClicks = linear.getElementsByTagName('VideoClicks');

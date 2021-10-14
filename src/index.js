@@ -1,5 +1,3 @@
-'use strict';
-
 if ('undefined' === typeof FP_HOMEPAGE) {
     global.FP_HOMEPAGE = 'https://fluidplayer.com';
 }

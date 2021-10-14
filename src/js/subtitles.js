@@ -1,4 +1,3 @@
-'use strict';
 export default function (self, options) {
     self.subtitleFetchParse = (subtitleItem) => {
         self.sendRequest(

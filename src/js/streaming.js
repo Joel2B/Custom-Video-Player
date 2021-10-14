@@ -1,5 +1,3 @@
-'use strict';
-
 // Prevent DASH.js from automatically attaching to video sources by default.
 // Whoever thought this is a good idea?!
 if (typeof window !== 'undefined' && !window.dashjs) {
