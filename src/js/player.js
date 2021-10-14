@@ -1,50 +1,50 @@
 'use strict';
 
 // Player modules
-import ControlBar from './modules/control-bar/control-bar';
-import Controls from './modules/control-bar/controls';
-import Download from './modules/control-bar/download';
-import EventsControls from './modules/control-bar/events-controls';
-import Fullscreen from './modules/control-bar/fullscreen';
-import Keyboard from './modules/control-bar/keyboard';
-import Mute from './modules/control-bar/mute';
-import PlayPause from './modules/control-bar/play-pause';
-import ProgressControl from './modules/control-bar/progress-control';
-import Theatre from './modules/control-bar/theatre';
-import Timeline from './modules/control-bar/timeline';
-import VolumeControl from './modules/control-bar/volume-control';
+import ControlBar from './control-bar/control-bar';
+import Controls from './control-bar/controls';
+import Download from './control-bar/download';
+import EventsControls from './control-bar/events-controls';
+import Fullscreen from './control-bar/fullscreen';
+import Keyboard from './control-bar/keyboard';
+import Mute from './control-bar/mute';
+import PlayPause from './control-bar/play-pause';
+import ProgressControl from './control-bar/progress-control';
+import Theatre from './control-bar/theatre';
+import Timeline from './control-bar/timeline';
+import VolumeControl from './control-bar/volume-control';
 
-import Autoplay from './modules/menu/autoplay';
-import ContextMenu from './modules/menu/context-menu';
-import Loop from './modules/menu/loop';
-import Menu from './modules/menu/menu';
-import PlaybackRate from './modules/menu/playback-rate';
-import QualityLevels from './modules/menu/quality-levels';
+import Autoplay from './menu/autoplay';
+import ContextMenu from './menu/context-menu';
+import Loop from './menu/loop';
+import Menu from './menu/menu';
+import PlaybackRate from './menu/playback-rate';
+import QualityLevels from './menu/quality-levels';
 
-import Browser from './modules/utils/browser';
-import Dom from './modules/utils/dom';
-import Events from './modules/utils/events';
-import Media from './modules/utils/media';
-import Request from './modules/utils/request';
-import Storage from './modules/utils/storage';
-import Time from './modules/utils/time';
-import Version from './modules/utils/version';
+import Browser from './utils/browser';
+import Dom from './utils/dom';
+import Events from './utils/events';
+import Media from './utils/media';
+import Request from './utils/request';
+import Storage from './utils/storage';
+import Time from './utils/time';
+import Version from './utils/version';
 
-import AdSupport from './modules/vast/adsupport';
-import Vast from './modules/vast/vast';
-import Vpaid from './modules/vast/vpaid';
+import AdSupport from './vast/adsupport';
+import Vast from './vast/vast';
+import Vpaid from './vast/vpaid';
 
-import CardBoard from './modules/cardboard';
-import Debug from './modules/debug';
-import Handlers from './modules/handlers';
-import HtmlOnPause from './modules/html-on-pause';
-import Logo from './modules/logo';
-import MeasureFPS from './modules/measure-fps';
-import PersistentSettings from './modules/persistent-settings';
-import Shortcuts from './modules/shortcuts';
-import Streaming from './modules/streaming';
-import Subtitles from './modules/subtitles';
-import Title from './modules/title';
+import CardBoard from './cardboard';
+import Debug from './debug';
+import Handlers from './handlers';
+import HtmlOnPause from './html-on-pause';
+import Logo from './logo';
+import MeasureFPS from './measure-fps';
+import PersistentSettings from './persistent-settings';
+import Shortcuts from './shortcuts';
+import Streaming from './streaming';
+import Subtitles from './subtitles';
+import Title from './title';
 
 const FP_MODULES = [
     ControlBar,

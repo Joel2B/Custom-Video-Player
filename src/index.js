@@ -29,6 +29,6 @@ if ('undefined' === typeof FP_DEBUG) {
 }
 
 import './polyfills';
-import playerInitializer from './player.js';
+import playerInitializer from './js/player';
 
 export default playerInitializer;
