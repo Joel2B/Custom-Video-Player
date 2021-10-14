@@ -15,7 +15,7 @@ import Timeline from './control-bar/timeline';
 import VolumeControl from './control-bar/volume-control';
 
 import Autoplay from './menu/autoplay';
-import ContextMenu from './menu/context-menu';
+import ContextMenu from './context-menu';
 import Loop from './menu/loop';
 import Menu from './menu/menu';
 import PlaybackRate from './menu/playback-rate';
