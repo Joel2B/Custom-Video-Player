@@ -65,7 +65,7 @@ export default function (self) {
         self.createElement({
             tag: 'li',
             id: self.videoPlayerId + '_context_option_homepage',
-            innerHTML: 'Fluid Player ' + self.version,
+            innerHTML: 'CVP ' + self.version,
             parent: contextMenuList
         }, () => window.open(self.homepage, '_blank'));
 

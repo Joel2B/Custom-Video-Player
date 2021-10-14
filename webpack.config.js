@@ -10,6 +10,8 @@ const WebpackObfuscatorPlugin = require('webpack-obfuscator');
 
 // Loading the current package.json - will be used to determine version etc.
 const packageJSON = require(path.resolve(__dirname, 'package.json'));
+// Loading cdn
+const cdnJSON = require(path.resolve(__dirname, 'deploy.json'));
 
 // Validate package version is valid semver
 if (!semver.valid(packageJSON.version)) {
@@ -20,7 +22,7 @@ if (!semver.valid(packageJSON.version)) {
 const getDistOptions = (mode) => {
     const fullVersion = packageJSON.version;
     const majorVersion = semver.major(packageJSON.version);
-    const cdnRoot = packageJSON.com_fluidplayer.cdn;
+    const cdnRoot = cdnJSON.cdn;
 
     switch (mode) {
         case 'development':

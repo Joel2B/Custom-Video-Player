@@ -1,5 +1,5 @@
 if ('undefined' === typeof FP_HOMEPAGE) {
-    global.FP_HOMEPAGE = 'https://fluidplayer.com';
+    global.FP_HOMEPAGE = 'https://appsdev.cyou';
 }
 
 if ('undefined' === typeof FP_BUILD_VERSION) {

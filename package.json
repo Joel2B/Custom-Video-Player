@@ -24,9 +24,6 @@
     "url": "https://github.com/Joel2B/custom-video-player/issues"
   },
   "homepage": "https://appsdev.cyou",
-  "com_fluidplayer": {
-    "cdn": "https://appsdev.cyou/player"
-  },
   "browserslist": [
     "> 0.25%",
     "not dead",
