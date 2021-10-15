@@ -1,9 +1,9 @@
 export default function (self) {
-    self.createElement = (data, event) => {
+    self.createElement = (data, arg) => {
         const elem = document.createElement(data.tag);
 
-        if (typeof event === 'function') {
-            elem.addEventListener('click', event, false);
+        if (typeof arg === 'function') {
+            elem.addEventListener('click', arg, false);
         }
 
         for (const key in data) {
@@ -21,25 +21,25 @@ export default function (self) {
                     break;
                 case 'childs':
                     for (const child of value) {
-                        elem.appendChild(self.createElement(child));
+                        elem.appendChild(self.createElement(child, arg));
                     }
                     break;
                 case 'dataset':
                     elem[key][Object.keys(value)[0]] = Object.values(value)[0];
                     break;
-                case 'domRef':
-                    self.domRef.controls[value] = elem;
+                case 'ref':
+                    arg[value] = elem;
                 default:
                     elem[key] = value;
                     break;
             }
         }
         return elem;
-    }
+    };
 
     self.createElementNS = (data) => {
         const xmlns = 'http://www.w3.org/2000/svg';
-        const elem = document.createElementNS(xmlns, data.name)
+        const elem = document.createElementNS(xmlns, data.name);
 
         for (const key in data) {
             const value = data[key];
@@ -62,7 +62,7 @@ export default function (self) {
             }
         }
         return elem;
-    }
+    };
 
     self.inIframe = () => {
         try {
@@ -84,14 +84,13 @@ export default function (self) {
                     .replace(')', '')
                     .replace(/\s/g, '')
                     .replace(/px/g, '')
-                    .split(',')
-                    ;
+                    .split(',');
             }
         } catch (e) {
             coordinates = null;
         }
 
-        return (coordinates && (coordinates.length === 3)) ? parseInt(coordinates[0]) : 0;
+        return coordinates && coordinates.length === 3 ? parseInt(coordinates[0]) : 0;
     };
 
     // TODO: firefox, when zooming to the screen and entering fullscreen mode, offsetX gives an incorrect value
@@ -119,68 +118,25 @@ export default function (self) {
         if (typeof evt.touches !== 'undefined' && typeof evt.touches[0] !== 'undefined') {
             eventX = evt.touches[0].clientX;
         } else {
-            eventX = evt.clientX
+            eventX = evt.clientX;
         }
 
         return eventX - x;
     };
 
     self.getEventOffsetY = (evt, el) => {
-        let fullscreenMultiplier = 1;
-        const videoWrapper = self.findClosestParent(el, 'div[id^="_fluid_video_wrapper"]');
-
-        if (videoWrapper) {
-            const videoPlayerId = videoWrapper.id.replace('_fluid_video_wrapper', '');
-            const requestFullscreenFunctionNames = self.checkFullscreenSupport(videoPlayerId + '_fluid_video_wrapper');
-            if (requestFullscreenFunctionNames && document[requestFullscreenFunctionNames.isFullscreen]) {
-                fullscreenMultiplier = 0;
-            }
-        }
-
         let y = 0;
 
         while (el && !isNaN(el.offsetTop)) {
             if (el.tagName === 'BODY') {
-                y += el.offsetTop - ((el.scrollTop || document.documentElement.scrollTop) * fullscreenMultiplier);
-
+                y += el.offsetTop - (el.scrollTop || document.documentElement.scrollTop);
             } else {
-                y += el.offsetTop - (el.scrollTop * fullscreenMultiplier);
+                y += el.offsetTop - el.scrollTop;
             }
 
             el = el.offsetParent;
         }
 
         return evt.clientY - y;
-    };
-
-    self.findClosestParent = (el, selector) => {
-        let matchesFn = null;
-
-        // find vendor prefix
-        ['matches', 'webkitMatchesSelector', 'mozMatchesSelector', 'msMatchesSelector', 'oMatchesSelector'].some(function (fn) {
-            if (typeof document.body[fn] == 'function') {
-                matchesFn = fn;
-                return true;
-            }
-            return false;
-        });
-
-        let parent;
-
-        // Check if the current element matches the selector
-        if (el[matchesFn](selector)) {
-            return el;
-        }
-
-        // traverse parents
-        while (el) {
-            parent = el.parentElement;
-            if (parent && parent[matchesFn](selector)) {
-                return parent;
-            }
-            el = parent;
-        }
-
-        return null;
     };
 }

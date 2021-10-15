@@ -207,19 +207,19 @@ export default function (self, options) {
                 {
                     name: 'hotspots',
                     enabled: self.getLocalStorage('hotspots'),
-                    domRef: 'hotspots',
+                    ref: 'hotspots',
                     show: self.isEnabledModule('hotspots')
                 },
                 {
                     name: 'autoplay',
                     enabled: self.getLocalStorage('autoPlay') != undefined ? self.getLocalStorage('autoPlay') : self.displayOptions.layoutControls.autoPlay,
-                    domRef: 'autoPlay',
+                    ref: 'autoPlay',
                     show: self.isEnabledModule('autoPlay')
                 },
                 {
                     name: 'loop',
                     enabled: self.getLocalStorage('loop') != undefined ? self.getLocalStorage('loop') : self.displayOptions.layoutControls.loop,
-                    domRef: 'loop',
+                    ref: 'loop',
                     show: self.isEnabledModule('loop')
                 }
             ],
@@ -231,13 +231,13 @@ export default function (self, options) {
                         || !self.getLocalStorage('playbackRate')
                         || self.getLocalStorage('playbackRate') == 1
                     ) ? 'Normal' : self.getLocalStorage('playbackRate'),
-                    domRef: 'speedsPage',
+                    ref: 'speedsPage',
                     show: self.isEnabledModule('playbackRate')
                 },
                 {
                     name: 'quality',
                     defaultValue: 'Auto',
-                    domRef: 'levelsPage',
+                    ref: 'levelsPage',
                     show: self.isEnabledModule('qualityLevels')
                 }
             ]
@@ -255,7 +255,7 @@ export default function (self, options) {
                 tag: 'div',
                 className: `cvp_switch cvp_${module.name} ${module.enabled ? 'cvp_enabled' : ''}`,
                 textContent: module.name.charAt(0).toUpperCase() + module.name.slice(1),
-                domRef: module.domRef,
+                ref: module.ref,
                 childs: [
                     {
                         tag: 'i',
@@ -292,7 +292,7 @@ export default function (self, options) {
                 tag: 'div',
                 className: `cvp_selector cvp_${module.name}`,
                 textContent: module.name.charAt(0).toUpperCase() + module.name.slice(1),
-                domRef: `${module.name}Selector`,
+                ref: `${module.name}Selector`,
                 childs: [
                     {
                         tag: 'i',
@@ -309,7 +309,7 @@ export default function (self, options) {
             options_list.push({
                 tag: 'ul',
                 className: `cvp_options_list cvp_${module.name} hide`,
-                domRef: module.domRef,
+                ref: module.ref,
             });
         }
 
@@ -356,7 +356,7 @@ export default function (self, options) {
                 className: 'cvp_switches',
                 parent: controls.mainPage,
                 childs: menu_options
-            });
+            }, controls);
 
             // Right container -> Menu -> background -> subpages
             self.createElement({
@@ -367,7 +367,7 @@ export default function (self, options) {
                     {
                         tag: 'div',
                         className: 'cvp_header',
-                        domRef: 'menuHeader'
+                        ref: 'menuHeader'
                     },
                     {
                         tag: 'div',
@@ -375,14 +375,14 @@ export default function (self, options) {
                         childs: options_list
                     }
                 ]
-            });
+            }, controls);
 
             // Right container -> Main menu button
             self.createElement({
                 tag: 'div',
                 id: self.videoPlayerId + '_fluid_control_menu_btn',
                 className: 'fluid_button fluid_button_main_menu',
-                parent: controls.rightContainer
+                parent: controls.rightContainer,
             });
         }
 
