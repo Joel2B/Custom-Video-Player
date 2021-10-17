@@ -1,32 +1,56 @@
-export default function (self, options) {
-    self.setupLoop = () => {
-        if (!self.isEnabledModule('loop')) {
+import { switcher } from './menu-item';
+
+class Loop {
+    constructor(player) {
+        this.player = player;
+        this.id = 'loop';
+        if (this.player.getLocalStorage(this.id) === null) {
+            const value = this.player.displayOptions.layoutControls[this.id];
+            this.player.setLocalStorage(this.id, value);
+        }
+
+        if (!this.player.menu.isEnabled(this.id)) {
             return;
         }
-        self.domRef.controls.loop.addEventListener('click', () => {
-            if (self.domRef.controls.loop.className.indexOf('cvp_enabled') != -1) {
-                self.domRef.controls.loop.classList.remove('cvp_enabled');
-                self.setLocalStorage('loop', false, 30);
-            } else {
-                self.domRef.controls.loop.classList.add('cvp_enabled');
-                self.setLocalStorage('loop', true, 30);
-            }
-            self.initLoop();
+
+        this.createItems();
+        this.apply();
+    }
+
+    createItems() {
+        const item = switcher({
+            id: this.id,
+            title: 'Loop',
+            enabled: this.player.getLocalStorage(this.id),
         });
-    };
-    
-    // TODO: refactor this
-    self.applyLoop = () => {
-        if (!self.isEnabledModule('loop')) {
+        item.addEventListener('click', () => {
+            let value = false;
+            if (item.className.indexOf('cvp_enabled') !== -1) {
+                item.classList.remove('cvp_enabled');
+            } else {
+                item.classList.add('cvp_enabled');
+                value = true;
+            }
+            this.player.setLocalStorage(this.id, value);
+            this.player.setLoop(value);
+        });
+
+        this.player.menu.add({
+            id: this.id,
+            field: 'switcher',
+            item: item,
+        });
+    }
+
+    apply() {
+        if (!this.player.menu.isEnabled(this.id) || !this.player.getLocalStorage(this.id)) {
             return;
         }
 
-        if (self.displayOptions.layoutControls.loop && self.getLocalStorage('loop') == undefined) {
-            return true;
-        }
+        this.player.setLoop(true);
 
-        if (self.getLocalStorage('loop')) {
-            return true;
-        }
-    };
+        return true;
+    }
 }
+
+export default Loop;

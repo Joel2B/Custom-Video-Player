@@ -1,71 +1,111 @@
-export default function (self) {
-    self.createPlaybackList = () => {
-        const playbackRates = [0.5, 1, 1.5, 2];
+import { selector } from './menu-item';
+
+class Speed {
+    constructor(player) {
+        this.player = player;
+        this.id = 'playbackRate';
+        if (!this.player.menu.isEnabled(this.id)) {
+            return;
+        }
+
+        if (this.player.getLocalStorage(this.id) === null) {
+            this.player.setLocalStorage(this.id, 1);
+        }
+
+        this.width = 110;
+        this.height = 67;
+
+        this.createItems();
+    }
+
+    createItems() {
+        this.item = selector({
+            id: this.id,
+            title: 'Speed',
+            value: 'Normal',
+        });
+
+        const options = [0.5, 1, 1.5, 2];
         const childs = new DocumentFragment();
 
-        for (const value of playbackRates) {
-            childs.appendChild(self.createElement({
+        for (const value of options) {
+            const option = this.player.createElement({
                 tag: 'li',
-                textContent: (value == 1) ? 'Normal' : value,
+                textContent: value === 1 ? 'Normal' : value,
                 dataset: {
-                    speed: value
+                    speed: value,
                 },
-                ...(value == 1) && { className: 'cvp_active' }
-            }, (e) => {
-                const previousSpeed = self.domRef.wrapper.querySelector('.cvp_speed .cvp_active');
-                const selectedSpeed = e.target;
-
-                previousSpeed.classList.remove('cvp_active');
-                self.domRef.wrapper.querySelector(`[data-speed='${selectedSpeed.dataset.speed}']`).classList.add('cvp_active');
-                self.domRef.controls.speedSelector.lastChild.textContent = selectedSpeed.firstChild.textContent;
-                self.setPlaybackSpeed(selectedSpeed.dataset.speed);
-
-                self.closeMenu();
-            }))
+                ...(value === 1 && { className: 'cvp_active' }),
+            });
+            childs.appendChild(option);
+            this.height += this.player.menu.item.height;
         }
-        self.domRef.controls.speedsPage.append(childs);
-    };
 
-    self.setupPlaybackRates = () => {
-        if (!self.isEnabledModule('playbackRate')) {
-            return;
-        }
-        self.createPlaybackList();
-        self.domRef.controls.speedSelector.addEventListener('click', () => {
-            self.openSubMenu(
-                self.domRef.controls.speedSelector,
-                self.domRef.controls.speedsPage,
-                self.menu.playbackRate.width,
-                self.menu.playbackRate.height
-            );
+        this.page = this.player.createElement({
+            tag: 'ul',
+            className: `cvp_options_list cvp_speed hide`,
         });
-    },
 
-    self.setPlaybackSpeed = (speed) => {
-        if (self.isCurrentlyPlayingAd || !self.isEnabledModule('playbackRate')) {
+        this.page.appendChild(childs);
+        this.page.addEventListener('click', (e) => {
+            if (e.target.tagName !== 'LI') {
+                return;
+            }
+
+            this.player.menu.close();
+
+            const previous = this.page.querySelector('.cvp_active');
+            const selected = e.target;
+            if (previous === selected) {
+                return;
+            }
+            previous.classList.remove('cvp_active');
+            selected.classList.add('cvp_active');
+
+            this.item.lastChild.textContent = selected.firstChild.textContent;
+            this.set(selected.dataset.speed);
+        });
+
+        this.item.addEventListener('click', () => {
+            this.player.menu.openSubMenu(this.item, this.page, this.width, this.height);
+        });
+
+        this.player.menu.add({
+            id: this.id,
+            field: 'selector',
+            content: this.page,
+            item: this.item,
+        });
+    }
+
+    set(speed) {
+        if (this.player.isCurrentlyPlayingAd) {
             return;
         }
-        self.domRef.player.playbackRate = speed;
-        self.setLocalStorage('playbackRate', speed, 30);
-    };
+        this.player.setPlaybackSpeed(speed);
+        this.player.setLocalStorage(this.id, speed);
+    }
 
-    self.applyPlaybackSpeed = () => {
-        if (!self.isEnabledModule('playbackRate')) {
-            return;
-        }
-        const currentSpeed = self.getLocalStorage('playbackRate');
-        if (!currentSpeed) {
+    apply() {
+        if (!this.player.menu.isEnabled(this.id)) {
             return;
         }
 
-        const previousSpeed = self.domRef.wrapper.querySelector('.cvp_speed .cvp_active');
-        previousSpeed.classList.remove('cvp_active');
+        const current = this.player.getLocalStorage(this.id);
+        if (current == 1) {
+            return;
+        }
+
+        const previous = this.page.querySelector('.cvp_active');
+        const selected = this.page.querySelector(`[data-speed='${current}']`);
+        previous.classList.remove('cvp_active');
+        selected.classList.add('cvp_active');
+        this.item.lastChild.textContent = selected.firstChild.textContent;
 
         setTimeout(() => {
-            self.setPlaybackSpeed(currentSpeed);
+            this.set(current);
         }, 500);
-
-        const selectedSpeed = self.domRef.wrapper.querySelector(`[data-speed='${currentSpeed}']`)
-        selectedSpeed.classList.add('cvp_active');
     }
 }
+
+export default Speed;

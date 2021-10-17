@@ -11,18 +11,19 @@ export default function (self) {
         const muteButtonTag = self.domRef.player.parentNode.getElementsByClassName('fluid_control_mute');
         const menuOptionMute = document.getElementById(self.videoPlayerId + '_context_option_mute');
 
-        if (!self.getLocalStorage('autoPlay')) {
-            if (0 !== self.domRef.player.volume) {
-                self.latestVolume = self.domRef.player.volume;
-                self.setLocalStorage('mute', false, 30);
-            } else {
-                self.setLocalStorage('mute', true, 30);
-            }
+        if (0 !== self.domRef.player.volume) {
+            self.latestVolume = self.domRef.player.volume;
+            self.setLocalStorage('mute', false);
+        } else {
+            self.setLocalStorage('mute', true);
         }
 
         if (self.domRef.player.volume && !self.domRef.player.muted) {
             for (let i = 0; i < muteButtonTag.length; i++) {
-                muteButtonTag[i].className = muteButtonTag[i].className.replace(/\bfluid_button_mute\b/g, 'fluid_button_volume');
+                muteButtonTag[i].className = muteButtonTag[i].className.replace(
+                    /\bfluid_button_mute\b/g,
+                    'fluid_button_volume',
+                );
             }
 
             if (menuOptionMute !== null) {
@@ -30,19 +31,22 @@ export default function (self) {
             }
         } else {
             for (let i = 0; i < muteButtonTag.length; i++) {
-                muteButtonTag[i].className = muteButtonTag[i].className.replace(/\bfluid_button_volume\b/g, 'fluid_button_mute');
+                muteButtonTag[i].className = muteButtonTag[i].className.replace(
+                    /\bfluid_button_volume\b/g,
+                    'fluid_button_mute',
+                );
             }
 
             if (menuOptionMute !== null) {
                 menuOptionMute.innerHTML = self.displayOptions.captions.unmute;
             }
         }
-        currentVolumeTag.style.width = (self.domRef.player.volume * volumebarTotalWidth) + 'px';
-        volumeposTag.style.left = (self.domRef.player.volume * volumebarTotalWidth - (volumeposTagWidth / 2)) + 'px';
+        currentVolumeTag.style.width = self.domRef.player.volume * volumebarTotalWidth + 'px';
+        volumeposTag.style.left = self.domRef.player.volume * volumebarTotalWidth - volumeposTagWidth / 2 + 'px';
     };
 
     self.onVolumeBarMouseDown = () => {
-        const shiftVolume = volumeBarX => {
+        const shiftVolume = (volumeBarX) => {
             const totalWidth = self.domRef.controls.volumeContainer.clientWidth;
 
             if (totalWidth) {
@@ -61,14 +65,14 @@ export default function (self) {
 
                 self.setVolume(newVolume);
             }
-        }
+        };
 
-        const onVolumeBarMouseMove = event => {
+        const onVolumeBarMouseMove = (event) => {
             const currentX = self.getEventOffsetX(event, self.domRef.controls.volumeContainer);
             shiftVolume(currentX);
-        }
+        };
 
-        const onVolumeBarMouseUp = event => {
+        const onVolumeBarMouseUp = (event) => {
             document.removeEventListener('mousemove', onVolumeBarMouseMove);
             document.removeEventListener('touchmove', onVolumeBarMouseMove);
             document.removeEventListener('mouseup', onVolumeBarMouseUp);
@@ -79,7 +83,7 @@ export default function (self) {
             if (!isNaN(currentX)) {
                 shiftVolume(currentX);
             }
-        }
+        };
 
         document.addEventListener('mouseup', onVolumeBarMouseUp);
         document.addEventListener('touchend', onVolumeBarMouseUp);
@@ -135,25 +139,17 @@ export default function (self) {
         const latestVolume = 0 === passedVolume ? 1 : passedVolume;
 
         self.latestVolume = latestVolume;
-        self.setLocalStorage('volume', latestVolume, 30)
+        self.setLocalStorage('volume', latestVolume);
     };
 
     self.applyVolume = () => {
-        if (self.getLocalStorage('volume') == undefined) {
-            if (self.getLocalStorage('autoPlay') || self.displayOptions.layoutControls.autoPlay) {
-                self.muteToggle();
-            }
-            return;
+        if (self.getLocalStorage('volume') === null) {
+            self.setLocalStorage('volume', 1);
         }
+        self.setVolume(self.getLocalStorage('volume'));
 
-        if (self.getLocalStorage('volume') == 1 && !self.getLocalStorage('mute')) {
-            self.setVolume(self.getLocalStorage('volume'));
-            self.domRef.player.muted = false;
-        } else if (self.getLocalStorage('volume') != 1) {
-            self.setVolume(self.getLocalStorage('volume'));
-            self.domRef.player.muted = false;
-        } else {
-            self.setMute();
+        if (self.getLocalStorage('mute')) {
+            self.muteToggle();
         }
-    }
+    };
 }

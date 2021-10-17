@@ -22,11 +22,6 @@ export default function (self) {
         if (!self.displayOptions.layoutControls.mute) {
             return;
         }
-
-        if (self.getLocalStorage('volume') != undefined) {
-            return;
-        }
-
         self.setMute();
     };
 }

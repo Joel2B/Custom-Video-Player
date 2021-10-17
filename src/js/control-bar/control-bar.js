@@ -14,7 +14,7 @@ export default function (self) {
     };
 
     self.hideControlBar = () => {
-        self.closeMenu();
+        self.menu.close();
 
         if (self.isCurrentlyPlayingAd && !self.domRef.player.paused) {
             self.toggleAdCountdown(true);

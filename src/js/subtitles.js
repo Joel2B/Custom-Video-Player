@@ -63,7 +63,7 @@ export default function (self, options) {
         const subtitlesOff = 'OFF';
         self.subtitlesData = [];
 
-        if (!self.isEnabledModule('subtitles')) {
+        if (!self.menu.isEnabled('subtitles')) {
             // No other video subtitles
             document.getElementById(self.videoPlayerId + '_fluid_control_subtitles').style.display = 'none';
             return;
@@ -200,7 +200,7 @@ export default function (self, options) {
         divSubtitlesContainer.className = 'fluid_subtitles_container';
         self.domRef.player.parentNode.insertBefore(divSubtitlesContainer, self.domRef.player.nextSibling);
 
-        if (!self.isEnabledModule('subtitles')) {
+        if (!self.menu.isEnabled('subtitles')) {
             return;
         }
 

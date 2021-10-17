@@ -17,7 +17,7 @@ export default function (self, options) {
         }
         const data = {
             value: value,
-            expire: new Date().getTime() / 1000 + 60 * 60 * 24 * (days || 1)
+            expire: new Date().getTime() / 1000 + 60 * 60 * 24 * (days || 30)
         }
         localStorage.setItem(key, JSON.stringify(data));
     }
@@ -29,7 +29,7 @@ export default function (self, options) {
         let data = JSON.parse(localStorage.getItem(key));
         if (!data || data.expire < new Date().getTime() / 1000) {
             localStorage.removeItem(key);
-            return;
+            return null;
         }
         return data.value;
     }

@@ -41,7 +41,7 @@ export default function (self, options) {
             // If false we want to override the autoPlay, as it comes from postRoll
             const playVideo = !self.autoplayAfterAd
                 ? self.autoplayAfterAd
-                : self.applyAutoPlay();
+                : self.autoPlay.apply();
 
             const defaultOptions = {
                 'debug': {
@@ -81,168 +81,10 @@ export default function (self, options) {
         }
     };
 
-    self.selectQualityLevel = (e) => {
-        let levelSelect = Number(e.target.dataset.level);
-        if (levelSelect == self.menu.qualityLevels.current && !self.menu.qualityLevels.auto) {
-            return;
-        }
-
-        self.menu.inSubmenu = false;
-        self.menu.qualityLevels.auto = false;
-        self.menu.qualityLevels.current = levelSelect;
-        self.updateViewQualityLevels();
-
-        if (self.hlsPlayer && !self.multipleVideoSources) {
-            // reset the "auto" label, if a level is selected
-            const auto = e.target.parentNode.lastChild;
-            if (auto.textContent != 'Auto' && self.menu.qualityLevels.current != -1) {
-                auto.textContent = 'Auto';
-            }
-            self.hlsPlayer.currentLevel = levelSelect;
-        } else {
-            self.setBuffering();
-            self.setVideoSource(self.videoSources[levelSelect].src);
-        }
-
-        self.setLocalStorage('forceQualityLevel', levelSelect, 30);
-        self.closeMenu();
-    };
-
-    self.insertQualityLevels = (data) => {
-        if (!self.isEnabledModule('qualityLevels')) {
-            return;
-        }
-        let levels = [];
-
-        for (const [index, level] of data.entries()) {
-            self.menu.qualityLevels.height += self.menu.qualityLevels.option.height;
-
-            let info = [];
-            let title;
-
-            if (level.title != undefined && level.title != '') {
-                title = level.title;
-            } else if (level.height != undefined && level.height != '') {
-                title = level.height + 'p';
-            } else {
-                title = `Level ${index}`;
-            }
-
-            let qualityLevel = title.match(/\d/g);
-            qualityLevel = Number(qualityLevel != null ? qualityLevel.join('') : false);
-            if (qualityLevel !== false && qualityLevel >= 720 || level.isHD === true) {
-                info.push({
-                    tag: 'span',
-                    className: 'hd',
-                    textContent: 'HD',
-                });
-            }
-
-            if (self.hlsPlayer) {
-                const bitrate = (level.bitrate / 1000).toFixed();
-                info.push({
-                    tag: 'span',
-                    className: 'kbps',
-                    textContent: `${bitrate} kbps`,
-                });
-            }
-
-            levels.push(self.createElement({
-                tag: 'li',
-                textContent: title,
-                dataset: { level: index },
-                childs: info,
-            }, (e) => {
-                self.selectQualityLevel(e);
-            }));
-        }
-
-        levels.reverse();
-        if (self.hlsPlayer) {
-            self.menu.qualityLevels.height += self.menu.qualityLevels.option.height;
-            levels.push(self.createElement({
-                tag: 'li',
-                className: 'cvp_active',
-                textContent: 'Auto',
-                dataset: { level: -1 },
-            }, (e) => {
-                self.selectQualityLevel(e);
-            }));
-        }
-
-        self.domRef.controls.levelsPage.append(...levels);
-    };
-
-    self.updateViewQualityLevels = () => {
-        const previousLevel = self.domRef.wrapper.querySelector('.cvp_quality .cvp_active');
-        if (previousLevel) {
-            previousLevel.classList.remove('cvp_active');
-        }
-
-        if (!self.menu.inSubmenu) {
-            self.restartMenuLater();
-        }
-
-        const currentLevel = self.domRef.wrapper.querySelector(`[data-level='${self.menu.qualityLevels.current}']`)
-        let qualityLabel = currentLevel.firstChild.textContent;
-
-        if (self.hlsPlayer && !self.multipleVideoSources && self.menu.qualityLevels.auto) {
-            qualityLabel = `Auto (${qualityLabel})`;
-            const autoLevel = self.domRef.wrapper.querySelector('[data-level="-1"]');
-            autoLevel.textContent = qualityLabel;
-            autoLevel.classList.add('cvp_active');
-        } else {
-            currentLevel.classList.add('cvp_active');
-        }
-
-        self.domRef.controls.qualitySelector.lastChild.textContent = qualityLabel;
-
-        const menuButtons = self.domRef.wrapper.querySelector('.fluid_button_main_menu');
-        const quality = Number(currentLevel.firstChild.textContent.replace(/\D/g, ''));
-        if (quality >= 720) {
-            menuButtons.classList.add('hd-quality-badge')
-        } else {
-            menuButtons.classList.remove('hd-quality-badge')
-        }
-    }
-
-    self.applyQualityLevel = (data) => {
-        if (!self.isEnabledModule('qualityLevels')) {
-            return;
-        }
-        let level = self.getLocalStorage('forceQualityLevel');
-        if (level == undefined || level == -1 || !self.displayOptions.layoutControls.persistentSettings.quality) {
-            if (self.hlsPlayer && !self.multipleVideoSources) {
-                self.domRef.controls.levelsPage.lastChild.classList.add('cvp_active');
-            } else {
-                self.menu.qualityLevels.current = data.length - 1;
-                self.updateViewQualityLevels();
-            }
-            return;
-        }
-
-        level = Number(level);
-        if (level >= data.length) {
-            level = data.length - 1;
-        }
-
-        if (self.hlsPlayer && !self.multipleVideoSources) {
-            self.hlsPlayer.startLevel = level;
-            self.hlsPlayer.nextLevel = level;
-        } else {
-            self.setBuffering();
-            self.setVideoSource(data[level].src);
-        }
-
-        self.menu.qualityLevels.auto = false;
-        self.menu.qualityLevels.current = level;
-        self.updateViewQualityLevels();
-    };
-
     self.initialiseHls = () => {
         if (self.domRef.player.canPlayType('application/vnd.apple.mpegurl')) {
-            if (!self.multipleVideoSources && self.isEnabledModule('qualityLevels')) {
-                self.removeOption('qualitySelector');
+            if (!self.multipleVideoSources) {
+                self.menu.remove('qualityLevels');
             }
         } else if (Hls.isSupported()) {
             const defaultOptions = {
@@ -288,13 +130,13 @@ export default function (self, options) {
             })
 
             hls.on(Hls.Events.LEVEL_SWITCHED, (e, data) => {
-                if (self.menu.qualityLevels.current != -1 && !self.menu.qualityLevels.auto || self.multipleVideoSources) {
+                if (self.quality.current != -1 && !self.quality.auto || self.multipleVideoSources) {
                     return;
                 }
 
-                self.menu.qualityLevels.auto = true;
-                self.menu.qualityLevels.current = data.level;
-                self.updateViewQualityLevels();
+                self.quality.auto = true;
+                self.quality.current = data.level;
+                self.quality.update();
             })
 
             if (process.env.NODE_ENV === 'development') {
@@ -307,8 +149,8 @@ export default function (self, options) {
                 if (process.env.NODE_ENV === 'development') {
                     console.log('MANIFEST_PARSED', data)
                 }
-                if (data.levels.length == 1 && !self.multipleVideoSources && self.isEnabledModule('qualityLevels')) {
-                    self.removeOption('qualitySelector');
+                if (data.levels.length == 1 && !self.multipleVideoSources) {
+                    self.menu.remove('qualityLevels');
                     return;
                 }
 
@@ -316,8 +158,8 @@ export default function (self, options) {
                     return;
                 }
 
-                self.insertQualityLevels(data.levels);
-                self.applyQualityLevel(data.levels);
+                self.quality.add(data.levels);
+                self.quality.set(data.levels);
             });
 
             hls.on(Hls.Events.ERROR, (e, data) => {
@@ -346,7 +188,7 @@ export default function (self, options) {
 
             self.displayOptions.modules.onAfterInitHls(hls);
 
-            if (!self.firstPlayLaunched && self.applyAutoPlay()) {
+            if (!self.firstPlayLaunched && self.autoPlay.apply()) {
                 self.domRef.player.play();
             }
         } else {

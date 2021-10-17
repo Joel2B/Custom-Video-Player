@@ -1111,9 +1111,7 @@ export default function (self, options) {
             self.domRef.player.currentTime = newCurrentTime;
         }
 
-        if (self.displayOptions.layoutControls.loop) {
-            self.domRef.player.loop = true;
-        }
+        self.loop.apply();
 
         self.setCurrentTimeAndPlay(newCurrentTime, self.autoplayAfterAd);
 

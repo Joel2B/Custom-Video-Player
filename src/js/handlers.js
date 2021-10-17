@@ -12,15 +12,15 @@ export default function (self) {
 
     self.handleMouseenterForKeyboard = (e) => {
         let clickedMenuButton = false;
-        // improve this iteration
+        // TODO: improve this iteration
         Array.from(self.domRef.wrapper.getElementsByClassName('fluid_button_main_menu')).map((elem) => {
             if (elem == e.target) {
                 clickedMenuButton = true;
             }
         });
 
-        if (!clickedMenuButton && !self.domRef.controls.optionsMenu.contains(e.target)) {
-            self.closeMenu();
+        if (!clickedMenuButton && self.menu.menu && !self.menu.menu.contains(e.target)) {
+            self.menu.close();
         }
 
         if (e.target != self.domRef.controls.shortcuts 

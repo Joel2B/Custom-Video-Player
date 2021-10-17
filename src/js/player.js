@@ -11,13 +11,13 @@ import ProgressControl from './control-bar/progress-control';
 import Theatre from './control-bar/theatre';
 import Timeline from './control-bar/timeline';
 import VolumeControl from './control-bar/volume-control';
-
-import Autoplay from './menu/autoplay';
 import ContextMenu from './context-menu';
-import Loop from './menu/loop';
+
 import Menu from './menu/menu';
-import PlaybackRate from './menu/playback-rate';
-import QualityLevels from './menu/quality-levels';
+import Loop from './menu/loop';
+import Autoplay from './menu/autoplay';
+import Speed from './menu/playback-rate';
+import Quality from './menu/quality-levels';
 
 import Browser from './utils/browser';
 import Dom from './utils/dom';
@@ -57,13 +57,7 @@ const FP_MODULES = [
     Theatre,
     Timeline,
     VolumeControl,
-
-    Autoplay,
     ContextMenu,
-    Loop,
-    Menu,
-    PlaybackRate,
-    QualityLevels,
 
     Browser,
     Dom,
@@ -228,30 +222,6 @@ const playerClass = function () {
         self.fluidPseudoPause = false;
         self.mobileInfo = self.getMobileOs();
         self.events = {};
-        self.menu = {
-            enabledModules: 0,
-            inSubmenu: false,
-            option: {
-                height: 27,
-                width: 0
-            },
-            width: 185,
-            height: 28,
-            qualityLevels: {
-                option: {
-                    height: 26,
-                    width: 0
-                },
-                width: 115,
-                height: 67,
-                auto: true,
-                current: -1
-            },
-            playbackRate: {
-                width: 110,
-                height: 171,
-            }
-        }
         self.updateInterval = null;
         self.updateRefreshInterval = 60;
         self.multipleVideoSources = false;
@@ -281,11 +251,10 @@ const playerClass = function () {
                 allowTheatre: true,
                 doubleclickFullscreen: true,
                 menu: {
-                    loop: false,
+                    loop: true,
                     autoPlay: true,
                     playbackRate: true,
                     qualityLevels: true,
-                    hotspots: false,
                     subtitles: false,
                 },
                 theatreSettings: {
@@ -325,9 +294,9 @@ const playerClass = function () {
                 playerInitCallback: (function () {
                 }),
                 persistentSettings: {
-                    volume: true,
-                    quality: true,
                     speed: true,
+                    quality: true,
+                    volume: true,
                     theatre: true
                 },
                 controlForwardBackward: {
@@ -449,13 +418,14 @@ const playerClass = function () {
 
         self.initTitle();
 
-        self.initMute();
-
-        self.initLoop();
-
         self.displayOptions.layoutControls.playerInitCallback();
 
-        self.setupMenu();
+        self.menu = new Menu(self);
+        self.loop = new Loop(self);
+        self.autoPlay = new Autoplay(self);
+        self.speed = new Speed(self);
+        self.quality = new Quality(self);
+        self.menu.init();
 
         self.setupShortcuts();
 
@@ -470,6 +440,8 @@ const playerClass = function () {
         self.setVastList();
 
         self.setPersistentSettings();
+
+        self.initMute();
 
         // DO NOT initialize streamers if there are pre-rolls. It will break the streamers!
         // Streamers will re-initialize once ad has been shown.
@@ -549,7 +521,7 @@ const playerClass = function () {
             }
         };
 
-        if (self.applyAutoPlay() && !self.dashScriptLoaded && !self.hlsScriptLoaded) {
+        if (self.autoPlay.apply() && !self.dashScriptLoaded && !self.hlsScriptLoaded) {
             //There is known issue with Safari 11+, will prevent autoPlay, so we wont try
             const browserVersion = self.getBrowserVersion();
 
@@ -641,7 +613,7 @@ const playerClass = function () {
             clearInterval(self.timer);
         }
 
-        if (self.applyLoop()) {
+        if (self.loop.apply()) {
             self.switchToMainVideo();
             self.playPauseToggle();
         }
@@ -847,8 +819,8 @@ const playerClass = function () {
         }
 
         if (sourcesList.length == 1) {
-            if (!self.isHLS(sourcesList[0].src) && self.isEnabledModule('qualityLevels')) {
-                self.removeOption('qualitySelector');
+            if (!self.isHLS(sourcesList[0].src)) {
+                self.menu.remove('qualityLevels');
             }
             return;
         }
@@ -878,17 +850,17 @@ const playerClass = function () {
 
         sources.reverse();
         self.videoSources = sources;
-        self.insertQualityLevels(sources);
+        self.quality.add(sources);
 
         if (firstStreamingSource) {
             const interval = setInterval(() => {
                 if (window.Hls || window.dashjs.MediaPlayer) {
-                    self.applyQualityLevel(sources);
+                    self.quality.set(sources);
                     clearInterval(interval);
                 }
             }, 100);
         } else {
-            self.applyQualityLevel(sources);
+            self.quality.set(sources);
         }
     }
 
@@ -1081,9 +1053,13 @@ const playerClass = function () {
         self.domRef.player.setAttribute('preload', self.displayOptions.layoutControls.preload);
     };
 
-    self.initLoop = () => {
-        self.domRef.player.loop = self.applyLoop();
+    self.setLoop = (loop) => {
+        self.domRef.player.loop = loop;
     };
+    
+    self.setPlaybackSpeed = (speed) => {
+        self.domRef.player.playbackRate = speed;
+    }
 
     self.setBuffering = () => {
         let progressInterval;
