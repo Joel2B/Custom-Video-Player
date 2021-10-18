@@ -1,4 +1,4 @@
-export default function (self, options) {
+export default function(self, options) {
     self.compareVersion = (v1, v2) => {
         if (typeof v1 !== 'string') return false;
         if (typeof v2 !== 'string') return false;

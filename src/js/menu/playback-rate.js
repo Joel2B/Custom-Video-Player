@@ -9,8 +9,10 @@ class Speed {
         }
 
         if (this.player.getLocalStorage(this.id) === null) {
-            this.player.setLocalStorage(this.id, 1);
+            this.player.setLocalStorage(this.id, '1');
         }
+
+        this.options = [0.5, 1, 1.5, 2];
 
         this.width = 110;
         this.height = 67;
@@ -25,10 +27,9 @@ class Speed {
             value: 'Normal',
         });
 
-        const options = [0.5, 1, 1.5, 2];
         const childs = new DocumentFragment();
 
-        for (const value of options) {
+        for (const value of this.options) {
             const option = this.player.createElement({
                 tag: 'li',
                 textContent: value === 1 ? 'Normal' : value,
@@ -43,7 +44,7 @@ class Speed {
 
         this.page = this.player.createElement({
             tag: 'ul',
-            className: `cvp_options_list cvp_speed hide`,
+            className: 'cvp_options_list cvp_speed hide',
         });
 
         this.page.appendChild(childs);
@@ -92,7 +93,7 @@ class Speed {
         }
 
         const current = this.player.getLocalStorage(this.id);
-        if (current == 1) {
+        if (current === '1') {
             return;
         }
 

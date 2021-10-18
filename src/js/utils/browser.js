@@ -1,7 +1,9 @@
-export default function (self, options) {
+export default function(self, options) {
     self.isTouchDevice = () => {
-        return !!('ontouchstart' in window        // works on most browsers
-            || navigator.maxTouchPoints);       // works on IE10/11 and Surface
+        return !!(
+            'ontouchstart' in window || // works on most browsers
+            navigator.maxTouchPoints
+        ); // works on IE10/11 and Surface
     };
 
     /**
@@ -34,7 +36,7 @@ export default function (self, options) {
         }
 
         // determine version
-        if ('iOS' === result.userOs && versionIndex > -1) {
+        if (result.userOs === 'iOS' && versionIndex > -1) {
             const userOsTemp = ua.substr(versionIndex + 3);
             const indexOfEndOfVersion = userOsTemp.indexOf(' ');
 
@@ -42,7 +44,7 @@ export default function (self, options) {
                 result.userOsVer = userOsTemp.substring(0, userOsTemp.indexOf(' ')).replace(/_/g, '.');
                 result.userOsMajor = parseInt(result.userOsVer);
             }
-        } else if ('Android' === result.userOs && versionIndex > -1) {
+        } else if (result.userOs === 'Android' && versionIndex > -1) {
             result.userOsVer = ua.substr(versionIndex + 8, 3);
         } else {
             result.userOsVer = false;
@@ -74,8 +76,9 @@ export default function (self, options) {
             } else if ((idx = ua.indexOf('Opera')) !== -1) {
                 result.browserName = 'Opera';
                 result.fullVersion = ua.substring(idx + 6);
-                if ((idx = ua.indexOf('Version')) !== -1)
+                if ((idx = ua.indexOf('Version')) !== -1) {
                     result.fullVersion = ua.substring(idx + 8);
+                }
             } else if ((idx = ua.indexOf('MSIE')) !== -1) {
                 result.browserName = 'Microsoft Internet Explorer';
                 result.fullVersion = ua.substring(idx + 5);
@@ -85,15 +88,14 @@ export default function (self, options) {
             } else if ((idx = ua.indexOf('Safari')) !== -1) {
                 result.browserName = 'Safari';
                 result.fullVersion = ua.substring(idx + 7);
-                if ((idx = ua.indexOf('Version')) !== -1)
+                if ((idx = ua.indexOf('Version')) !== -1) {
                     result.fullVersion = ua.substring(idx + 8);
+                }
             } else if ((idx = ua.indexOf('Firefox')) !== -1) {
                 result.browserName = 'Mozilla Firefox';
                 result.fullVersion = ua.substring(idx + 8);
-            }
-
-            // Others "name/version" is at the end of userAgent
-            else if ((uaindex = ua.lastIndexOf(' ') + 1) < (idx = ua.lastIndexOf('/'))) {
+            } else if ((uaindex = ua.lastIndexOf(' ') + 1) < (idx = ua.lastIndexOf('/'))) {
+                // Others "name/version" is at the end of userAgent
                 result.browserName = ua.substring(uaindex, idx);
                 result.fullVersion = ua.substring(idx + 1);
                 if (result.browserName.toLowerCase() === result.browserName.toUpperCase()) {
@@ -116,7 +118,7 @@ export default function (self, options) {
                 result.majorVersion = parseInt(navigator.appVersion, 10);
             }
         } catch (e) {
-            //Return default obj.
+            // Return default obj.
         }
 
         return result;

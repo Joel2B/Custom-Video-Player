@@ -1,4 +1,4 @@
-export default function (self) {
+export default function(self) {
     self.hasControlBar = () => {
         return !!self.domRef.controls.root;
     };
@@ -57,7 +57,6 @@ export default function (self) {
         if (self.isCurrentlyPlayingAd && !self.domRef.player.paused) {
             self.toggleAdCountdown(false);
         }
-
 
         if (!self.isTouchDevice()) {
             self.domRef.player.style.cursor = 'default';

@@ -1,33 +1,33 @@
-export default function (self) {
+export default function(self) {
     self.setCustomContextMenu = () => {
         const playerWrapper = self.domRef.wrapper;
 
         const showDefaultControls = self.displayOptions.layoutControls.contextMenu.controls;
         const extraLinks = self.displayOptions.layoutControls.contextMenu.links;
 
-        //Create own context menu
+        // Create own context menu
         self.domRef.contextMenu = self.createElement({
             tag: 'div',
             id: self.videoPlayerId + '_fluid_context_menu',
             className: 'fluid_context_menu',
             style: {
                 display: 'none',
-                position: 'absolute'
-            }
+                position: 'absolute',
+            },
         });
 
         const contextMenuList = self.createElement({
             tag: 'ul',
-            parent: self.domRef.contextMenu
+            parent: self.domRef.contextMenu,
         });
 
-        if (!!extraLinks) {
+        if (extraLinks) {
             for (const [key, link] of extraLinks.entries()) {
                 self.createElement({
                     tag: 'li',
                     id: self.videoPlayerId + '_context_option_extra_' + key,
                     innerHTML: link.label,
-                    parent: contextMenuList
+                    parent: contextMenuList,
                 }, () => window.open(link.href, '_blank'));
             }
         }
@@ -37,28 +37,28 @@ export default function (self) {
                 tag: 'li',
                 id: self.videoPlayerId + '_context_option_play',
                 innerHTML: self.displayOptions.captions.play,
-                parent: contextMenuList
+                parent: contextMenuList,
             }, () => self.playPauseToggle());
 
             self.createElement({
                 tag: 'li',
                 id: self.videoPlayerId + '_context_option_mute',
                 innerHTML: self.displayOptions.captions.mute,
-                parent: contextMenuList
+                parent: contextMenuList,
             }, () => self.muteToggle());
 
             self.createElement({
                 tag: 'li',
                 id: self.videoPlayerId + '_context_option_shortcuts_info',
                 innerHTML: self.displayOptions.captions.shortcutsInfo,
-                parent: contextMenuList
+                parent: contextMenuList,
             }, () => self.openShortcuts());
 
             self.createElement({
                 tag: 'li',
                 id: self.videoPlayerId + '_context_option_fullscreen',
                 innerHTML: self.displayOptions.captions.fullscreen,
-                parent: contextMenuList
+                parent: contextMenuList,
             }, () => self.fullscreenToggle());
         }
 
@@ -66,12 +66,12 @@ export default function (self) {
             tag: 'li',
             id: self.videoPlayerId + '_context_option_homepage',
             innerHTML: 'CVP ' + self.version,
-            parent: contextMenuList
+            parent: contextMenuList,
         }, () => window.open(self.homepage, '_blank'));
 
         self.domRef.player.parentNode.insertBefore(self.domRef.contextMenu, self.domRef.player.nextSibling);
 
-        //Disable the default context menu
+        // Disable the default context menu
         playerWrapper.addEventListener('contextmenu', e => {
             e.preventDefault();
 
@@ -80,7 +80,7 @@ export default function (self) {
             self.domRef.contextMenu.style.display = 'block';
         }, false);
 
-        //Hide the context menu on clicking elsewhere
+        // Hide the context menu on clicking elsewhere
         document.addEventListener('click', e => {
             if ((e.target !== self.domRef.player) || e.button !== 2) {
                 self.domRef.contextMenu.style.display = 'none';

@@ -1,4 +1,4 @@
-export default function (self) {
+export default function(self) {
     self.theatreToggle = () => {
         if (self.isInIframe) {
             return;
@@ -13,7 +13,7 @@ export default function (self) {
         if (self.displayOptions.layoutControls.theatreAdvanced) {
             const elementForTheatre = document.getElementById(self.displayOptions.layoutControls.theatreAdvanced.theatreElement);
             const theatreClassToApply = self.displayOptions.layoutControls.theatreAdvanced.classToApply;
-            if (elementForTheatre != null && theatreClassToApply != null) {
+            if (elementForTheatre !== null && theatreClassToApply !== 'undefined') {
                 if (!self.theatreMode) {
                     elementForTheatre.classList.add(theatreClassToApply);
                 } else {
@@ -73,12 +73,12 @@ export default function (self) {
         videoWrapper.style.marginTop = self.displayOptions.layoutControls.theatreSettings.marginTop + 'px';
         switch (self.displayOptions.layoutControls.theatreSettings.horizontalAlign) {
             case 'center':
-                // We must calculate the margin differently based on whether they passed % or px
-                if (typeof (workingWidth) == 'string' && workingWidth.substr(workingWidth.length - 1) === '%') {
-                    // A margin of half the remaining space
+            // We must calculate the margin differently based on whether they passed % or px
+                if (typeof (workingWidth) === 'string' && workingWidth.substr(workingWidth.length - 1) === '%') {
+                // A margin of half the remaining space
                     defaultHorizontalMargin = ((100 - parseInt(workingWidth.substring(0, workingWidth.length - 1))) / 2) + '%';
-                } else if (typeof (workingWidth) == 'string' && workingWidth.substr(workingWidth.length - 2) === 'px') {
-                    // Half the (Remaining width / fullwidth)
+                } else if (typeof (workingWidth) === 'string' && workingWidth.substr(workingWidth.length - 2) === 'px') {
+                // Half the (Remaining width / fullwidth)
                     defaultHorizontalMargin = (((screen.width - parseInt(workingWidth.substring(0, workingWidth.length - 2))) / screen.width) * 100 / 2) + '%';
                 } else {
                     console.log('[FP_ERROR] Theatre width specified invalid.');
@@ -100,5 +100,5 @@ export default function (self) {
         if (self.getLocalStorage('theatre')) {
             self.theatreToggle();
         }
-    }
+    };
 }

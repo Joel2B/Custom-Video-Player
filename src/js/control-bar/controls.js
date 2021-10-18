@@ -1,4 +1,4 @@
-export default function (self, options) {
+export default function(self, options) {
     self.generateCustomControlTags = (options) => {
         const controls = {};
 
@@ -13,7 +13,7 @@ export default function (self, options) {
             name: 'svg',
             attr: {
                 viewBox: '25 25 50 50',
-                class: 'circular'
+                class: 'circular',
             },
             childs: [
                 {
@@ -25,11 +25,11 @@ export default function (self, options) {
                         fill: 'none',
                         'stroke-width': 2,
                         'stroke-miterlimit': 10,
-                        class: 'path'
-                    }
-                }
+                        class: 'path',
+                    },
+                },
             ],
-            parent: controls.loader
+            parent: controls.loader,
         });
 
         // Root element
@@ -51,7 +51,7 @@ export default function (self, options) {
         controls.leftContainer = self.createElement({
             tag: 'div',
             className: 'fluid_controls_left',
-            parent: controls.root
+            parent: controls.root,
         });
 
         // Left container -> Play/Pause
@@ -59,7 +59,7 @@ export default function (self, options) {
             tag: 'div',
             id: self.videoPlayerId + '_fluid_control_playpause',
             className: 'fluid_button fluid_button_play fluid_control_playpause',
-            parent: controls.leftContainer
+            parent: controls.leftContainer,
         });
 
         if (options.controlForwardBackward) {
@@ -68,7 +68,7 @@ export default function (self, options) {
                 tag: 'div',
                 id: self.videoPlayerId + '_fluid_control_skip_back',
                 className: 'fluid_button fluid_button_skip_back',
-                parent: controls.leftContainer
+                parent: controls.leftContainer,
             });
 
             // Left container -> Skip forward
@@ -76,7 +76,7 @@ export default function (self, options) {
                 tag: 'div',
                 id: self.videoPlayerId + '_fluid_control_skip_forward',
                 className: 'fluid_button fluid_button_skip_forward',
-                parent: controls.leftContainer
+                parent: controls.leftContainer,
             });
         }
 
@@ -85,14 +85,14 @@ export default function (self, options) {
             tag: 'div',
             id: self.videoPlayerId + '_fluid_controls_progress_container',
             className: 'fluid_controls_progress_container fluid_slider',
-            parent: controls.root
+            parent: controls.root,
         });
 
         // Progress container -> Progress wrapper
         controls.progressWrapper = self.createElement({
             tag: 'div',
             className: 'fluid_controls_progress',
-            parent: controls.progressContainer
+            parent: controls.progressContainer,
         });
 
         // Progress container -> Progress wrapper -> Current progress
@@ -102,8 +102,8 @@ export default function (self, options) {
             className: 'fluid_controls_currentprogress',
             parent: controls.progressWrapper,
             style: {
-                backgroundColor: options.primaryColor
-            }
+                backgroundColor: options.primaryColor,
+            },
         });
 
         // Progress container -> Progress wrapper -> Hover progress
@@ -128,8 +128,8 @@ export default function (self, options) {
             className: 'fluid_controls_currentpos',
             parent: controls.progressMarkerContainer,
             style: {
-                backgroundColor: options.primaryColor
-            }
+                backgroundColor: options.primaryColor,
+            },
         });
 
         // Progress container -> Buffered indicator

@@ -82,7 +82,7 @@ const FP_MODULES = [
     Shortcuts,
     Streaming,
     Subtitles,
-    Title
+    Title,
 ];
 
 // Determine build mode
@@ -95,22 +95,23 @@ const FP_RUNTIME_DEBUG = typeof FP_DEBUG !== 'undefined' && FP_DEBUG === true;
 
 let playerInstances = 0;
 
-const playerClass = function () {
+const PlayerClass = function() {
     // "self" always points to current instance of the player within the scope of the instance
     // This should help readability and context awareness slightly...
     const self = this;
 
     self.domRef = {
         player: null,
-        controls: {}
+        controls: {},
     };
 
     // noinspection JSUnresolvedVariable
     self.version = typeof FP_BUILD_VERSION !== 'undefined' ? FP_BUILD_VERSION : '';
     // noinspection JSUnresolvedVariable
-    self.homepage = typeof FP_HOMEPAGE !== 'undefined'
-        ? FP_HOMEPAGE + '/?utm_source=player&utm_medium=context_menu&utm_campaign=organic'
-        : '';
+    self.homepage =
+        typeof FP_HOMEPAGE !== 'undefined'
+            ? FP_HOMEPAGE + '/?utm_source=player&utm_medium=context_menu&utm_campaign=organic'
+            : '';
     self.destructors = [];
 
     self.init = (playerTarget, options) => {
@@ -228,7 +229,7 @@ const playerClass = function () {
         self.playButtonTimer = null;
         self.useCapture = self.useCapture();
 
-        //Default options
+        // Default options
         self.displayOptions = {
             layoutControls: {
                 mediaType: self.getCurrentSrcType(),
@@ -262,7 +263,7 @@ const playerClass = function () {
                     height: '60%',
                     marginTop: 0,
                     horizontalAlign: 'center',
-                    keepPosition: false
+                    keepPosition: false,
                 },
                 theatreAdvanced: false,
                 title: null,
@@ -274,37 +275,36 @@ const playerClass = function () {
                     mouseOverImageUrl: null,
                     imageMargin: '2px',
                     hideWithControls: false,
-                    showOverAds: false
+                    showOverAds: false,
                 },
                 controlBar: {
                     autoHide: false,
                     autoHideTimeout: 3,
-                    animated: true
+                    animated: true,
                 },
                 timelinePreview: {
                     spriteImage: false,
-                    spriteRelativePath: false
+                    spriteRelativePath: false,
                 },
                 htmlOnPauseBlock: {
                     html: null,
                     height: null,
-                    width: null
+                    width: null,
                 },
-                layout: 'default', //options: 'default', '<custom>'
-                playerInitCallback: (function () {
-                }),
+                layout: 'default', // options: 'default', '<custom>'
+                playerInitCallback: function() {},
                 persistentSettings: {
                     speed: true,
                     quality: true,
                     volume: true,
-                    theatre: true
+                    theatre: true,
                 },
                 controlForwardBackward: {
-                    show: false
+                    show: false,
                 },
                 contextMenu: {
                     controls: true,
-                    links: []
+                    links: [],
                 },
             },
             vastOptions: {
@@ -324,15 +324,11 @@ const playerClass = function () {
                 vpaidTimeout: 3000,
 
                 vastAdvanced: {
-                    vastLoadedCallback: (function () {
-                    }),
-                    noVastVideoCallback: (function () {
-                    }),
-                    vastVideoSkippedCallback: (function () {
-                    }),
-                    vastVideoEndedCallback: (function () {
-                    })
-                }
+                    vastLoadedCallback: function() {},
+                    noVastVideoCallback: function() {},
+                    vastVideoSkippedCallback: function() {},
+                    vastVideoEndedCallback: function() {},
+                },
             },
             captions: {
                 play: 'Play',
@@ -342,41 +338,37 @@ const playerClass = function () {
                 fullscreen: 'Fullscreen',
                 subtitles: 'Subtitles',
                 exitFullscreen: 'Exit Fullscreen',
-                shortcutsInfo: 'Keyboard Shortcuts'
+                shortcutsInfo: 'Keyboard Shortcuts',
             },
             debug: FP_RUNTIME_DEBUG,
             modules: {
                 configureHls: (options) => {
                     return options;
                 },
-                onBeforeInitHls: (hls) => {
-                },
-                onAfterInitHls: (hls) => {
-                },
+                onBeforeInitHls: (hls) => {},
+                onAfterInitHls: (hls) => {},
                 configureDash: (options) => {
                     return options;
                 },
-                onBeforeInitDash: (dash) => {
-                },
-                onAfterInitDash: (dash) => {
-                }
+                onBeforeInitDash: (dash) => {},
+                onAfterInitDash: (dash) => {},
             },
-            onBeforeXMLHttpRequestOpen: (request) => {
-            },
+            onBeforeXMLHttpRequestOpen: (request) => {},
             onBeforeXMLHttpRequest: (request) => {
                 if (FP_RUNTIME_DEBUG || FP_DEVELOPMENT_MODE) {
                     console.debug('[FP_DEBUG] Request made', request);
                 }
-            }
+            },
         };
 
-        if (!!options.hlsjsConfig) {
-            console.error('[FP_ERROR] player option hlsjsConfig is removed and has no effect. ' +
-                'Use module callbacks instead!')
+        if (options.hlsjsConfig) {
+            console.error(
+                '[FP_ERROR] player option hlsjsConfig is removed and has no effect. ' + 'Use module callbacks instead!',
+            );
         }
 
         // Overriding the default options
-        self.overrideOptions(self.displayOptions, options)
+        self.overrideOptions(self.displayOptions, options);
 
         self.setupPlayerWrapper();
 
@@ -396,7 +388,7 @@ const playerClass = function () {
             playerNode.setAttribute('crossOrigin', 'anonymous');
         }
 
-        //Manually load the video duration if the video was loaded before adding the event listener
+        // Manually load the video duration if the video was loaded before adding the event listener
         self.currentVideoDuration = self.getCurrentVideoDuration();
 
         if (isNaN(self.currentVideoDuration) || !isFinite(self.currentVideoDuration)) {
@@ -405,13 +397,13 @@ const playerClass = function () {
 
         self.setLayout();
 
-        //Set the volume control state
+        // Set the volume control state
         self.latestVolume = playerNode.volume;
 
         // Set the default animation setting
         self.initialAnimationSet = self.displayOptions.layoutControls.playPauseAnimation;
 
-        //Set the custom fullscreen behaviour
+        // Set the custom fullscreen behaviour
         self.handleFullscreen();
 
         self.initLogo();
@@ -446,19 +438,22 @@ const playerClass = function () {
         // DO NOT initialize streamers if there are pre-rolls. It will break the streamers!
         // Streamers will re-initialize once ad has been shown.
         const preRolls = self.findRoll('preRoll');
-        if (!preRolls || 0 === preRolls.length) {
+        if (!preRolls || preRolls.length === 0) {
             self.initialiseStreamers();
         }
 
-        const _play_videoPlayer = playerNode.play;
+        const playVideoPlayer = playerNode.play;
 
-        playerNode.play = function () {
+        playerNode.play = function() {
             let promise = null;
 
             if (self.displayOptions.layoutControls.showCardBoardView) {
-                if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                if (
+                    typeof DeviceOrientationEvent !== 'undefined' &&
+                    typeof DeviceOrientationEvent.requestPermission === 'function'
+                ) {
                     DeviceOrientationEvent.requestPermission()
-                        .then(function (response) {
+                        .then(function(response) {
                             if (response === 'granted') {
                                 self.debugMessage('DeviceOrientationEvent permission granted!');
                             }
@@ -468,32 +463,33 @@ const playerClass = function () {
             }
 
             try {
-                promise = _play_videoPlayer.apply(this, arguments);
+                promise = playVideoPlayer.apply(this, arguments);
 
                 if (promise !== undefined && promise !== null) {
-                    promise.then(() => {
-                        self.isPlayingMedia = true;
-                        clearTimeout(self.promiseTimeout);
-                    }).catch(error => {
-                        console.error('[FP_ERROR] Playback error', error);
-                        const isAbortError = (typeof error.name !== 'undefined' && error.name === 'AbortError');
-                        // Ignore abort errors which caused for example Safari or autoplay functions
-                        // (example: interrupted by a new load request)
-                        if (isAbortError) {
-                            // Ignore AbortError error reporting
-                        } else {
-                            self.announceLocalError(202, 'Failed to play video.');
-                        }
+                    promise
+                        .then(() => {
+                            self.isPlayingMedia = true;
+                            clearTimeout(self.promiseTimeout);
+                        })
+                        .catch((error) => {
+                            console.error('[FP_ERROR] Playback error', error);
+                            const isAbortError = typeof error.name !== 'undefined' && error.name === 'AbortError';
+                            // Ignore abort errors which caused for example Safari or autoplay functions
+                            // (example: interrupted by a new load request)
+                            if (isAbortError) {
+                                // Ignore AbortError error reporting
+                            } else {
+                                self.announceLocalError(202, 'Failed to play video.');
+                            }
 
-                        clearTimeout(self.promiseTimeout);
-                    });
+                            clearTimeout(self.promiseTimeout);
+                        });
 
-                    self.promiseTimeout = setTimeout(function () {
+                    self.promiseTimeout = setTimeout(function() {
                         if (self.isPlayingMedia === false) {
                             self.announceLocalError(204, '[FP_ERROR] Timeout error. Failed to play video?');
                         }
                     }, 5000);
-
                 }
 
                 return promise;
@@ -504,7 +500,7 @@ const playerClass = function () {
         };
 
         const videoPauseOriginal = playerNode.pause;
-        playerNode.pause = function () {
+        playerNode.pause = function() {
             if (self.isPlayingMedia === true) {
                 self.isPlayingMedia = false;
                 return videoPauseOriginal.apply(this, arguments);
@@ -522,10 +518,10 @@ const playerClass = function () {
         };
 
         if (self.autoPlay.apply() && !self.dashScriptLoaded && !self.hlsScriptLoaded) {
-            //There is known issue with Safari 11+, will prevent autoPlay, so we wont try
+            // There is known issue with Safari 11+, will prevent autoPlay, so we wont try
             const browserVersion = self.getBrowserVersion();
 
-            if ('Safari' === browserVersion.browserName) {
+            if (browserVersion.browserName === 'Safari') {
                 return;
             }
 
@@ -539,13 +535,14 @@ const playerClass = function () {
             videoWrapper.addEventListener('mouseenter', self.showControlBar, false);
             videoWrapper.addEventListener('mouseenter', self.showTitle, false);
         } else {
-            //On mobile mouseleave behavior does not make sense, so it's better to keep controls, once the playback starts
-            //Autohide behavior on timer is a separate functionality
+            // On mobile mouseleave behavior does not make sense, so it's better to keep controls
+            // Once the playback starts
+            // Autohide behavior on timer is a separate functionality
             self.hideControlBar();
             videoWrapper.addEventListener('touchstart', self.showControlBar, self.useCapture);
         }
 
-        //Keyboard Controls
+        // Keyboard Controls
         if (self.displayOptions.layoutControls.keyboardControl) {
             self.keyboardControl();
         }
@@ -557,18 +554,17 @@ const playerClass = function () {
         // Hide the captions on init if user added subtitles track.
         // We are taking captions track kind of as metadata
         try {
-            if (!!self.domRef.player.textTracks) {
+            if (self.domRef.player.textTracks) {
                 for (const textTrack of self.domRef.player.textTracks) {
                     textTrack.mode = 'hidden';
                 }
             }
-        } catch (_ignored) {
-        }
+        } catch (_ignored) {}
     };
 
     self.overrideOptions = (opt1, opt2) => {
-        for (let key in opt2) {
-            if (opt1[key] != undefined && opt2[key] != null && typeof opt2[key] == 'object') {
+        for (const key in opt2) {
+            if (opt1[key] !== 'undefined' && opt2[key] !== null && typeof opt2[key] === 'object') {
                 if (Object.keys(opt1[key]).length === 0) {
                     opt1[key] = opt2[key];
                 } else {
@@ -578,7 +574,7 @@ const playerClass = function () {
                 opt1[key] = opt2[key];
             }
         }
-    }
+    };
 
     self.getCurrentVideoDuration = () => {
         if (self.domRef.player) {
@@ -599,13 +595,13 @@ const playerClass = function () {
     self.onMainVideoEnded = (event) => {
         self.debugMessage('onMainVideoEnded is called');
 
-        if (self.isCurrentlyPlayingAd && self.autoplayAfterAd) {  // It may be in-stream ending, and if it's not postroll then we don't execute anything
+        if (self.isCurrentlyPlayingAd && self.autoplayAfterAd) {
+            // It may be in-stream ending, and if it's not postroll then we don't execute anything
             return;
         }
 
-        //we can remove timer as no more ad will be shown
+        // we can remove timer as no more ad will be shown
         if (Math.floor(self.getCurrentTime()) >= Math.floor(self.mainVideoDuration)) {
-
             // play pre-roll ad
             // sometime pre-roll ad will be missed because we are clearing the timer
             self.adKeytimePlay(Math.floor(self.mainVideoDuration));
@@ -620,9 +616,7 @@ const playerClass = function () {
     };
 
     self.getCurrentTime = () => {
-        return self.isCurrentlyPlayingAd
-            ? self.mainVideoCurrentTime
-            : self.domRef.player.currentTime;
+        return self.isCurrentlyPlayingAd ? self.mainVideoCurrentTime : self.domRef.player.currentTime;
     };
 
     /**
@@ -662,7 +656,7 @@ const playerClass = function () {
     self.onRecentWaiting = () => {
         self.recentWaiting = true;
 
-        setTimeout(function () {
+        setTimeout(function() {
             self.recentWaiting = false;
         }, 1000);
     };
@@ -675,7 +669,7 @@ const playerClass = function () {
             return;
         }
 
-        for (let key in self.adList) {
+        for (const key in self.adList) {
             if (!self.adList.hasOwnProperty(key)) {
                 continue;
             }
@@ -698,7 +692,7 @@ const playerClass = function () {
             primaryColor: self.displayOptions.layoutControls.primaryColor
                 ? self.displayOptions.layoutControls.primaryColor
                 : '#f00',
-            controlForwardBackward: !!self.displayOptions.layoutControls.controlForwardBackward.show
+            controlForwardBackward: !!self.displayOptions.layoutControls.controlForwardBackward.show,
         });
 
         // Remove the default controls
@@ -716,7 +710,7 @@ const playerClass = function () {
          */
         let remainingAttemptsToInitiateVolumeBar = 100;
 
-        const initiateVolumebar = function () {
+        const initiateVolumebar = function() {
             if (!remainingAttemptsToInitiateVolumeBar) {
                 clearInterval(initiateVolumebarTimerId);
             } else if (self.checkIfVolumebarIsRendered()) {
@@ -726,7 +720,7 @@ const playerClass = function () {
                 remainingAttemptsToInitiateVolumeBar--;
             }
         };
-        let initiateVolumebarTimerId = setInterval(initiateVolumebar, 100);
+        const initiateVolumebarTimerId = setInterval(initiateVolumebar, 100);
 
         if (self.displayOptions.layoutControls.doubleclickFullscreen) {
             self.domRef.player.addEventListener('dblclick', self.fullscreenToggle);
@@ -748,7 +742,7 @@ const playerClass = function () {
 
         self.createDownload();
 
-        if (!!self.displayOptions.layoutControls.controlForwardBackward.show) {
+        if (self.displayOptions.layoutControls.controlForwardBackward.show) {
             self.initSkipControls();
         }
     };
@@ -771,10 +765,10 @@ const playerClass = function () {
     };
 
     self.setLayout = () => {
-        //All other browsers
-        const listenTo = (self.isTouchDevice()) ? 'touchend' : 'click';
+        // All other browsers
+        const listenTo = self.isTouchDevice() ? 'touchend' : 'click';
         self.domRef.player.addEventListener(listenTo, () => self.playPauseToggle(), false);
-        //Mobile Safari - because it does not emit a click event on initial click of the video
+        // Mobile Safari - because it does not emit a click event on initial click of the video
         self.domRef.player.addEventListener('play', self.initialPlay, false);
         self.setDefaultLayout();
     };
@@ -786,15 +780,15 @@ const playerClass = function () {
             id: self.videoPlayerId + '_fluid_video_wrapper',
             className: self.isTouchDevice() ? 'fluid_video_wrapper mobile' : 'fluid_video_wrapper',
             style: {
-                //Assign the height/width dimensions to the wrapper
-                ...(fillToContainer) && {
+                // Assign the height/width dimensions to the wrapper
+                ...(fillToContainer && {
                     width: '100%',
-                    height: '100%'
-                },
-                ...(!fillToContainer) && {
+                    height: '100%',
+                }),
+                ...(!fillToContainer && {
                     width: self.domRef.player.clientWidth + 'px',
-                    height: self.domRef.player.clientHeight + 'px'
-                },
+                    height: self.domRef.player.clientHeight + 'px',
+                }),
             },
         });
 
@@ -807,18 +801,18 @@ const playerClass = function () {
 
     self.onErrorDetection = () => {
         if (self.domRef.player.networkState === self.domRef.player.NETWORK_NO_SOURCE && self.isCurrentlyPlayingAd) {
-            //Probably the video ad file was not loaded successfully
+            // Probably the video ad file was not loaded successfully
             self.playMainVideoWhenVastFails(401);
         }
     };
 
     self.sourcesInVideoTag = () => {
         const sourcesList = self.domRef.player.querySelectorAll('source');
-        if (sourcesList.length == 0) {
+        if (sourcesList.length === 0) {
             return;
         }
 
-        if (sourcesList.length == 1) {
+        if (sourcesList.length === 1) {
             if (!self.isHLS(sourcesList[0].src)) {
                 self.menu.remove('qualityLevels');
             }
@@ -830,10 +824,14 @@ const playerClass = function () {
         let firstStreamingSource = false;
         const sources = [];
         for (const [index, source] of sourcesList.entries()) {
-            if (!self.isSource(source.src) || !source.type || self.mobileInfo.userOs === 'iOS' && self.isMKV(source.src)) {
+            if (
+                !self.isSource(source.src) ||
+                !source.type ||
+                (self.mobileInfo.userOs === 'iOS' && self.isMKV(source.src))
+            ) {
                 continue;
             }
-            if (index == 0) {
+            if (index === 0) {
                 if (self.isHLS(source.src) || self.isDASH(source.src)) {
                     firstStreamingSource = true;
                 }
@@ -841,10 +839,10 @@ const playerClass = function () {
             sources.push({
                 title: source.title,
                 src: source.src,
-                isHD: source.getAttribute('data-fluid-hd') != null
+                isHD: source.getAttribute('data-fluid-hd') !== null,
             });
         }
-        if (sources.length == 0) {
+        if (sources.length === 0) {
             return;
         }
 
@@ -862,7 +860,7 @@ const playerClass = function () {
         } else {
             self.quality.set(sources);
         }
-    }
+    };
 
     self.setVideoSource = (url) => {
         if (self.mobileInfo.userOs === 'iOS' && self.isMKV(url)) {
@@ -870,7 +868,7 @@ const playerClass = function () {
             return false;
         }
 
-        if (url == self.originalSrc) {
+        if (url === self.originalSrc) {
             return;
         }
 
@@ -916,7 +914,7 @@ const playerClass = function () {
             self.domRef.player.style.height = '100%';
         };
 
-        let videoPlayStart = () => {
+        const videoPlayStart = () => {
             self.currentTime = newCurrentTime;
             self.domRef.player.removeEventListener('playing', videoPlayStart);
         };
@@ -924,8 +922,6 @@ const playerClass = function () {
         self.domRef.player.addEventListener('loadedmetadata', loadedMetadata, false);
         self.domRef.player.load();
     };
-
-
 
     /**
      * Play button in the middle when the video loads
@@ -938,14 +934,16 @@ const playerClass = function () {
             className: 'fluid_html_on_pause',
         });
 
-        const backgroundColor = (self.displayOptions.layoutControls.primaryColor) ? self.displayOptions.layoutControls.primaryColor : '#333333';
+        const backgroundColor = self.displayOptions.layoutControls.primaryColor
+            ? self.displayOptions.layoutControls.primaryColor
+            : '#333333';
 
         self.domRef.controls.initialPlayButton = self.createElement({
             tag: 'div',
             id: self.videoPlayerId + '_fluid_initial_play',
             className: 'fluid_initial_play',
             style: {
-                backgroundColor: backgroundColor
+                backgroundColor: backgroundColor,
             },
             parent: self.domRef.controls.initialPlayButtonContainer,
         });
@@ -966,7 +964,7 @@ const playerClass = function () {
                 self.playPauseToggle();
                 self.domRef.controls.initialPlayButton.addEventListener('dblclick', self.fullscreenToggle);
             });
-        }
+        };
         self.domRef.controls.initialPlayButtonContainer.addEventListener('click', initPlayFunction);
         // If the user has chosen to not show the play button we'll make it invisible
         // We don't hide altogether because animations might still be used
@@ -1000,7 +998,7 @@ const playerClass = function () {
 
         let isMouseStillDown = false;
 
-        const activity = event => {
+        const activity = (event) => {
             if (event.type === 'touchstart' || event.type === 'mousedown') {
                 isMouseStillDown = true;
             }
@@ -1020,7 +1018,7 @@ const playerClass = function () {
             }
 
             if (self.isUserActive === false || !self.isControlBarVisible()) {
-                let event = new CustomEvent('userActive');
+                const event = new CustomEvent('userActive');
                 self.domRef.player.dispatchEvent(event);
                 self.isUserActive = true;
             }
@@ -1035,12 +1033,12 @@ const playerClass = function () {
 
                 self.isUserActive = false;
 
-                let event = new CustomEvent('userInactive');
+                const event = new CustomEvent('userInactive');
                 self.domRef.player.dispatchEvent(event);
             }, self.displayOptions.layoutControls.controlBar.autoHideTimeout * 1000);
         }, 300);
 
-        const listenTo = (self.isTouchDevice())
+        const listenTo = self.isTouchDevice()
             ? ['touchstart', 'touchmove', 'touchend']
             : ['mousemove', 'mousedown', 'mouseup'];
 
@@ -1056,10 +1054,10 @@ const playerClass = function () {
     self.setLoop = (loop) => {
         self.domRef.player.loop = loop;
     };
-    
+
     self.setPlaybackSpeed = (speed) => {
         self.domRef.player.playbackRate = speed;
-    }
+    };
 
     self.setBuffering = () => {
         let progressInterval;
@@ -1077,18 +1075,26 @@ const playerClass = function () {
             }
 
             for (let i = 0; i < self.domRef.player.buffered.length; i++) {
-                if (self.domRef.player.buffered.start(self.domRef.player.buffered.length - 1 - i) >= self.domRef.player.currentTime) {
+                if (
+                    self.domRef.player.buffered.start(self.domRef.player.buffered.length - 1 - i) >=
+                    self.domRef.player.currentTime
+                ) {
                     continue;
                 }
 
-                const newBufferLength = (self.domRef.player.buffered.end(self.domRef.player.buffered.length - 1 - i) / duration) * 100 + '%';
+                const newBufferLength =
+                    (self.domRef.player.buffered.end(self.domRef.player.buffered.length - 1 - i) / duration) * 100 +
+                    '%';
 
                 for (let j = 0; j < bufferBar.length; j++) {
                     bufferBar[j].style.width = newBufferLength;
                 }
 
                 // Stop checking for buffering if the video is fully buffered
-                if (!!progressInterval && 1 === (self.domRef.player.buffered.end(self.domRef.player.buffered.length - 1 - i) / duration)) {
+                if (
+                    !!progressInterval &&
+                    self.domRef.player.buffered.end(self.domRef.player.buffered.length - 1 - i) / duration === 1
+                ) {
                     clearInterval(progressInterval);
                 }
 
@@ -1112,12 +1118,17 @@ const playerClass = function () {
             console.log('[FP_ERROR] Not allowed value in posterImageSize');
             return;
         }
-        containerDiv.style.background = "url('" + self.displayOptions.layoutControls.posterImage + "') center center / "
-            + self.displayOptions.layoutControls.posterImageSize + ' no-repeat black';
+        containerDiv.style.background =
+            "url('" +
+            self.displayOptions.layoutControls.posterImage +
+            "') center center / " +
+            self.displayOptions.layoutControls.posterImageSize +
+            ' no-repeat black';
         self.domRef.player.parentNode.insertBefore(containerDiv, null);
     };
 
-    // This is called when a media type is unsupported. We'll find the current source and try set the next source if it exists
+    // This is called when a media type is unsupported
+    // We'll find the current source and try set the next source if it exists
     self.nextSource = () => {
         const sources = self.domRef.player.getElementsByTagName('source');
 
@@ -1160,7 +1171,7 @@ const playerClass = function () {
     self.destroy = () => {
         const numDestructors = self.destructors.length;
 
-        if (0 === numDestructors) {
+        if (numDestructors === 0) {
             return;
         }
 
@@ -1171,11 +1182,13 @@ const playerClass = function () {
         const container = self.domRef.wrapper;
 
         if (!container) {
-            console.warn('Unable to remove wrapper element for Fluid Player instance - element not found ' + self.videoPlayerId);
+            console.warn(
+                'Unable to remove wrapper element for Fluid Player instance - element not found ' + self.videoPlayerId,
+            );
             return;
         }
 
-        if ('function' === typeof container.remove) {
+        if (typeof container.remove === 'function') {
             container.remove();
             return;
         }
@@ -1186,62 +1199,62 @@ const playerClass = function () {
         }
 
         console.error('Unable to remove wrapper element for Fluid Player instance - no parent' + self.videoPlayerId);
-    }
+    };
 };
 
 /**
  * Public Fluid Player API interface
  * @param instance
  */
-const playerInterface = function (instance) {
+const PlayerInterface = function(instance) {
     this.play = () => {
-        return instance.play()
+        return instance.play();
     };
 
     this.pause = () => {
-        return instance.pause()
+        return instance.pause();
     };
 
     this.skipTo = (position) => {
-        return instance.skipTo(position)
+        return instance.skipTo(position);
     };
 
     this.setPlaybackSpeed = (speed) => {
-        return instance.setPlaybackSpeed(speed)
+        return instance.setPlaybackSpeed(speed);
     };
 
     this.setVolume = (volume) => {
-        return instance.setVolume(volume)
+        return instance.setVolume(volume);
     };
 
     this.setHtmlOnPauseBlock = (options) => {
-        return instance.setHtmlOnPauseBlock(options)
+        return instance.setHtmlOnPauseBlock(options);
     };
 
     this.toggleControlBar = (state) => {
-        return instance.toggleControlBar(state)
+        return instance.toggleControlBar(state);
     };
 
     this.toggleFullScreen = (state) => {
-        return instance.fullscreenToggle(state)
+        return instance.fullscreenToggle(state);
     };
 
     this.destroy = () => {
-        return instance.destroy()
+        return instance.destroy();
     };
 
     this.dashInstance = () => {
-        return !!instance.dashPlayer ? instance.dashPlayer : null;
-    }
+        return instance.dashPlayer ? instance.dashPlayer : null;
+    };
 
     this.hlsInstance = () => {
-        return !!instance.hlsPlayer ? instance.hlsPlayer : null;
-    }
+        return instance.hlsPlayer ? instance.hlsPlayer : null;
+    };
 
     this.on = (event, callback) => {
-        return instance.on(event, callback)
+        return instance.on(event, callback);
     };
-}
+};
 
 /**
  * Initialize and attach Fluid Player to instance of HTMLVideoElement
@@ -1250,8 +1263,8 @@ const playerInterface = function (instance) {
  * @param options Fluid Player configuration options
  * @returns {playerInterface}
  */
-const playerInitializer = function (target, options) {
-    const instance = new playerClass();
+const playerInitializer = function(target, options) {
+    const instance = new PlayerClass();
 
     if (!options) {
         options = {};
@@ -1259,14 +1272,14 @@ const playerInitializer = function (target, options) {
 
     instance.init(target, options);
 
-    const publicInstance = new playerInterface(instance);
+    const publicInstance = new PlayerInterface(instance);
 
     if (window && FP_DEVELOPMENT_MODE) {
         const debugApi = {
             id: target,
             options: options,
             instance: publicInstance,
-            internals: instance
+            internals: instance,
         };
 
         if (typeof window.fluidPlayerDebug === 'undefined') {
@@ -1275,12 +1288,17 @@ const playerInitializer = function (target, options) {
 
         window.fluidPlayerDebug.push(debugApi);
 
-        console.log('Created instance of Fluid Player. ' +
-            'Debug API available at window.fluidPlayerDebug[' + (window.fluidPlayerDebug.length - 1) + '].', debugApi);
+        console.log(
+            'Created instance of Fluid Player. ' +
+                'Debug API available at window.fluidPlayerDebug[' +
+                (window.fluidPlayerDebug.length - 1) +
+                '].',
+            debugApi,
+        );
     }
 
     return publicInstance;
-}
+};
 
 if (FP_DEVELOPMENT_MODE) {
     console.log('Fluid Player - Development Build' + (FP_RUNTIME_DEBUG ? ' (in debug mode)' : ''));

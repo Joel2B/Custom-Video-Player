@@ -1,4 +1,4 @@
-export default function (self) {
+export default function(self) {
     self.createDownload = () => {
         const downloadOption = self.domRef.controls.download;
         if (!self.displayOptions.layoutControls.allowDownload) {
@@ -16,7 +16,7 @@ export default function (self) {
                 e.stopImmediatePropagation();
             }
 
-            setInterval(function () {
+            setInterval(function() {
                 linkItem.download = '';
                 linkItem.href = '';
             }, 100);
@@ -24,7 +24,7 @@ export default function (self) {
 
         downloadOption.appendChild(downloadClick);
 
-        downloadOption.addEventListener('click', function () {
+        downloadOption.addEventListener('click', function() {
             const downloadItem = downloadClick;
             downloadItem.download = self.originalSrc;
             downloadItem.href = self.originalSrc;

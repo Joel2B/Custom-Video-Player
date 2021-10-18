@@ -1,4 +1,4 @@
-export default function (self) {
+export default function(self) {
     self.insertShortcuts = () => {
         self.domRef.controls.shortcuts = self.createElement({
             tag: 'div',
@@ -11,9 +11,9 @@ export default function (self) {
                     childs: [
                         {
                             tag: 'span',
-                            textContent: '×'
-                        }
-                    ]
+                            textContent: '×',
+                        },
+                    ],
                 },
                 {
                     tag: 'div',
@@ -25,13 +25,13 @@ export default function (self) {
                                 {
                                     tag: 'div',
                                     className: 'cvp_longBtn',
-                                    textContent: 'Space'
+                                    textContent: 'Space',
                                 },
                                 {
                                     tag: 'span',
-                                    textContent: 'Reproducir / Pausa'
-                                }
-                            ]
+                                    textContent: 'Reproducir / Pausa',
+                                },
+                            ],
                         },
                         {
                             tag: 'div',
@@ -39,18 +39,18 @@ export default function (self) {
                                 {
                                     tag: 'div',
                                     className: 'cvp_shortBtn',
-                                    textContent: '←'
+                                    textContent: '←',
                                 },
                                 {
                                     tag: 'div',
                                     className: 'cvp_shortBtn',
-                                    textContent: '→'
+                                    textContent: '→',
                                 },
                                 {
                                     tag: 'span',
-                                    textContent: 'Salto 5 segundos'
-                                }
-                            ]
+                                    textContent: 'Salto 5 segundos',
+                                },
+                            ],
                         },
                         {
                             tag: 'div',
@@ -58,13 +58,13 @@ export default function (self) {
                                 {
                                     tag: 'div',
                                     className: 'cvp_shortBtn',
-                                    textContent: 'Inicio'
+                                    textContent: 'Inicio',
                                 },
                                 {
                                     tag: 'span',
-                                    textContent: 'Ir al comienzo del video'
-                                }
-                            ]
+                                    textContent: 'Ir al comienzo del video',
+                                },
+                            ],
                         },
                         {
                             tag: 'div',
@@ -72,18 +72,18 @@ export default function (self) {
                                 {
                                     tag: 'div',
                                     className: 'cvp_shortBtn',
-                                    textContent: '0'
+                                    textContent: '0',
                                 },
                                 {
                                     tag: 'div',
                                     className: 'cvp_shortBtn',
-                                    textContent: '9'
+                                    textContent: '9',
                                 },
                                 {
                                     tag: 'span',
-                                    textContent: 'Ir del 0% al 90% de la duración del video'
-                                }
-                            ]
+                                    textContent: 'Ir del 0% al 90% de la duración del video',
+                                },
+                            ],
                         },
                         {
                             tag: 'div',
@@ -91,13 +91,13 @@ export default function (self) {
                                 {
                                     tag: 'div',
                                     className: 'cvp_shortBtn',
-                                    textContent: 'Fin'
+                                    textContent: 'Fin',
                                 },
                                 {
                                     tag: 'span',
-                                    textContent: 'Ir al final del video'
-                                }
-                            ]
+                                    textContent: 'Ir al final del video',
+                                },
+                            ],
                         },
                         {
                             tag: 'div',
@@ -105,13 +105,13 @@ export default function (self) {
                                 {
                                     tag: 'div',
                                     className: 'cvp_shortBtn',
-                                    textContent: 'F'
+                                    textContent: 'F',
                                 },
                                 {
                                     tag: 'span',
-                                    textContent: 'Alternar pantalla completa'
-                                }
-                            ]
+                                    textContent: 'Alternar pantalla completa',
+                                },
+                            ],
                         },
                         {
                             tag: 'div',
@@ -119,18 +119,18 @@ export default function (self) {
                                 {
                                     tag: 'div',
                                     className: 'cvp_shortBtn',
-                                    textContent: ','
+                                    textContent: ',',
                                 },
                                 {
                                     tag: 'div',
                                     className: 'cvp_shortBtn',
-                                    textContent: '.'
+                                    textContent: '.',
                                 },
                                 {
                                     tag: 'span',
-                                    textContent: '-1 / +1 fotograma'
-                                }
-                            ]
+                                    textContent: '-1 / +1 fotograma',
+                                },
+                            ],
                         },
                         {
                             tag: 'div',
@@ -138,13 +138,13 @@ export default function (self) {
                                 {
                                     tag: 'div',
                                     className: 'cvp_shortBtn',
-                                    textContent: 'M'
+                                    textContent: 'M',
                                 },
                                 {
                                     tag: 'span',
-                                    textContent: 'Silencio / Desactivar Silencio'
-                                }
-                            ]
+                                    textContent: 'Silencio / Desactivar Silencio',
+                                },
+                            ],
                         },
                         {
                             tag: 'div',
@@ -152,18 +152,18 @@ export default function (self) {
                                 {
                                     tag: 'div',
                                     className: 'cvp_shortBtn',
-                                    textContent: '↑'
+                                    textContent: '↑',
                                 },
                                 {
                                     tag: 'div',
                                     className: 'cvp_shortBtn',
-                                    textContent: '↓'
+                                    textContent: '↓',
                                 },
                                 {
                                     tag: 'span',
-                                    textContent: 'Volumen arriba / abajo'
-                                }
-                            ]
+                                    textContent: 'Volumen arriba / abajo',
+                                },
+                            ],
                         },
                         {
                             tag: 'div',
@@ -171,17 +171,17 @@ export default function (self) {
                                 {
                                     tag: 'div',
                                     className: 'cvp_shortBtn',
-                                    textContent: 'T'
+                                    textContent: 'T',
                                 },
                                 {
                                     tag: 'span',
-                                    textContent: 'Alternar modo teatro'
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ]
+                                    textContent: 'Alternar modo teatro',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
         });
 
         self.domRef.player.parentNode.insertBefore(self.domRef.controls.shortcuts, null);
@@ -200,6 +200,6 @@ export default function (self) {
         const close = self.domRef.controls.shortcuts.querySelector('.cvp_hideShortcuts');
         close.addEventListener('click', () => {
             self.closeShortcuts();
-        })
+        });
     };
 }

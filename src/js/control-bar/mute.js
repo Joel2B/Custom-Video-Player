@@ -1,6 +1,6 @@
-export default function (self) {
+export default function(self) {
     self.muteToggle = () => {
-        if (0 !== self.domRef.player.volume && !self.domRef.player.muted) {
+        if (self.domRef.player.volume !== 0 && !self.domRef.player.muted) {
             self.domRef.player.volume = 0;
             self.domRef.player.muted = true;
         } else {

@@ -1,4 +1,4 @@
-export default function (self) {
+export default function(self) {
     self.initTitle = () => {
         if (!self.displayOptions.layoutControls.title) {
             return;
@@ -8,7 +8,7 @@ export default function (self) {
             id: self.videoPlayerId + '_title',
             className: 'fp_title',
             innerHTML: self.displayOptions.layoutControls.title,
-            domRef: 'titleHolder'
+            domRef: 'titleHolder',
         });
 
         self.domRef.player.parentNode.insertBefore(titleHolder, null);
@@ -17,7 +17,7 @@ export default function (self) {
     self.hasTitle = () => {
         const title = self.domRef.controls.titleHolder;
         const titleOption = self.displayOptions.layoutControls.title;
-        return title && titleOption != null;
+        return title && titleOption !== null;
     };
 
     self.hideTitle = () => {

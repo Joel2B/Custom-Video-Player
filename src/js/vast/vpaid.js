@@ -1,3 +1,4 @@
+/* eslint-disable */
 // VPAID support module
 export default function (self, options) {
     const callbacks = {

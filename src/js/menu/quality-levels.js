@@ -30,7 +30,7 @@ class Quality {
 
         this.page = this.player.createElement({
             tag: 'ul',
-            className: `cvp_options_list cvp_quality hide`,
+            className: 'cvp_options_list cvp_quality hide',
         });
 
         this.page.addEventListener('click', (e) => {
@@ -53,10 +53,10 @@ class Quality {
     }
 
     add(data) {
-        let levels = [];
+        const levels = [];
 
         for (const [index, level] of data.entries()) {
-            let info = [];
+            const info = [];
             let title;
 
             if (level.attrs && level.attrs.NAME) {
@@ -116,8 +116,8 @@ class Quality {
     }
 
     select(e) {
-        let selected = Number(e.target.dataset.level);
-        if (selected == this.current && !this.auto) {
+        const selected = Number(e.target.dataset.level);
+        if (selected === this.current && !this.auto) {
             return;
         }
 

@@ -1,6 +1,6 @@
-export default function (self) {
+export default function(self) {
     self.initHtmlOnPauseBlock = () => {
-        //If onPauseRoll is defined than HtmlOnPauseBlock won't be shown
+        // If onPauseRoll is defined than HtmlOnPauseBlock won't be shown
         if (self.hasValidOnPauseAd()) {
             return;
         }
@@ -15,8 +15,8 @@ export default function (self) {
             className: 'fluid_html_on_pause',
             innerHTML: self.displayOptions.layoutControls.htmlOnPauseBlock.html,
             style: {
-                display: 'none'
-            }
+                display: 'none',
+            },
         }, () => self.playPauseToggle());
 
         if (self.displayOptions.layoutControls.htmlOnPauseBlock.width) {
@@ -31,7 +31,7 @@ export default function (self) {
     };
 
     self.setHtmlOnPauseBlock = (passedHtml) => {
-        if (typeof passedHtml != 'object' || typeof passedHtml.html == 'undefined') {
+        if (typeof passedHtml !== 'object' || typeof passedHtml.html === 'undefined') {
             return false;
         }
 
@@ -45,8 +45,8 @@ export default function (self) {
                 className: 'fluid_html_on_pause',
                 innerHTML: passedHtml.html,
                 style: {
-                    display: 'none'
-                }
+                    display: 'none',
+                },
             }, () => self.playPauseToggle());
 
             if (passedHtml.width) {

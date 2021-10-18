@@ -1,11 +1,14 @@
+/* eslint-disable */
 import promisePolyfill from 'es6-promise';
 
 // Object.assign polyfill
 if (typeof Object.assign != 'function') {
     // Must be writable: true, enumerable: false, configurable: true
     Object.defineProperty(Object, 'assign', {
-        value: function assign(target, varArgs) { // .length of function is 2
-            if (target == null) { // TypeError if undefined or null
+        value: function assign(target, varArgs) {
+            // .length of function is 2
+            if (target == null) {
+                // TypeError if undefined or null
                 throw new TypeError('Cannot convert undefined or null to object');
             }
 
@@ -14,7 +17,8 @@ if (typeof Object.assign != 'function') {
             for (let index = 1; index < arguments.length; index++) {
                 const nextSource = arguments[index];
 
-                if (nextSource != null) { // Skip over if undefined or null
+                if (nextSource != null) {
+                    // Skip over if undefined or null
                     for (let nextKey in nextSource) {
                         // Avoid bugs when hasOwnProperty is shadowed
                         if (Object.prototype.hasOwnProperty.call(nextSource, nextKey)) {
@@ -26,7 +30,7 @@ if (typeof Object.assign != 'function') {
             return to;
         },
         writable: true,
-        configurable: true
+        configurable: true,
     });
 }
 
@@ -61,7 +65,7 @@ if (typeof Object.assign != 'function') {
                     return;
                 }
                 this.parentNode.removeChild(this);
-            }
+            },
         });
     });
 })([Element.prototype, CharacterData.prototype, DocumentType.prototype]);

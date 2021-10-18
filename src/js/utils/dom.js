@@ -1,4 +1,4 @@
-export default function (self) {
+export default function(self) {
     self.createElement = (data, arg) => {
         const elem = document.createElement(data.tag);
 
@@ -29,6 +29,7 @@ export default function (self) {
                     break;
                 case 'ref':
                     arg[value] = elem;
+                    break;
                 default:
                     elem[key] = value;
                     break;
@@ -106,7 +107,8 @@ export default function (self) {
             translateX = self.getTranslateX(el);
 
             if (el.tagName === 'BODY') {
-                x += el.offsetLeft + el.clientLeft + translateX - (el.scrollLeft || document.documentElement.scrollLeft);
+                x +=
+                    el.offsetLeft + el.clientLeft + translateX - (el.scrollLeft || document.documentElement.scrollLeft);
             } else {
                 x += el.offsetLeft + el.clientLeft + translateX - el.scrollLeft;
             }

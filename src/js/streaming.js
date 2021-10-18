@@ -3,11 +3,11 @@
 if (typeof window !== 'undefined' && !window.dashjs) {
     window.dashjs = {
         skipAutoCreate: true,
-        isDefaultSubject: true
+        isDefaultSubject: true,
     };
 }
 
-export default function (self, options) {
+export default function(self, options) {
     const $script = require('scriptjs');
 
     self.initialiseStreamers = () => {
@@ -44,11 +44,11 @@ export default function (self, options) {
                 : self.autoPlay.apply();
 
             const defaultOptions = {
-                'debug': {
-                    'logLevel': typeof FP_DEBUG !== 'undefined' && FP_DEBUG === true
+                debug: {
+                    logLevel: typeof FP_DEBUG !== 'undefined' && FP_DEBUG === true
                         ? dashjs.Debug.LOG_LEVEL_DEBUG
-                        : dashjs.Debug.LOG_LEVEL_FATAL
-                }
+                        : dashjs.Debug.LOG_LEVEL_FATAL,
+                },
             };
 
             const dashPlayer = dashjs.MediaPlayer().create();
@@ -116,7 +116,7 @@ export default function (self, options) {
                 abrBandWidthUpFactor: 0.5,
             };
 
-            self.displayOptions.modules.onBeforeInitHls(hls);
+            self.displayOptions.modules.onBeforeInitHls();
 
             const options = self.displayOptions.modules.configureHls(defaultOptions);
             const hls = new Hls(options);
@@ -127,29 +127,29 @@ export default function (self, options) {
 
             hls.on(Hls.Events.MEDIA_ATTACHED, () => {
                 hls.loadSource(self.originalSrc);
-            })
+            });
 
             hls.on(Hls.Events.LEVEL_SWITCHED, (e, data) => {
-                if (self.quality.current != -1 && !self.quality.auto || self.multipleVideoSources) {
+                if ((self.quality.current !== -1 && !self.quality.auto) || self.multipleVideoSources) {
                     return;
                 }
 
                 self.quality.auto = true;
                 self.quality.current = data.level;
                 self.quality.update();
-            })
+            });
 
             if (process.env.NODE_ENV === 'development') {
                 hls.on(Hls.Events.LEVEL_SWITCHING, (e, data) => {
-                    console.log('LEVEL_SWITCHING', data)
+                    console.log('LEVEL_SWITCHING', data);
                 });
             }
 
             hls.on(Hls.Events.MANIFEST_PARSED, (e, data) => {
                 if (process.env.NODE_ENV === 'development') {
-                    console.log('MANIFEST_PARSED', data)
+                    console.log('MANIFEST_PARSED', data);
                 }
-                if (data.levels.length == 1 && !self.multipleVideoSources) {
+                if (data.levels.length === 1 && !self.multipleVideoSources) {
                     self.menu.remove('qualityLevels');
                     return;
                 }
@@ -170,7 +170,7 @@ export default function (self, options) {
                 if (data.fatal) {
                     switch (data.type) {
                         case Hls.ErrorTypes.NETWORK_ERROR:
-                            // try to recover network error
+                        // try to recover network error
                             console.log('fatal network error encountered, try to recover');
                             hls.startLoad();
                             break;
@@ -179,7 +179,7 @@ export default function (self, options) {
                             hls.recoverMediaError();
                             break;
                         default:
-                            // cannot recover
+                        // cannot recover
                             self.recoverError();
                             break;
                     }

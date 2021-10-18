@@ -1,6 +1,6 @@
-export default function (self) {
+export default function(self) {
     self.checkShouldDisplayVolumeBar = () => {
-        return 'iOS' !== self.getMobileOs().userOs;
+        return self.getMobileOs().userOs !== 'iOS';
     };
 
     self.contolVolumebarUpdate = () => {
@@ -11,7 +11,7 @@ export default function (self) {
         const muteButtonTag = self.domRef.player.parentNode.getElementsByClassName('fluid_control_mute');
         const menuOptionMute = document.getElementById(self.videoPlayerId + '_context_option_mute');
 
-        if (0 !== self.domRef.player.volume) {
+        if (self.domRef.player.volume !== 0) {
             self.latestVolume = self.domRef.player.volume;
             self.setLocalStorage('mute', false);
         } else {
@@ -94,9 +94,9 @@ export default function (self) {
     self.onKeyboardVolumeChange = (direction) => {
         let volume = self.domRef.player.volume;
 
-        if ('asc' === direction) {
+        if (direction === 'asc') {
             volume += 0.05;
-        } else if ('desc' === direction) {
+        } else if (direction === 'desc') {
             volume -= 0.05;
         }
 
@@ -136,7 +136,7 @@ export default function (self) {
         // and storing 0 will break the toggle.
         // In case user scrolls to 0 we assume last volume to be 1
         // for toggle.
-        const latestVolume = 0 === passedVolume ? 1 : passedVolume;
+        const latestVolume = passedVolume === 0 ? 1 : passedVolume;
 
         self.latestVolume = latestVolume;
         self.setLocalStorage('volume', latestVolume);

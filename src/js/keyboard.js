@@ -1,4 +1,4 @@
-export default function (self, options) {
+export default function(self, options) {
     self.onKeyboardSeekPosition = (keyCode) => {
         if (self.isCurrentlyPlayingAd) {
             return;
@@ -7,41 +7,41 @@ export default function (self, options) {
         self.domRef.player.currentTime = self.getNewCurrentTimeValueByKeyCode(
             keyCode,
             self.domRef.player.currentTime,
-            self.domRef.player.duration
+            self.domRef.player.duration,
         );
     };
 
     self.getNewCurrentTimeValueByKeyCode = (keyCode, currentTime, duration) => {
-        self.currentFrameRate = Math.round(self.currentFrameRate != 0 ? self.currentFrameRate : 24);
+        self.currentFrameRate = Math.round(self.currentFrameRate !== 0 ? self.currentFrameRate : 24);
         let newCurrentTime = currentTime;
-        let frameTime = 1 / self.currentFrameRate;
-        let frame = Math.floor(Number(newCurrentTime.toFixed(5)) * self.currentFrameRate);
+        const frameTime = 1 / self.currentFrameRate;
+        const frame = Math.floor(Number(newCurrentTime.toFixed(5)) * self.currentFrameRate);
 
         switch (keyCode) {
-            case 37://left arrow
+            case 37:// left arrow
                 newCurrentTime -= 5;
                 newCurrentTime = (newCurrentTime < 5) ? 0 : newCurrentTime;
                 break;
-            case 39://right arrow
+            case 39:// right arrow
                 newCurrentTime += 5;
                 newCurrentTime = (newCurrentTime > duration - 5) ? duration : newCurrentTime;
                 break;
-            case 35://End
+            case 35:// End
                 newCurrentTime = duration;
                 break;
-            case 36://Home
+            case 36:// Home
                 newCurrentTime = 0;
                 break;
-            case 48://0
-            case 49://1
-            case 50://2
-            case 51://3
-            case 52://4
-            case 53://5
-            case 54://6
-            case 55://7
-            case 56://8
-            case 57://9
+            case 48:// 0
+            case 49:// 1
+            case 50:// 2
+            case 51:// 3
+            case 52:// 4
+            case 53:// 5
+            case 54:// 6
+            case 55:// 7
+            case 56:// 8
+            case 57:// 9
                 if (keyCode < 58 && keyCode > 47) {
                     const percent = (keyCode - 48) * 10;
                     newCurrentTime = duration * percent / 100;
@@ -57,13 +57,13 @@ export default function (self, options) {
                 break;
         }
 
-        if (process.env.NODE_ENV === 'development' && (keyCode == 188 || keyCode == 190)) {
+        if (process.env.NODE_ENV === 'development' && (keyCode === 188 || keyCode === 190)) {
             console.log(`
-            key: ( ${keyCode == 188 ? ',' : '.'} ),
+            key: ( ${keyCode === 188 ? ',' : '.'} ),
             current frame: ${frame},
             currentFrameRate: ${self.currentFrameRate},
-            currentTime: ${currentTime}, 
-            seekBackward: ${((frame - 1) / self.currentFrameRate) + 0.00001}, 
+            currentTime: ${currentTime},
+            seekBackward: ${((frame - 1) / self.currentFrameRate) + 0.00001},
             seekForward: ${((frame + 1) / self.currentFrameRate) + 0.00001},
             applied currentTime: ${newCurrentTime}`);
         }

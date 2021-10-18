@@ -1,4 +1,4 @@
-export default function (self, options) {
+export default function(self, options) {
     self.drawTimelineBasicPreview = (event) => {
         const progressContainer = self.domRef.controls.progressContainer;
         const totalWidth = progressContainer.clientWidth;
@@ -45,9 +45,9 @@ export default function (self, options) {
             className: 'fluid_timeline_preview',
             style: {
                 visibility: 'hidden',
-                position: 'absolute'
+                position: 'absolute',
             },
-            parent: self.domRef.controls.root
+            parent: self.domRef.controls.root,
         });
 
         // Set up hover for time position preview display
@@ -59,7 +59,7 @@ export default function (self, options) {
         self.trackEvent(self.domRef.player.parentNode, 'mouseout', '.fluid_controls_progress_container', (event) => {
             const progress = self.domRef.controls.progressContainer;
             if (typeof event.clientX !== 'undefined' && progress.contains(document.elementFromPoint(event.clientX, event.clientY))) {
-                //False positive (Chrome bug when fast click causes leave event)
+                // False positive (Chrome bug when fast click causes leave event)
                 return;
             }
             const hoverTimeItem = progress.parentNode.lastChild;
@@ -72,8 +72,8 @@ export default function (self, options) {
             self.displayOptions.layoutControls.timelinePreview.file,
             false,
             self.displayOptions.vastOptions.vastTimeout,
-            function () {
-                const convertVttRawData = function (vttRawData) {
+            function() {
+                const convertVttRawData = function(vttRawData) {
                     if (!vttRawData.length) {
                         return [];
                     }
@@ -84,7 +84,7 @@ export default function (self, options) {
 
                     for (let i = 0; i < vttRawData.length; i++) {
                         tempThumbnailData = vttRawData[i].text.split('#');
-                        let xCoords = 0, yCoords = 0, wCoords = 122.5, hCoords = 69;
+                        let xCoords = 0; let yCoords = 0; let wCoords = 122.5; let hCoords = 69;
 
                         // .vtt file contains sprite corrdinates
                         if (
@@ -104,9 +104,9 @@ export default function (self, options) {
                         }
 
                         let imageUrl;
-                        if (self.displayOptions.layoutControls.timelinePreview.spriteRelativePath
-                            && self.displayOptions.layoutControls.timelinePreview.file.indexOf('/') !== -1
-                            && (typeof self.displayOptions.layoutControls.timelinePreview.sprite === 'undefined' || self.displayOptions.layoutControls.timelinePreview.sprite === '')
+                        if (self.displayOptions.layoutControls.timelinePreview.spriteRelativePath &&
+                            self.displayOptions.layoutControls.timelinePreview.file.indexOf('/') !== -1 &&
+                            (typeof self.displayOptions.layoutControls.timelinePreview.sprite === 'undefined' || self.displayOptions.layoutControls.timelinePreview.sprite === '')
                         ) {
                             imageUrl = self.displayOptions.layoutControls.timelinePreview.file.substring(0, self.displayOptions.layoutControls.timelinePreview.file.lastIndexOf('/'));
                             imageUrl += '/' + tempThumbnailData[0];
@@ -121,7 +121,7 @@ export default function (self, options) {
                             x: xCoords,
                             y: yCoords,
                             w: wCoords,
-                            h: hCoords
+                            h: hCoords,
                         });
                     }
 
@@ -131,7 +131,7 @@ export default function (self, options) {
                 const xmlHttpReq = this;
 
                 if ((xmlHttpReq.readyState === 4) && (xmlHttpReq.status !== 200)) {
-                    //The response returned an error.
+                    // The response returned an error.
                     return;
                 }
 
@@ -148,7 +148,7 @@ export default function (self, options) {
                 parser.flush();
 
                 self.timelinePreviewData = convertVttRawData(cues);
-            }
+            },
         );
     };
 
@@ -161,30 +161,30 @@ export default function (self, options) {
                 display: 'none',
                 position: 'absolute',
             },
-            parent: self.domRef.controls.root
-        })
+            parent: self.domRef.controls.root,
+        });
 
         self.domRef.controls.tooltipTextContainer = self.createElement({
             tag: 'div',
             id: self.videoPlayerId + '_fluid_timeline_preview_tooltip_text_container',
             className: 'fluid_timeline_preview_tooltip_text_container',
             style: {
-                position: 'absolute'
+                position: 'absolute',
             },
-            parent: self.domRef.controls.previewContainer
-        })
+            parent: self.domRef.controls.previewContainer,
+        });
 
         self.domRef.controls.previewTooltipText = self.createElement({
             tag: 'div',
             id: self.videoPlayerId + '_fluid_timeline_preview_tooltip_text',
             className: 'fluid_timeline_preview_tooltip_text',
             style: {
-                position: 'absolute'
+                position: 'absolute',
             },
-            parent: self.domRef.controls.tooltipTextContainer
-        })
+            parent: self.domRef.controls.tooltipTextContainer,
+        });
 
-        //Shadow is needed to not trigger mouseleave event, that stops showing thumbnails, in case one scrubs a bit too fast and leaves current thumb before new one drawn.
+        // Shadow is needed to not trigger mouseleave event, that stops showing thumbnails, in case one scrubs a bit too fast and leaves current thumb before new one drawn.
         self.domRef.controls.previewContainerShadow = self.createElement({
             tag: 'div',
             id: self.videoPlayerId + '_fluid_timeline_preview_container_shadow',
@@ -192,10 +192,10 @@ export default function (self, options) {
             style: {
                 position: 'absolute',
                 display: 'none',
-                opacity: 1
+                opacity: 1,
             },
-            parent: self.domRef.controls.root
-        })
+            parent: self.domRef.controls.root,
+        });
     };
 
     self.getThumbnailCoordinates = (second) => {
@@ -226,14 +226,14 @@ export default function (self, options) {
             return;
         }
 
-        //get the hover position
+        // get the hover position
         const hoverX = self.getEventOffsetX(event, progressContainer);
         let hoverSecond = null;
 
         if (totalWidth) {
             hoverSecond = self.currentVideoDuration * hoverX / totalWidth;
 
-            //get the corresponding thumbnail coordinates
+            // get the corresponding thumbnail coordinates
             const thumbnailCoordinates = self.getThumbnailCoordinates(hoverSecond);
             timelinePreviewShadow.style.width = totalWidth + 'px';
             timelinePreviewShadow.style.display = 'block';
@@ -280,7 +280,7 @@ export default function (self, options) {
     };
 
     self.setupThumbnailPreview = () => {
-        let timelinePreview = self.displayOptions.layoutControls.timelinePreview;
+        const timelinePreview = self.displayOptions.layoutControls.timelinePreview;
         if (!timelinePreview || !timelinePreview.type || self.showCardBoardView) {
             return;
         }
@@ -294,10 +294,10 @@ export default function (self, options) {
         self.domRef.controls.progressContainer
             .addEventListener(eventOn, self.drawTimelinePreview.bind(self), false);
         self.domRef.controls.progressContainer
-            .addEventListener(eventOff, function (event) {
+            .addEventListener(eventOff, function(event) {
                 const progress = self.domRef.controls.progressContainer;
                 if (typeof event.clientX !== 'undefined' && progress.contains(document.elementFromPoint(event.clientX, event.clientY))) {
-                    //False positive (Chrome bug when fast click causes leave event)
+                    // False positive (Chrome bug when fast click causes leave event)
                     return;
                 }
                 self.domRef.controls.previewContainer.style.display = 'none';
@@ -305,11 +305,11 @@ export default function (self, options) {
             }, false);
         self.generateTimelinePreviewTags();
 
-        if ('VTT' === timelinePreview.type && typeof timelinePreview.file === 'string') {
+        if (timelinePreview.type === 'VTT' && typeof timelinePreview.file === 'string') {
             import(/* webpackChunkName: "webvtt" */ 'videojs-vtt.js').then(() => {
                 self.setupThumbnailPreviewVtt();
             });
-        } else if ('static' === timelinePreview.type && typeof timelinePreview.frames === 'object') {
+        } else if (timelinePreview.type === 'static' && typeof timelinePreview.frames === 'object') {
             timelinePreview.spriteImage = true;
             self.timelinePreviewData = timelinePreview.frames;
         } else {

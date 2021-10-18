@@ -1,3 +1,4 @@
+/* eslint-disable */
 // VAST support module
 export default function (self, options) {
     self.getClickThroughUrlFromLinear = (linear) => {

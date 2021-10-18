@@ -1,7 +1,7 @@
-export default function (self, options) {
+export default function(self, options) {
     // TODO: rename
     self.announceLocalError = (code, msg) => {
-        const parsedCode = typeof (code) !== 'undefined' ? parseInt(code) : 900;
+        const parsedCode = typeof code !== 'undefined' ? parseInt(code) : 900;
         let message = '[Error] (' + parsedCode + '): ';
         message += !msg ? 'Failed to load Vast' : msg;
         console.warn(message);

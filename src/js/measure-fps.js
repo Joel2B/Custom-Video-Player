@@ -1,16 +1,16 @@
-export default function (self, options) {
+export default function(self, options) {
     self.checkFPS = (totalVideoFrames) => {
         const previousFrameRate = self.currentFrameRate;
         self.currentFrameRate = (totalVideoFrames - self.currentFrameCount) / self.updateFpsTimer;
         self.currentFrameRate /= self.domRef.player.playbackRate;
         self.currentFrameCount = totalVideoFrames;
-        if (self.currentFrameRate == 0) {
+        if (self.currentFrameRate === 0) {
             return;
         }
         self.totalFPS += self.currentFrameRate;
         self.countCheckFPS++;
 
-        if (previousFrameRate == self.currentFrameRate) {
+        if (previousFrameRate === self.currentFrameRate) {
             self.countRegularFPS++;
         } else {
             self.countRegularFPS = 0;
@@ -19,10 +19,10 @@ export default function (self, options) {
         if (process.env.NODE_ENV === 'development') {
             console.log(`
             averageFPS: ${Math.round(self.totalFPS / self.countCheckFPS)},
-            currentFrameRate: ${self.currentFrameRate}, 
-            previousFrameRate: ${previousFrameRate}, 
-            currentFrameCount: ${self.currentFrameCount}, 
-            countCheckFPS: ${self.countCheckFPS}, 
+            currentFrameRate: ${self.currentFrameRate},
+            previousFrameRate: ${previousFrameRate},
+            currentFrameCount: ${self.currentFrameCount},
+            countCheckFPS: ${self.countCheckFPS},
             `);
         }
 
@@ -39,7 +39,7 @@ export default function (self, options) {
             self.currentFrameRate = self.totalFPS / self.countCheckFPS;
             clearInterval(self.fpsTimer);
         }
-    }
+    };
 
     self.checkFPSInterval = () => {
         if (self.isCurrentlyPlayingAd) {
@@ -47,12 +47,13 @@ export default function (self, options) {
         }
 
         clearInterval(self.fpsTimer);
-        const isFirefoxAndroid = self.mobileInfo.userOs == false
-            && self.mobileInfo.userOs === 'Android'
-            && browserVersion.browserName === 'Mozilla Firefox';
-        const isSafariIOS = self.mobileInfo.userOs !== false
-            && self.mobileInfo.userOs === 'IOS'
-            && browserVersion.browserName === 'Safari';
+        const browserVersion = self.getBrowserVersion();
+        const isFirefoxAndroid = self.mobileInfo.userOs === false &&
+            self.mobileInfo.userOs === 'Android' &&
+            browserVersion.browserName === 'Mozilla Firefox';
+        const isSafariIOS = self.mobileInfo.userOs !== false &&
+            self.mobileInfo.userOs === 'IOS' &&
+            browserVersion.browserName === 'Safari';
 
         if (self.stopCheckFPSInterval || isFirefoxAndroid || isSafariIOS) {
             return;

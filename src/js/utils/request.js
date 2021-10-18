@@ -1,4 +1,4 @@
-export default function (self, options) {
+export default function(self, options) {
     self.sendRequest = (url, withCredentials, timeout, functionReadyStateChange) => {
         const xmlHttpReq = new XMLHttpRequest();
 

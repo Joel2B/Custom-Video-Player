@@ -1,11 +1,11 @@
-export default function (self, options) {
+export default function(self, options) {
     self.convertTimeStringToSeconds = (str) => {
         if (!(str && str.match(/^(\d){2}(:[0-5][0-9]){2}(.(\d){1,3})?$/))) {
             return false;
         }
 
         const timeParts = str.split(':');
-        return ((parseInt(timeParts[0], 10)) * 3600) + ((parseInt(timeParts[1], 10)) * 60) + (parseInt(timeParts[2], 10));
+        return parseInt(timeParts[0], 10) * 3600 + parseInt(timeParts[1], 10) * 60 + parseInt(timeParts[2], 10);
     };
 
     // Format time to hh:mm:ss

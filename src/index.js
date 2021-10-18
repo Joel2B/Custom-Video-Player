@@ -1,17 +1,20 @@
-if ('undefined' === typeof FP_HOMEPAGE) {
+import './polyfills';
+import playerInitializer from './js/player';
+
+if (typeof FP_HOMEPAGE === 'undefined') {
     global.FP_HOMEPAGE = 'https://appsdev.cyou';
 }
 
-if ('undefined' === typeof FP_BUILD_VERSION) {
+if (typeof FP_BUILD_VERSION === 'undefined') {
     global.FP_BUILD_VERSION = 'v3';
 }
 
-if ('undefined' === typeof FP_ENV) {
-    const isLocalhost = window
-        && window.location
-        && (window.location.hostname === 'localhost'
-            || window.location.hostname === '127.0.0.1'
-            || window.location.hostname === '');
+if (typeof FP_ENV === 'undefined') {
+    const isLocalhost = window &&
+        window.location &&
+        (window.location.hostname === 'localhost' ||
+            window.location.hostname === '127.0.0.1' ||
+            window.location.hostname === '');
 
     if (process && process.env && process.env.NODE_ENV) {
         global.FP_ENV = process.env.NODE_ENV;
@@ -22,11 +25,8 @@ if ('undefined' === typeof FP_ENV) {
     }
 }
 
-if ('undefined' === typeof FP_DEBUG) {
+if (typeof FP_DEBUG === 'undefined') {
     global.FP_DEBUG = false;
 }
-
-import './polyfills';
-import playerInitializer from './js/player';
 
 export default playerInitializer;

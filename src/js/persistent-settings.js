@@ -1,4 +1,4 @@
-export default function (self) {
+export default function(self) {
     self.setPersistentSettings = () => {
         if (self.displayOptions.layoutControls.persistentSettings.volume) {
             self.applyVolume();

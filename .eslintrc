@@ -1,0 +1,33 @@
+{
+    "parser": "babel-eslint",
+    "extends": ["standard"],
+    "env": {
+        "browser": true,
+        "es2021": true
+    },
+    "parserOptions": {
+        "ecmaVersion": 12,
+        "sourceType": "module"
+    },
+    "rules": {
+        "semi": [2, "always"],
+        "comma-dangle": [2, "always-multiline"],
+        "indent": ["warn", 4, { "SwitchCase": 1 }],
+        "eqeqeq": ["warn", "always"],
+        "no-undef": "warn",
+        "no-throw-literal": "warn",
+        "no-prototype-builtins": "warn",
+        "prefer-const": "warn",
+        "no-unused-vars": "warn",
+        "import/no-cycle": "warn",
+        "max-len": ["warn", { "code": 120 }],
+        "space-before-function-paren": [
+            "error",
+            {
+                "anonymous": "never",
+                "named": "never",
+                "asyncArrow": "always"
+            }
+        ]
+    }
+}

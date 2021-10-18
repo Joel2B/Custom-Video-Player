@@ -1,6 +1,6 @@
-export default function (self) {
+export default function(self) {
     self.setCustomControls = () => {
-        //Set the Play/Pause behaviour
+        // Set the Play/Pause behaviour
         self.trackEvent(self.domRef.player.parentNode, 'click', '.fluid_control_playpause', () => {
             if (!self.firstPlayLaunched) {
                 self.domRef.player.removeEventListener('play', self.initialPlay);
@@ -19,9 +19,9 @@ export default function (self) {
             self.controlPlayPauseToggle();
         }, false);
 
-        //Set the progressbar
+        // Set the progressbar
         self.domRef.player.addEventListener('timeupdate', () => {
-            if (self.updateInterval == null) {
+            if (self.updateInterval === null) {
                 self.updateInterval = setInterval(() => {
                     self.contolProgressbarUpdate();
                     if (self.domRef.player.paused) {
@@ -50,7 +50,7 @@ export default function (self) {
             self.domRef.controls.hoverProgress.style.transformOrigin = '0 0';
         });
 
-        //Set the volume controls
+        // Set the volume controls
         document.getElementById(self.videoPlayerId + '_fluid_control_volume_container')
             .addEventListener(eventOn, event => self.onVolumeBarMouseDown(), self.useCapture);
 
@@ -60,7 +60,7 @@ export default function (self) {
 
         self.setBuffering();
 
-        //Set the fullscreen control
+        // Set the fullscreen control
         self.trackEvent(self.domRef.player.parentNode, 'click', '.fluid_control_fullscreen', () => self.fullscreenToggle());
 
         // Theatre mode
@@ -78,11 +78,11 @@ export default function (self) {
         });
 
         if (window.attachEvent) {
-            window.attachEvent('onresize', function () {
+            window.attachEvent('onresize', function() {
                 self.resizeMarkerContainer();
             });
         } else if (window.addEventListener) {
-            window.addEventListener('resize', function () {
+            window.addEventListener('resize', function() {
                 self.resizeMarkerContainer();
             }, true);
         } else {

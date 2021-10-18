@@ -1,9 +1,9 @@
-export default function (self) {
+export default function(self) {
     /**
      * Dispatches a custom pause event which is not present when seeking.
      */
     self.onFluidPlayerPause = () => {
-        setTimeout(function () {
+        setTimeout(function() {
             if (self.recentWaiting) {
                 return;
             }
@@ -154,7 +154,6 @@ export default function (self) {
                 }
 
                 self.playPauseAnimationToggle(true);
-
             } else if (!isFirstStart) {
                 if (self.isCurrentlyPlayingAd && self.vastOptions !== null && self.vastOptions.vpaid) {
                     // pause the vpaid linear ad
@@ -177,11 +176,11 @@ export default function (self) {
             // The URL is hardcoded here to cover widest possible use cases.
             // If you know of an alternative workaround for this issue - let us know!
             const browserVersion = self.getBrowserVersion();
-            const isChromeAndroid = self.mobileInfo.userOs !== false
-                && self.mobileInfo.userOs === 'Android'
-                && browserVersion.browserName === 'Google Chrome';
+            const isChromeAndroid = self.mobileInfo.userOs !== false &&
+                self.mobileInfo.userOs === 'Android' &&
+                browserVersion.browserName === 'Google Chrome';
 
-            if ('Safari' === browserVersion.browserName || isChromeAndroid) {
+            if (browserVersion.browserName === 'Safari' || isChromeAndroid) {
                 self.domRef.player.src = 'https://cdn.fluidplayer.com/static/blank.mp4';
                 self.domRef.player.play();
                 self.playPauseAnimationToggle(true);
@@ -189,7 +188,7 @@ export default function (self) {
 
             self.firstPlayLaunched = true;
 
-            //trigger the loading of the VAST Tag
+            // trigger the loading of the VAST Tag
             self.prepareVast('preRoll');
             self.preRollAdPodsLength = preRolls.length;
         }

@@ -1,4 +1,4 @@
-export default function (self) {
+export default function(self) {
     self.checkFullscreenSupport = (videoPlayerWrapperId) => {
         const videoPlayerWrapper = document.getElementById(videoPlayerWrapperId);
 
@@ -6,35 +6,31 @@ export default function (self) {
             return {
                 goFullscreen: 'mozRequestFullScreen',
                 exitFullscreen: 'mozCancelFullScreen',
-                isFullscreen: 'mozFullScreenElement'
+                isFullscreen: 'mozFullScreenElement',
             };
-
         } else if (videoPlayerWrapper.webkitRequestFullscreen) {
             return {
                 goFullscreen: 'webkitRequestFullscreen',
                 exitFullscreen: 'webkitExitFullscreen',
-                isFullscreen: 'webkitFullscreenElement'
+                isFullscreen: 'webkitFullscreenElement',
             };
-
         } else if (videoPlayerWrapper.msRequestFullscreen) {
             return {
                 goFullscreen: 'msRequestFullscreen',
                 exitFullscreen: 'msExitFullscreen',
-                isFullscreen: 'msFullscreenElement'
+                isFullscreen: 'msFullscreenElement',
             };
-
         } else if (videoPlayerWrapper.requestFullscreen) {
             return {
                 goFullscreen: 'requestFullscreen',
                 exitFullscreen: 'exitFullscreen',
-                isFullscreen: 'fullscreenElement'
+                isFullscreen: 'fullscreenElement',
             };
-
         } else if (self.domRef.player.webkitSupportsFullscreen) {
             return {
                 goFullscreen: 'webkitEnterFullscreen',
                 exitFullscreen: 'webkitExitFullscreen',
-                isFullscreen: 'webkitDisplayingFullscreen'
+                isFullscreen: 'webkitDisplayingFullscreen',
             };
         }
 
@@ -86,18 +82,18 @@ export default function (self) {
                 }
             } else {
                 if (document[requestFullscreenFunctionNames.isFullscreen] === null) {
-                    //Go fullscreen
+                    // Go fullscreen
                     functionNameToExecute = 'videoPlayerTag.' + requestFullscreenFunctionNames.goFullscreen + '();';
                     self.fullscreenOn(fullscreenButton, menuOptionFullscreen);
                 } else {
-                    //Exit fullscreen
+                    // Exit fullscreen
                     functionNameToExecute = 'document.' + requestFullscreenFunctionNames.exitFullscreen + '();';
                     self.fullscreenOff(fullscreenButton, menuOptionFullscreen);
                 }
                 new Function('videoPlayerTag', functionNameToExecute)(fullscreenTag);
             }
         } else {
-            //The browser does not support the Fullscreen API, so a pseudo-fullscreen implementation is used
+            // The browser does not support the Fullscreen API, so a pseudo-fullscreen implementation is used
             if (fullscreenTag.className.search(/\bpseudo_fullscreen\b/g) !== -1) {
                 fullscreenTag.className = fullscreenTag.className.replace(/\bpseudo_fullscreen\b/g, '');
                 self.fullscreenOff(fullscreenButton, menuOptionFullscreen);

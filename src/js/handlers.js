@@ -1,8 +1,8 @@
-export default function (self) {
+export default function(self) {
     self.handleMouseleave = (event) => {
-        if (typeof event.clientX !== 'undefined'
-            && self.domRef.wrapper.contains(document.elementFromPoint(event.clientX, event.clientY))) {
-            //false positive; we didn't actually leave the player
+        if (typeof event.clientX !== 'undefined' &&
+            self.domRef.wrapper.contains(document.elementFromPoint(event.clientX, event.clientY))) {
+            // false positive; we didn't actually leave the player
             return;
         }
 
@@ -12,20 +12,20 @@ export default function (self) {
 
     self.handleMouseenterForKeyboard = (e) => {
         let clickedMenuButton = false;
-        // TODO: improve this iteration
-        Array.from(self.domRef.wrapper.getElementsByClassName('fluid_button_main_menu')).map((elem) => {
-            if (elem == e.target) {
+        const menus = self.domRef.wrapper.getElementsByClassName('fluid_button_main_menu');
+        for (const menu of menus) {
+            if (menu === e.target) {
                 clickedMenuButton = true;
             }
-        });
+        }
 
         if (!clickedMenuButton && self.menu.menu && !self.menu.menu.contains(e.target)) {
             self.menu.close();
         }
 
-        if (e.target != self.domRef.controls.shortcuts 
-            && !self.domRef.controls.shortcuts.contains(e.target)
-            && !self.domRef.contextMenu.contains(e.target)) {
+        if (e.target !== self.domRef.controls.shortcuts &&
+            !self.domRef.controls.shortcuts.contains(e.target) &&
+            !self.domRef.contextMenu.contains(e.target)) {
             self.closeShortcuts();
         }
 
@@ -40,7 +40,7 @@ export default function (self) {
             const keyCode = event.keyCode;
 
             switch (keyCode) {
-                case 70://f
+                case 70:// f
                     self.fullscreenToggle();
                     event.preventDefault();
                     break;
@@ -48,38 +48,38 @@ export default function (self) {
                     self.theatreToggle();
                     event.preventDefault();
                     break;
-                case 13://Enter
-                case 32://Space
+                case 13:// Enter
+                case 32:// Space
                 case 75:// k
                     self.playPauseToggle();
                     event.preventDefault();
                     break;
-                case 77://m
+                case 77:// m
                     self.muteToggle();
                     event.preventDefault();
                     break;
-                case 38://up arrow
+                case 38:// up arrow
                     self.onKeyboardVolumeChange('asc');
                     event.preventDefault();
                     break;
-                case 40://down arrow
+                case 40:// down arrow
                     self.onKeyboardVolumeChange('desc');
                     event.preventDefault();
                     break;
-                case 37://left arrow
-                case 39://right arrow
-                case 35://End
-                case 36://Home
-                case 48://0
-                case 49://1
-                case 50://2
-                case 51://3
-                case 52://4
-                case 53://5
-                case 54://6
-                case 55://7
-                case 56://8
-                case 57://9
+                case 37:// left arrow
+                case 39:// right arrow
+                case 35:// End
+                case 36:// Home
+                case 48:// 0
+                case 49:// 1
+                case 50:// 2
+                case 51:// 3
+                case 52:// 4
+                case 53:// 5
+                case 54:// 6
+                case 55:// 7
+                case 56:// 8
+                case 57:// 9
                 case 188:// ,
                 case 190:// .
                     self.onKeyboardSeekPosition(keyCode);
@@ -88,7 +88,6 @@ export default function (self) {
             }
 
             return false;
-
         };
 
         document.addEventListener('keydown', self.captureKey, true);
@@ -96,8 +95,8 @@ export default function (self) {
 
     self.handleWindowClick = (e) => {
         if (!self.domRef.wrapper) {
-            console.warn('Dangling click event listener should be collected for unknown wrapper ' + self.videoPlayerId
-                + '. Did you forget to call destroy on player instance?');
+            console.warn('Dangling click event listener should be collected for unknown wrapper ' + self.videoPlayerId +
+                '. Did you forget to call destroy on player instance?');
             return;
         }
 
@@ -108,7 +107,7 @@ export default function (self) {
         }
 
         document.removeEventListener('keydown', self.captureKey, true);
-        delete self['captureKey'];
+        delete self.captureKey;
 
         if (self.theatreMode && !self.theatreModeAdvanced) {
             self.theatreToggle();
@@ -122,7 +121,7 @@ export default function (self) {
 
         ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'msfullscreenchange'].forEach(eventType => {
             if (typeof (document['on' + eventType]) === 'object') {
-                document.addEventListener(eventType, function (ev) {
+                document.addEventListener(eventType, function(ev) {
                     self.recalculateAdDimensions();
                 }, false);
             }
@@ -160,7 +159,7 @@ export default function (self) {
                 break;
             case 'timeupdate':
                 self.domRef.player.addEventListener('timeupdate', () => {
-                    functionCall(self.getCurrentTime())
+                    functionCall(self.getCurrentTime());
                 });
                 break;
             default:

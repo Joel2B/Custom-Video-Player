@@ -1,4 +1,4 @@
-export default function (self, options) {
+export default function(self, options) {
     // this functions helps in adding event listeners for future dynamic elements
     // trackEvent(document, "click", ".some_elem", callBackFunction);
     self.trackEvent = (el, evt, sel, handler) => {
@@ -22,12 +22,12 @@ export default function (self, options) {
     };
 
     self.copyEvents = (topLevelEl) => {
-        for (let sel in self.events) {
+        for (const sel in self.events) {
             if (!self.events.hasOwnProperty(sel)) {
                 continue;
             }
 
-            for (let evt in self.events[sel]) {
+            for (const evt in self.events[sel]) {
                 if (!self.events[sel].hasOwnProperty(evt)) {
                     continue;
                 }

@@ -1,4 +1,4 @@
-export default function (self) {
+export default function(self) {
     self.contolProgressbarUpdate = () => {
         const progressContainer = self.domRef.wrapper.getElementsByClassName('fluid_controls_progress_container');
 
@@ -76,21 +76,23 @@ export default function (self) {
                 self.drawTimelineBasicPreview(event);
             }
 
-            Array.from(progressContainer.childNodes).map((elem) => {
-                if (elem.className.indexOf('marker_container') == -1) {
-                    elem.style.transform = 'none'
+            const nodes = progressContainer.childNodes;
+            for (let i = 0; i < nodes.length; i++) {
+                if (nodes[i].className.indexOf('marker_container') === -1) {
+                    nodes[i].style.transform = 'none';
                 }
-            });
+            }
 
             progressContainer.firstChild.nextSibling.firstChild.style.setProperty('transform', 'none', 'important');
         };
 
         const onProgressbarMouseUp = event => {
-            Array.from(progressContainer.childNodes).map((elem) => {
-                if (elem.className.indexOf('marker_container') == -1) {
-                    elem.style.removeProperty('transform');
+            const nodes = progressContainer.childNodes;
+            for (let i = 0; i < nodes.length; i++) {
+                if (nodes[i].className.indexOf('marker_container') === -1) {
+                    nodes[i].style.removeProperty('transform');
                 }
-            });
+            }
 
             progressContainer.firstChild.nextSibling.firstChild.style.removeProperty('transform');
 
