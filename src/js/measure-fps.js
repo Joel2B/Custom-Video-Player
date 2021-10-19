@@ -1,75 +1,88 @@
-export default function(self, options) {
-    self.checkFPS = (totalVideoFrames) => {
-        const previousFrameRate = self.currentFrameRate;
-        self.currentFrameRate = (totalVideoFrames - self.currentFrameCount) / self.updateFpsTimer;
-        self.currentFrameRate /= self.domRef.player.playbackRate;
-        self.currentFrameCount = totalVideoFrames;
-        if (self.currentFrameRate === 0) {
+class Fps {
+    constructor(player) {
+        this.player = player;
+        this.interval = null;
+        this.update = 0.3;
+        this.current = 0;
+        this.count = 0;
+        this.total = 0;
+        this.attempt = 0;
+        this.regularAttempt = 0;
+        this.stop = false;
+    }
+
+    calc(totalVideoFrames) {
+        const previous = this.current;
+        this.current = (totalVideoFrames - this.count) / this.update;
+        this.current /= this.player.domRef.player.playbackRate;
+        this.count = totalVideoFrames;
+        if (this.current === 0) {
             return;
         }
-        self.totalFPS += self.currentFrameRate;
-        self.countCheckFPS++;
+        this.total += this.current;
+        this.attempt++;
 
-        if (previousFrameRate === self.currentFrameRate) {
-            self.countRegularFPS++;
+        if (previous === this.current) {
+            this.regularAttempt++;
         } else {
-            self.countRegularFPS = 0;
+            this.regularAttempt = 0;
         }
 
         if (process.env.NODE_ENV === 'development') {
             console.log(`
-            averageFPS: ${Math.round(self.totalFPS / self.countCheckFPS)},
-            currentFrameRate: ${self.currentFrameRate},
-            previousFrameRate: ${previousFrameRate},
-            currentFrameCount: ${self.currentFrameCount},
-            countCheckFPS: ${self.countCheckFPS},
+                averageFPS: ${Math.round(this.total / this.attempt)},
+                currentFrameRate: ${this.current},
+                previousFrameRate: ${previous},
+                currentFrameCount: ${this.count},
+                countCheckFPS: ${this.attempt},
             `);
         }
 
-        if (self.countRegularFPS >= 3) {
-            clearInterval(self.fpsTimer);
-            self.stopCheckFPSInterval = true;
-        } else if (self.countCheckFPS >= 15) {
-            self.currentFrameRate = self.totalFPS / self.countCheckFPS;
-            clearInterval(self.fpsTimer);
-            self.stopCheckFPSInterval = true;
+        if (this.regularAttempt === 3) {
+            clearInterval(this.interval);
+            this.stop = true;
+        } else if (this.attempt === 15) {
+            this.current = this.total / this.attempt;
+            clearInterval(this.interval);
+            this.stop = true;
         }
 
-        if (self.domRef.player.paused) {
-            self.currentFrameRate = self.totalFPS / self.countCheckFPS;
-            clearInterval(self.fpsTimer);
+        if (this.player.domRef.player.paused) {
+            this.current = this.total / this.attempt;
+            clearInterval(this.interval);
         }
-    };
+    }
 
-    self.checkFPSInterval = () => {
-        if (self.isCurrentlyPlayingAd) {
+    check() {
+        if (this.player.isCurrentlyPlayingAd) {
             return;
         }
 
-        clearInterval(self.fpsTimer);
-        const browserVersion = self.getBrowserVersion();
-        const isFirefoxAndroid = self.mobileInfo.userOs === false &&
-            self.mobileInfo.userOs === 'Android' &&
-            browserVersion.browserName === 'Mozilla Firefox';
-        const isSafariIOS = self.mobileInfo.userOs !== false &&
-            self.mobileInfo.userOs === 'IOS' &&
-            browserVersion.browserName === 'Safari';
+        clearInterval(this.interval);
+        const browserVersion = this.player.getBrowserVersion();
+        const mobile = this.player.mobileInfo.userOs;
+        const browser = browserVersion.browserName;
+        const isFirefoxAndroid = mobile === 'Android' && browser === 'Mozilla Firefox';
+        const isSafariIOS = mobile === 'IOS' && browser === 'Safari';
 
-        if (self.stopCheckFPSInterval || isFirefoxAndroid || isSafariIOS) {
+        if (this.stop || isFirefoxAndroid || isSafariIOS) {
             return;
         }
 
-        self.fpsTimer = setInterval(() => {
-            const video = self.domRef.player;
-            if (typeof video.getVideoPlaybackQuality === 'function' &&
-                typeof video.getVideoPlaybackQuality().totalVideoFrames === 'number') {
-                const videoPlaybackQuality = video.getVideoPlaybackQuality();
-                self.checkFPS(videoPlaybackQuality.totalVideoFrames);
+        this.interval = setInterval(() => {
+            const video = this.player.domRef.player;
+            if (
+                typeof video.getVideoPlaybackQuality === 'function' &&
+                typeof video.getVideoPlaybackQuality().totalVideoFrames === 'number'
+            ) {
+                this.calc(video.getVideoPlaybackQuality().totalVideoFrames);
             } else if (typeof video.webkitDecodedFrameCount === 'number') {
-                self.checkFPS(video.webkitDecodedFrameCount);
+                this.calc(video.webkitDecodedFrameCount);
             } else {
                 console.log('[FP_ERROR] The browser does not support webkitDecodedFrameCount.');
             }
-        }, self.updateFpsTimer * 1000);
-    };
+        }, this.update * 1000);
+    }
 }
+
+export default Fps;

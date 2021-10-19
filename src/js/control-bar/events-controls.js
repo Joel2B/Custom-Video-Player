@@ -12,7 +12,7 @@ export default function(self) {
         self.domRef.player.addEventListener('play', () => {
             self.controlPlayPauseToggle();
             self.contolVolumebarUpdate();
-            self.checkFPSInterval();
+            self.fps.check();
         }, false);
 
         self.domRef.player.addEventListener('fluidplayerpause', () => {

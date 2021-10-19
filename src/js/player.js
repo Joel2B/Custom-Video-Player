@@ -37,7 +37,7 @@ import Debug from './debug';
 import Handlers from './handlers';
 import HtmlOnPause from './html-on-pause';
 import Logo from './logo';
-import MeasureFPS from './measure-fps';
+import Fps from './measure-fps';
 import PersistentSettings from './persistent-settings';
 import Shortcuts from './shortcuts';
 import Streaming from './streaming';
@@ -77,7 +77,6 @@ const FP_MODULES = [
     Handlers,
     HtmlOnPause,
     Logo,
-    MeasureFPS,
     PersistentSettings,
     Shortcuts,
     Streaming,
@@ -171,14 +170,6 @@ const PlayerClass = function() {
         self.timelinePreviewData = [];
         self.mainVideoCurrentTime = 0;
         self.mainVideoDuration = 0;
-        self.totalFPS = 0;
-        self.currentFrameRate = 0;
-        self.currentFrameCount = 0;
-        self.countCheckFPS = 0;
-        self.countRegularFPS = 0;
-        self.fpsTimer = null;
-        self.stopCheckFPSInterval = false;
-        self.updateFpsTimer = 0.3;
         self.isTimer = false;
         self.timer = null;
         self.timerPool = {};
@@ -434,6 +425,8 @@ const PlayerClass = function() {
         self.setPersistentSettings();
 
         self.initMute();
+
+        self.fps = new Fps(self);
 
         // DO NOT initialize streamers if there are pre-rolls. It will break the streamers!
         // Streamers will re-initialize once ad has been shown.

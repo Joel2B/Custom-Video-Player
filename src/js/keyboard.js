@@ -12,19 +12,19 @@ export default function(self, options) {
     };
 
     self.getNewCurrentTimeValueByKeyCode = (keyCode, currentTime, duration) => {
-        self.currentFrameRate = Math.round(self.currentFrameRate !== 0 ? self.currentFrameRate : 24);
+        let fps = self.fps.current;
+        fps = fps !== 0 ? fps : 29.97;
         let newCurrentTime = currentTime;
-        const frameTime = 1 / self.currentFrameRate;
-        const frame = Math.floor(Number(newCurrentTime.toFixed(5)) * self.currentFrameRate);
+        const frame = currentTime * fps + 0.00001;
 
         switch (keyCode) {
             case 37:// left arrow
                 newCurrentTime -= 5;
-                newCurrentTime = (newCurrentTime < 5) ? 0 : newCurrentTime;
+                newCurrentTime = (newCurrentTime > 0) ? newCurrentTime : 0;
                 break;
             case 39:// right arrow
                 newCurrentTime += 5;
-                newCurrentTime = (newCurrentTime > duration - 5) ? duration : newCurrentTime;
+                newCurrentTime = (newCurrentTime < duration) ? newCurrentTime : duration;
                 break;
             case 35:// End
                 newCurrentTime = duration;
@@ -48,24 +48,23 @@ export default function(self, options) {
                 }
                 break;
             case 188: // ,
-                newCurrentTime -= frameTime;
-                newCurrentTime = newCurrentTime < frameTime ? 0 : newCurrentTime;
+                newCurrentTime = (frame - 1) / fps;
+                newCurrentTime = newCurrentTime > 0 ? newCurrentTime : 0;
                 break;
             case 190:// .
-                newCurrentTime += frameTime;
-                newCurrentTime = newCurrentTime > duration - frameTime ? duration : newCurrentTime;
+                newCurrentTime = (frame + 1) / fps;
+                newCurrentTime = newCurrentTime < duration ? newCurrentTime : duration;
                 break;
         }
 
         if (process.env.NODE_ENV === 'development' && (keyCode === 188 || keyCode === 190)) {
             console.log(`
-            key: ( ${keyCode === 188 ? ',' : '.'} ),
-            current frame: ${frame},
-            currentFrameRate: ${self.currentFrameRate},
-            currentTime: ${currentTime},
-            seekBackward: ${((frame - 1) / self.currentFrameRate) + 0.00001},
-            seekForward: ${((frame + 1) / self.currentFrameRate) + 0.00001},
-            applied currentTime: ${newCurrentTime}`);
+                key: ( ${keyCode === 188 ? ',' : '.'} ),
+                current frame: ${frame + (keyCode === 188 ? -1 : 1)},
+                currentFrameRate: ${fps},
+                applied currentTime: ${newCurrentTime}
+                previous currentTime: ${currentTime}
+            `);
         }
 
         return newCurrentTime;
