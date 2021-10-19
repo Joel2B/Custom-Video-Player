@@ -79,6 +79,8 @@ class Fps {
             } else if (typeof video.webkitDecodedFrameCount === 'number') {
                 this.calc(video.webkitDecodedFrameCount);
             } else {
+                this.stop = true;
+                clearInterval(this.interval);
                 console.log('[FP_ERROR] The browser does not support webkitDecodedFrameCount.');
             }
         }, this.update * 1000);
