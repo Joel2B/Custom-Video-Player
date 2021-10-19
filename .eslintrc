@@ -19,7 +19,6 @@
         "no-prototype-builtins": "warn",
         "prefer-const": "warn",
         "no-unused-vars": "warn",
-        "import/no-cycle": "warn",
         "max-len": ["warn", { "code": 120 }],
         "space-before-function-paren": [
             "error",
