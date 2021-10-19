@@ -37,7 +37,7 @@ import Debug from './debug';
 import Handlers from './handlers';
 import HtmlOnPause from './html-on-pause';
 import Logo from './logo';
-import Fps from './measure-fps';
+import Fps from './fps';
 import PersistentSettings from './persistent-settings';
 import Shortcuts from './shortcuts';
 import Streaming from './streaming';
