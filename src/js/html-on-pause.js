@@ -1,74 +1,78 @@
-export default function(self) {
-    self.initHtmlOnPauseBlock = () => {
+import { createElement, toggleClass } from './utils/dom';
+import { on } from './utils/events';
+
+class HtmlOnPause {
+    constructor(player) {
+        this.player = player;
+        this.loaded = false;
+        this.init();
+    }
+
+    init = () => {
         // If onPauseRoll is defined than HtmlOnPauseBlock won't be shown
-        if (self.hasValidOnPauseAd()) {
+        if (this.player.hasValidOnPauseAd()) {
             return;
         }
 
-        if (!self.displayOptions.layoutControls.htmlOnPauseBlock.html) {
+        this.options = this.player.config.layoutControls.htmlOnPauseBlock;
+        if (!this.options.html) {
             return;
         }
 
-        const containerDiv = self.createElement({
-            tag: 'div',
-            id: self.videoPlayerId + '_fluid_html_on_pause',
-            className: 'fluid_html_on_pause',
-            innerHTML: self.displayOptions.layoutControls.htmlOnPauseBlock.html,
-            style: {
-                display: 'none',
-            },
-        }, () => self.playPauseToggle());
+        this.createHtmlBlock();
+    }
 
-        if (self.displayOptions.layoutControls.htmlOnPauseBlock.width) {
-            containerDiv.style.width = self.displayOptions.layoutControls.htmlOnPauseBlock.width + 'px';
-        }
-
-        if (self.displayOptions.layoutControls.htmlOnPauseBlock.height) {
-            containerDiv.style.height = self.displayOptions.layoutControls.htmlOnPauseBlock.height + 'px';
-        }
-
-        self.domRef.player.parentNode.insertBefore(containerDiv, null);
-    };
-
-    self.setHtmlOnPauseBlock = (passedHtml) => {
+    setHtmlOnPauseBlock = (passedHtml) => {
         if (typeof passedHtml !== 'object' || typeof passedHtml.html === 'undefined') {
             return false;
         }
 
-        const htmlBlock = document.getElementById(self.videoPlayerId + '_fluid_html_on_pause');
-
         // We create the HTML block from scratch if it doesn't already exist
-        if (!htmlBlock) {
-            const containerDiv = self.createElement({
-                tag: 'div',
-                id: self.videoPlayerId + '_fluid_html_on_pause',
-                className: 'fluid_html_on_pause',
-                innerHTML: passedHtml.html,
-                style: {
-                    display: 'none',
-                },
-            }, () => self.playPauseToggle());
-
-            if (passedHtml.width) {
-                containerDiv.style.width = passedHtml.width + 'px';
-            }
-
-            if (passedHtml.height) {
-                containerDiv.style.height = passedHtml.height + 'px';
-            }
-
-            self.domRef.player.parentNode.insertBefore(containerDiv, null);
+        if (!this.htmlBlock) {
+            this.createHtmlBlock();
             return;
         }
 
-        htmlBlock.innerHTML = passedHtml.html;
+        this.htmlBlock.innerHTML = passedHtml.html;
 
         if (passedHtml.width) {
-            htmlBlock.style.width = passedHtml.width + 'px';
+            this.htmlBlock.style.width = passedHtml.width + 'px';
         }
 
         if (passedHtml.height) {
-            htmlBlock.style.height = passedHtml.height + 'px';
+            this.htmlBlock.style.height = passedHtml.height + 'px';
         }
-    };
+
+        this.loaded = true;
+    }
+
+    createHtmlBlock = () => {
+        this.htmlBlock = createElement('div', {
+            class: 'fluid_html_on_pause hide',
+        });
+        this.htmlBlock.innerHTML = this.options.html;
+
+        on.call(this.player, this.htmlBlock, 'click', this.player.playPause.toggle);
+
+        if (this.options.width) {
+            this.htmlBlock.style.width = this.options.width + 'px';
+        }
+
+        if (this.options.height) {
+            this.htmlBlock.style.height = this.options.height + 'px';
+        }
+
+        this.player.wrapper.appendChild(this.htmlBlock);
+        this.loaded = true;
+    }
+
+    toggle = (show) => {
+        if (!this.loaded) {
+            return;
+        }
+
+        toggleClass(this.htmlBlock, 'hide', !show);
+    }
 }
+
+export default HtmlOnPause;

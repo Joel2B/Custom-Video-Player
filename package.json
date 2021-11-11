@@ -4,17 +4,16 @@
   "description": "HTML5 video player",
   "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack --mode=production && uglifyjs dist/player.min.js -o dist/player.min.js -c -m",
-    "build-dev": "webpack --mode=development",
-    "build-obf": "webpack --mode=production --env obf=true && uglifyjs dist/player.min.js -o dist/player.min.js -c -m",
-    "build-cdn": "webpack --mode=production --env dist=current --env obf=true && uglifyjs dist/player.min.js -o dist/player.min.js -c -m",
-    "build-dev-debug": "webpack --mode=development --env debug",
+    "build": "webpack --mode=production",
+    "build-obf": "webpack --mode=production --env obf",
+    "build-cdn": "webpack --mode=production --env dist=current",
+    "build-dev": "webpack",
+    "build-debug": "webpack --env debug",
     "lint": "eslint src --ext .js",
     "lint-fix": "eslint src --ext .js --fix",
-    "dev-server": "webpack-dev-server --mode=development --host 0.0.0.0",
-    "dev-server-debug": "webpack-dev-server --mode=development --env debug --host 0.0.0.0",
-    "dev-server-test": "webpack-dev-server --mode=production --host 0.0.0.0"
+    "serve": "webpack serve --open",
+    "test": "npm run build-dev && webpack serve --open --no-client-overlay --mode=production",
+    "watch": "webpack -w"
   },
   "repository": {
     "type": "git",
@@ -32,31 +31,34 @@
     "IE 11"
   ],
   "dependencies": {
+    "custom-event-polyfill": "^1.0.7",
+    "element-remove": "^1.0.4",
+    "es6-object-assign": "^1.1.0",
     "es6-promise": "^4.2.8",
-    "uglify-js": "^3.13.10",
+    "url-polyfill": "^1.1.12",
     "videojs-vtt.js": "~0.15.3"
   },
   "devDependencies": {
-    "@babel/core": "^7.14.6",
-    "@babel/preset-env": "^7.14.7",
+    "@babel/core": "^7.16.0",
+    "@babel/preset-env": "^7.16.0",
     "babel-eslint": "^10.1.0",
-    "babel-loader": "^8.2.2",
+    "babel-loader": "^8.2.3",
     "cheerio": "1.0.0-rc.10",
     "copy-webpack-plugin": "^9.0.1",
-    "css-loader": "^6.1.0",
+    "css-loader": "^6.5.1",
     "eslint-config-standard": "^16.0.3",
-    "eslint-plugin-import": "^2.25.2",
+    "eslint-plugin-import": "^2.25.3",
     "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-promise": "^5.1.0",
-    "html-webpack-plugin": "^5.3.2",
+    "eslint-plugin-promise": "^5.1.1",
+    "html-webpack-plugin": "^5.5.0",
     "prettier-eslint": "^13.0.0",
     "scriptjs": "^2.5.9",
     "semver": "^7.3.5",
-    "style-loader": "^3.1.0",
+    "style-loader": "^3.3.1",
     "svg-url-loader": "^7.1.1",
-    "webpack": "^5.45.1",
-    "webpack-cli": "^4.7.2",
-    "webpack-dev-server": "^3.11.2",
-    "webpack-obfuscator": "^3.3.2"
+    "webpack": "^5.63.0",
+    "webpack-cli": "^4.9.1",
+    "webpack-dev-server": "^4.4.0",
+    "webpack-obfuscator": "^3.5.0"
   }
 }

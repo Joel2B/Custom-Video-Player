@@ -1,15 +1,24 @@
+import { hasClass, toggleClass } from '../utils/dom';
+import { on } from '../utils/events';
 import { switcher } from './menu-item';
 
 class Loop {
     constructor(player) {
         this.player = player;
         this.id = 'loop';
-        if (this.player.getLocalStorage(this.id) === null) {
-            const value = this.player.displayOptions.layoutControls[this.id];
-            this.player.setLocalStorage(this.id, value);
+
+        this.init();
+    }
+
+    init = () => {
+        const { player } = this;
+
+        if (player.storage.get(this.id) === null) {
+            const value = player.config.layoutControls[this.id];
+            player.storage.set(this.id, value);
         }
 
-        if (!this.player.menu.isEnabled(this.id)) {
+        if (!player.menu.isEnabled(this.id)) {
             return;
         }
 
@@ -17,37 +26,40 @@ class Loop {
         this.apply();
     }
 
-    createItems() {
+    createItems = () => {
+        const { player } = this;
         const item = switcher({
             id: this.id,
             title: 'Loop',
-            enabled: this.player.getLocalStorage(this.id),
-        });
-        item.addEventListener('click', () => {
-            let value = false;
-            if (item.className.indexOf('cvp_enabled') !== -1) {
-                item.classList.remove('cvp_enabled');
-            } else {
-                item.classList.add('cvp_enabled');
-                value = true;
-            }
-            this.player.setLocalStorage(this.id, value);
-            this.player.setLoop(value);
+            enabled: player.storage.get(this.id),
         });
 
-        this.player.menu.add({
+        on.call(player, item, 'click', () => {
+            let value = false;
+
+            if (hasClass(item, 'cvp_enabled')) {
+                toggleClass(item, 'cvp_enabled', false);
+            } else {
+                toggleClass(item, 'cvp_enabled', true);
+                value = true;
+            }
+            player.storage.set(this.id, value);
+            player.loop = value;
+        });
+
+        player.menu.add({
             id: this.id,
             field: 'switcher',
             item: item,
         });
     }
 
-    apply() {
-        if (!this.player.menu.isEnabled(this.id) || !this.player.getLocalStorage(this.id)) {
+    apply = () => {
+        if (!this.player.menu.isEnabled(this.id) || !this.player.storage.get(this.id)) {
             return;
         }
 
-        this.player.setLoop(true);
+        this.player.loop = true;
 
         return true;
     }

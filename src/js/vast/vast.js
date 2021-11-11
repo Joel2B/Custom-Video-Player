@@ -1,10 +1,15 @@
+
+import { toggleHidden } from '../utils/dom';
+import { convertTimeStringToSeconds } from '../utils/time';
+
 /* eslint-disable */
 // VAST support module
 export default function (self, options) {
     self.getClickThroughUrlFromLinear = (linear) => {
         const videoClicks = linear.getElementsByTagName('VideoClicks');
 
-        if (videoClicks.length) { //There should be exactly 1 node
+        if (videoClicks.length) {
+            //There should be exactly 1 node
             const clickThroughs = videoClicks[0].getElementsByTagName('ClickThrough');
 
             if (clickThroughs.length) {
@@ -31,19 +36,20 @@ export default function (self, options) {
 
     self.hasInLine = (xmlResponse) => {
         const inLine = xmlResponse.getElementsByTagName('InLine');
-        return ((typeof inLine !== 'undefined') && inLine.length);
+        return typeof inLine !== 'undefined' && inLine.length;
     };
 
     self.hasVastAdTagUri = (xmlResponse) => {
         const vastAdTagURI = xmlResponse.getElementsByTagName('VASTAdTagURI');
-        return ((typeof vastAdTagURI !== 'undefined') && vastAdTagURI.length);
+        return typeof vastAdTagURI !== 'undefined' && vastAdTagURI.length;
     };
 
     self.getClickThroughUrlFromNonLinear = (nonLinear) => {
         let result = '';
         const nonLinears = nonLinear.getElementsByTagName('NonLinear');
 
-        if (nonLinears.length) {//There should be exactly 1 node
+        if (nonLinears.length) {
+            //There should be exactly 1 node
             const nonLinearClickThrough = nonLinear.getElementsByTagName('NonLinearClickThrough');
             if (nonLinearClickThrough.length) {
                 result = self.extractNodeData(nonLinearClickThrough[0]);
@@ -56,7 +62,8 @@ export default function (self, options) {
     self.getTrackingFromLinear = (linear) => {
         const trackingEvents = linear.getElementsByTagName('TrackingEvents');
 
-        if (trackingEvents.length) {//There should be no more than one node
+        if (trackingEvents.length) {
+            //There should be no more than one node
             return trackingEvents[0].getElementsByTagName('Tracking');
         }
 
@@ -66,9 +73,9 @@ export default function (self, options) {
     self.getDurationFromLinear = (linear) => {
         const duration = linear.getElementsByTagName('Duration');
 
-        if (duration.length && (typeof duration[0].childNodes[0] !== 'undefined')) {
+        if (duration.length && typeof duration[0].childNodes[0] !== 'undefined') {
             const nodeDuration = self.extractNodeData(duration[0]);
-            return self.convertTimeStringToSeconds(nodeDuration);
+            return convertTimeStringToSeconds(nodeDuration);
         }
 
         return false;
@@ -77,14 +84,14 @@ export default function (self, options) {
     self.getDurationFromNonLinear = (tag) => {
         let result = 0;
         const nonLinear = tag.getElementsByTagName('NonLinear');
-        if (nonLinear.length && (typeof nonLinear[0].getAttribute('minSuggestedDuration') !== 'undefined')) {
-            result = self.convertTimeStringToSeconds(nonLinear[0].getAttribute('minSuggestedDuration'));
+        if (nonLinear.length && typeof nonLinear[0].getAttribute('minSuggestedDuration') !== 'undefined') {
+            result = convertTimeStringToSeconds(nonLinear[0].getAttribute('minSuggestedDuration'));
         }
         return result;
     };
 
     self.getDimensionFromNonLinear = (tag) => {
-        const result = { 'width': null, 'height': null };
+        const result = { width: null, height: null };
         const nonLinear = tag.getElementsByTagName('NonLinear');
 
         if (nonLinear.length) {
@@ -103,7 +110,8 @@ export default function (self, options) {
         let result = '';
         const nonLinears = tag.getElementsByTagName('NonLinear');
 
-        if (nonLinears.length && (typeof nonLinears[0].childNodes[0] !== 'undefined')) {//There should be exactly 1 StaticResource node
+        if (nonLinears.length && typeof nonLinears[0].childNodes[0] !== 'undefined') {
+            //There should be exactly 1 StaticResource node
             result = nonLinears[0].getElementsByTagName('StaticResource')[0].getAttribute('creativeType');
         }
 
@@ -113,7 +121,8 @@ export default function (self, options) {
     self.getMediaFilesFromLinear = (linear) => {
         const mediaFiles = linear.getElementsByTagName('MediaFiles');
 
-        if (mediaFiles.length) {//There should be exactly 1 MediaFiles node
+        if (mediaFiles.length) {
+            //There should be exactly 1 MediaFiles node
             return mediaFiles[0].getElementsByTagName('MediaFile');
         }
 
@@ -124,7 +133,8 @@ export default function (self, options) {
         let result = [];
         const nonLinears = linear.getElementsByTagName('NonLinear');
 
-        if (nonLinears.length) {//There should be exactly 1 StaticResource node
+        if (nonLinears.length) {
+            //There should be exactly 1 StaticResource node
             result = nonLinears[0].getElementsByTagName('StaticResource');
         }
 
@@ -132,7 +142,7 @@ export default function (self, options) {
     };
 
     self.extractNodeData = (parentNode) => {
-        let contentAsString = "";
+        let contentAsString = '';
         for (let n = 0; n < parentNode.childNodes.length; n++) {
             const child = parentNode.childNodes[n];
             if (child.nodeType === 8 || (child.nodeType === 3 && /^\s*$/.test(child.nodeValue))) {
@@ -173,18 +183,17 @@ export default function (self, options) {
 
             // get all the attributes of media file
             mediaFileList.push({
-                'src': self.extractNodeData(mediaFiles[n]),
-                'type': mediaFiles[n].getAttribute('type'),
-                'apiFramework': mediaFiles[n].getAttribute('apiFramework'),
-                'codec': mediaFiles[n].getAttribute('codec'),
-                'id': mediaFiles[n].getAttribute('codec'),
-                'fileSize': mediaFiles[n].getAttribute('fileSize'),
-                'delivery': mediaFiles[n].getAttribute('delivery'),
-                'width': mediaFiles[n].getAttribute('width'),
-                'height': mediaFiles[n].getAttribute('height'),
-                'mediaType': mediaType.toLowerCase()
+                src: self.extractNodeData(mediaFiles[n]),
+                type: mediaFiles[n].getAttribute('type'),
+                apiFramework: mediaFiles[n].getAttribute('apiFramework'),
+                codec: mediaFiles[n].getAttribute('codec'),
+                id: mediaFiles[n].getAttribute('codec'),
+                fileSize: mediaFiles[n].getAttribute('fileSize'),
+                delivery: mediaFiles[n].getAttribute('delivery'),
+                width: mediaFiles[n].getAttribute('width'),
+                height: mediaFiles[n].getAttribute('height'),
+                mediaType: mediaType.toLowerCase(),
             });
-
         }
 
         return mediaFileList;
@@ -209,7 +218,7 @@ export default function (self, options) {
                 fallbackStaticResource = self.extractNodeData(staticResources[i]);
             }
 
-            if (staticResources[i].getAttribute('type') === self.displayOptions.staticResource) {
+            if (staticResources[i].getAttribute('type') === self.config.staticResource) {
                 return self.extractNodeData(staticResources[i]);
             }
         }
@@ -248,16 +257,18 @@ export default function (self, options) {
                         tmpOptions.tracking[eventType] = [];
                     }
 
-                    oneEventOffset = self.convertTimeStringToSeconds(trackingEvents[i].getAttribute('offset'));
+                    oneEventOffset = convertTimeStringToSeconds(trackingEvents[i].getAttribute('offset'));
 
                     if (typeof tmpOptions.tracking[eventType][oneEventOffset] === 'undefined') {
                         tmpOptions.tracking[eventType][oneEventOffset] = {
                             elements: [],
-                            stopTracking: false
+                            stopTracking: false,
                         };
                     }
 
-                    tmpOptions.tracking[eventType][oneEventOffset].elements.push(trackingEvents[i].childNodes[0].nodeValue);
+                    tmpOptions.tracking[eventType][oneEventOffset].elements.push(
+                        trackingEvents[i].childNodes[0].nodeValue,
+                    );
 
                     break;
 
@@ -279,7 +290,6 @@ export default function (self, options) {
 
             tmpOptions.clicktracking.push(clickTrackingTag[i]);
         }
-
     };
 
     self.registerImpressionEvents = (impressionTags, tmpOptions) => {
@@ -294,10 +304,12 @@ export default function (self, options) {
     };
 
     self.registerErrorEvents = (errorTags, tmpOptions) => {
-        if ((typeof errorTags !== 'undefined') &&
-            (errorTags !== null) &&
-            (errorTags.length === 1) && //Only 1 Error tag is expected
-            (errorTags[0].childNodes.length === 1)) {
+        if (
+            typeof errorTags !== 'undefined' &&
+            errorTags !== null &&
+            errorTags.length === 1 && //Only 1 Error tag is expected
+            errorTags[0].childNodes.length === 1
+        ) {
             tmpOptions.errorUrl = errorTags[0].childNodes[0].nodeValue;
         }
     };
@@ -375,33 +387,12 @@ export default function (self, options) {
             divClickThrough.style.width = videoPlayer.offsetWidth + 'px';
             divClickThrough.style.height = videoPlayer.offsetHeight + 'px';
         }
+    };
 
-        const requestFullscreenFunctionNames = self.checkFullscreenSupport(self.videoPlayerId + '_fluid_video_wrapper');
-        const fullscreenButton = document.getElementById(self.videoPlayerId + '_fluid_control_fullscreen');
-        const menuOptionFullscreen = document.getElementById(self.videoPlayerId + '_context_option_fullscreen');
-
-        if (requestFullscreenFunctionNames) {
-            // this will go other way around because we already exited full screen
-            if (document[requestFullscreenFunctionNames.isFullscreen] === null) {
-                // Exit fullscreen
-                self.fullscreenOff(fullscreenButton, menuOptionFullscreen);
-            } else {
-                // Go fullscreen
-                self.fullscreenOn(fullscreenButton, menuOptionFullscreen);
-            }
-        } else {
-            // TODO: I am fairly certain this fallback does not work...
-            //The browser does not support the Fullscreen API, so a pseudo-fullscreen implementation is used
-            const fullscreenTag = self.domRef.wrapper;
-
-            if (fullscreenTag.className.search(/\bpseudo_fullscreen\b/g) !== -1) {
-                fullscreenTag.className += ' pseudo_fullscreen';
-                self.fullscreenOn(fullscreenButton, menuOptionFullscreen);
-            } else {
-                fullscreenTag.className = fullscreenTag.className.replace(/\bpseudo_fullscreen\b/g, '');
-                self.fullscreenOff(fullscreenButton, menuOptionFullscreen);
-            }
-        }
+    self.prepareVastAds = () => {
+        self.prepareVast('onPauseRoll');
+        self.prepareVast('postRoll');
+        self.prepareVast('midRoll');
     };
 
     self.prepareVast = (roll) => {
@@ -415,20 +406,19 @@ export default function (self, options) {
             }
 
             self.processVastWithRetries(self.adList[adListId]);
-            self.domRef.player.addEventListener('adId_' + adListId, self[roll]);
+            self.media.addEventListener('adId_' + adListId, self[roll]);
         }
     };
 
-
     self.playMainVideoWhenVastFails = (errorCode) => {
-        self.debugMessage('playMainVideoWhenVastFails called');
-        self.domRef.player.removeEventListener('loadedmetadata', self.switchPlayerToVastMode);
-        self.domRef.player.pause();
+        self.debug.log('playMainVideoWhenVastFails called');
+        self.media.removeEventListener('loadedmetadata', self.switchPlayerToVastMode);
+        self.pause();
         self.toggleLoader(false);
-        self.displayOptions.vastOptions.vastAdvanced.noVastVideoCallback();
+        self.config.vastOptions.vastAdvanced.noVastVideoCallback();
 
         if (!self.vastOptions || typeof self.vastOptions.errorUrl === 'undefined') {
-            self.announceLocalError(errorCode);
+            self.debug.error(errorCode);
         } else {
             self.announceError(errorCode);
         }
@@ -437,8 +427,7 @@ export default function (self, options) {
     };
 
     // TODO: ???
-    self.switchPlayerToVastMode = () => {
-    };
+    self.switchPlayerToVastMode = () => {};
 
     /**
      * Process the XML response
@@ -471,11 +460,14 @@ export default function (self, options) {
         const creative = xmlResponse.getElementsByTagName('Creative');
 
         //Currently only 1 creative and 1 linear is supported
-        if ((typeof creative !== 'undefined') && creative.length) {
+        if (typeof creative !== 'undefined' && creative.length) {
             const arrayCreativeLinears = creative[0].getElementsByTagName('Linear');
 
-            if ((typeof arrayCreativeLinears !== 'undefined') && (arrayCreativeLinears !== null) && arrayCreativeLinears.length) {
-
+            if (
+                typeof arrayCreativeLinears !== 'undefined' &&
+                arrayCreativeLinears !== null &&
+                arrayCreativeLinears.length
+            ) {
                 const creativeLinear = arrayCreativeLinears[0];
                 self.registerTrackingEvents(creativeLinear, tmpOptions);
 
@@ -484,14 +476,13 @@ export default function (self, options) {
 
                 //Extract the Ad data if it is actually the Ad (!wrapper)
                 if (!self.hasVastAdTagUri(xmlResponse) && self.hasInLine(xmlResponse)) {
-
                     //Set initial values
                     tmpOptions.adFinished = false;
                     tmpOptions.adType = 'linear';
                     tmpOptions.vpaid = false;
 
                     //Extract the necessary data from the Linear node
-                    tmpOptions.skipoffset = self.convertTimeStringToSeconds(creativeLinear.getAttribute('skipoffset'));
+                    tmpOptions.skipoffset = convertTimeStringToSeconds(creativeLinear.getAttribute('skipoffset'));
                     tmpOptions.clickthroughUrl = self.getClickThroughUrlFromLinear(creativeLinear);
                     tmpOptions.duration = self.getDurationFromLinear(creativeLinear);
                     tmpOptions.mediaFileList = self.getMediaFileListFromLinear(creativeLinear);
@@ -506,8 +497,11 @@ export default function (self, options) {
 
             const arrayCreativeNonLinears = creative[0].getElementsByTagName('NonLinearAds');
 
-            if ((typeof arrayCreativeNonLinears !== 'undefined') && (arrayCreativeNonLinears !== null) && arrayCreativeNonLinears.length) {
-
+            if (
+                typeof arrayCreativeNonLinears !== 'undefined' &&
+                arrayCreativeNonLinears !== null &&
+                arrayCreativeNonLinears.length
+            ) {
                 const creativeNonLinear = arrayCreativeNonLinears[0];
                 self.registerTrackingEvents(creativeNonLinear, tmpOptions);
 
@@ -516,7 +510,6 @@ export default function (self, options) {
 
                 //Extract the Ad data if it is actually the Ad (!wrapper)
                 if (!self.hasVastAdTagUri(xmlResponse) && self.hasInLine(xmlResponse)) {
-
                     //Set initial values
                     tmpOptions.adType = 'nonLinear';
                     tmpOptions.vpaid = false;
@@ -532,13 +525,15 @@ export default function (self, options) {
                     if (tmpOptions.adParameters) {
                         tmpOptions.vpaid = true;
                     }
-
                 }
             }
 
             //Extract the Ad data if it is actually the Ad (!wrapper)
             if (!self.hasVastAdTagUri(xmlResponse) && self.hasInLine(xmlResponse)) {
-                if (typeof tmpOptions.mediaFileList !== 'undefined' || typeof tmpOptions.staticResource !== 'undefined') {
+                if (
+                    typeof tmpOptions.mediaFileList !== 'undefined' ||
+                    typeof tmpOptions.staticResource !== 'undefined'
+                ) {
                     callBack(true, tmpOptions);
                 } else {
                     callBack(false);
@@ -561,16 +556,24 @@ export default function (self, options) {
         const adListId = vastObj.id;
 
         const handleVastResult = function (pass, tmpOptions) {
-            if (pass && typeof tmpOptions !== 'undefined' && tmpOptions.vpaid && !self.displayOptions.vastOptions.allowVPAID) {
+            if (
+                pass &&
+                typeof tmpOptions !== 'undefined' &&
+                tmpOptions.vpaid &&
+                !self.config.vastOptions.allowVPAID
+            ) {
                 pass = false;
-                self.announceLocalError('103', 'VPAID not allowed, so skipping this VAST tag.')
+                self.debug.error('VPAID not allowed, so skipping this VAST tag.');
             }
 
             if (pass) {
                 // ok
                 if (tmpOptions.adType === 'linear') {
-
-                    if ((typeof tmpOptions.iconClick !== 'undefined') && (tmpOptions.iconClick !== null) && tmpOptions.iconClick.length) {
+                    if (
+                        typeof tmpOptions.iconClick !== 'undefined' &&
+                        tmpOptions.iconClick !== null &&
+                        tmpOptions.iconClick.length
+                    ) {
                         self.adList[adListId].landingPage = tmpOptions.iconClick;
                     }
 
@@ -578,7 +581,6 @@ export default function (self, options) {
                     if (selectedMediaFile) {
                         self.adList[adListId].mediaType = selectedMediaFile.mediaType;
                     }
-
                 }
 
                 self.adList[adListId].adType = tmpOptions.adType ? tmpOptions.adType : 'unknown';
@@ -588,17 +590,11 @@ export default function (self, options) {
                 const event = document.createEvent('Event');
 
                 event.initEvent('adId_' + adListId, false, true);
-                self.domRef.player.dispatchEvent(event);
-                self.displayOptions.vastOptions.vastAdvanced.vastLoadedCallback();
-
-                if (self.hasTitle()) {
-                    const title = document.getElementById(self.videoPlayerId + '_title');
-                    title.style.display = 'none';
-                }
-
+                self.media.dispatchEvent(event);
+                self.config.vastOptions.vastAdvanced.vastLoadedCallback();
             } else {
                 // when vast failed
-                self.announceLocalError('101');
+                self.debug.error(101);
 
                 if (vastObj.hasOwnProperty('fallbackVastTags') && vastObj.fallbackVastTags.length > 0) {
                     vastTag = vastObj.fallbackVastTags.shift();
@@ -615,7 +611,6 @@ export default function (self, options) {
         self.processUrl(vastTag, handleVastResult);
     };
 
-
     self.processUrl = (vastTag, callBack) => {
         const numberOfRedirects = 0;
 
@@ -624,15 +619,26 @@ export default function (self, options) {
             stopTracking: [],
             impression: [],
             clicktracking: [],
-            vastLoaded: false
+            vastLoaded: false,
         };
 
-        self.resolveVastTag(
-            vastTag,
-            numberOfRedirects,
-            tmpOptions,
-            callBack
-        );
+        self.resolveVastTag(vastTag, numberOfRedirects, tmpOptions, callBack);
+    };
+
+    self.sendRequestVast = (url, withCredentials, timeout, functionReadyStateChange) => {
+        const xmlHttpReq = new XMLHttpRequest();
+
+        xmlHttpReq.onreadystatechange = functionReadyStateChange;
+
+        self.config.onBeforeXMLHttpRequestOpen(xmlHttpReq);
+
+        xmlHttpReq.open('GET', url, true);
+        xmlHttpReq.withCredentials = withCredentials;
+        xmlHttpReq.timeout = timeout;
+
+        self.config.onBeforeXMLHttpRequest(xmlHttpReq);
+
+        xmlHttpReq.send();
     };
 
     self.resolveVastTag = (vastTag, numberOfRedirects, tmpOptions, callBack) => {
@@ -655,11 +661,11 @@ export default function (self, options) {
                 return;
             }
 
-            if (!((xmlHttpReq.readyState === 4) && (xmlHttpReq.status === 200))) {
+            if (!(xmlHttpReq.readyState === 4 && xmlHttpReq.status === 200)) {
                 return;
             }
 
-            if ((xmlHttpReq.readyState === 4) && (xmlHttpReq.status !== 200)) {
+            if (xmlHttpReq.readyState === 4 && xmlHttpReq.status !== 200) {
                 callBack(false);
                 return;
             }
@@ -679,7 +685,6 @@ export default function (self, options) {
             self.inLineFound = self.hasInLine(xmlResponse);
 
             if (!self.inLineFound && self.hasVastAdTagUri(xmlResponse)) {
-
                 const vastAdTagUri = self.getVastAdTagUriFromWrapper(xmlResponse);
                 if (vastAdTagUri) {
                     self.resolveVastTag(vastAdTagUri, numberOfRedirects, tmpOptions, callBack);
@@ -689,7 +694,7 @@ export default function (self, options) {
                 }
             }
 
-            if (numberOfRedirects > self.displayOptions.vastOptions.maxAllowedVastTagRedirects && !self.inLineFound) {
+            if (numberOfRedirects > self.config.vastOptions.maxAllowedVastTagRedirects && !self.inLineFound) {
                 callBack(false);
                 return;
             }
@@ -697,14 +702,8 @@ export default function (self, options) {
             self.processVastXml(xmlResponse, tmpOptions, callBack);
         };
 
-        if (numberOfRedirects <= self.displayOptions.vastOptions.maxAllowedVastTagRedirects) {
-
-            self.sendRequest(
-                vastTag,
-                true,
-                self.displayOptions.vastOptions.vastTimeout,
-                handleXmlHttpReq
-            );
+        if (numberOfRedirects <= self.config.vastOptions.maxAllowedVastTagRedirects) {
+            self.sendRequestVast(vastTag, true, self.config.vastOptions.vastTimeout, handleXmlHttpReq);
         }
 
         numberOfRedirects++;
@@ -720,7 +719,7 @@ export default function (self, options) {
             vastLoaded: false,
             error: false,
             adText: null,
-            adTextPosition: null
+            adTextPosition: null,
         };
         let idPart = 0;
 
@@ -740,48 +739,46 @@ export default function (self, options) {
             let hasError = false;
 
             if (!item.vastTag) {
-                self.announceLocalError(102, '"vastTag" property is missing from adList.');
+                self.debug.error('"vastTag" property is missing from adList.');
+
                 hasError = true;
             }
 
             if (!item.roll) {
-                self.announceLocalError(102, '"roll" is missing from adList.');
+                self.debug.error('"roll" is missing from adList.');
                 hasError = true;
             }
 
             if (self.availableRolls.indexOf(item.roll) === -1) {
-                self.announceLocalError(102, 'Only ' + self.availableRolls.join(',') + ' rolls are supported.');
+                self.debug.error(`Only ${self.availableRolls.join(',')} rolls are supported.`);
                 hasError = true;
             }
 
             if (item.size && self.supportedNonLinearAd.indexOf(item.size) === -1) {
-                self.announceLocalError(102, 'Only ' + self.supportedNonLinearAd.join(',') + ' size are supported.');
+                self.debug.error(`Only ${self.supportedNonLinearAd.join(',')} size are supported.`);
                 hasError = true;
             }
 
             return hasError;
         };
 
-        if (self.displayOptions.vastOptions.hasOwnProperty('adList')) {
-
-            for (let key in self.displayOptions.vastOptions.adList) {
-
-                let adItem = self.displayOptions.vastOptions.adList[key];
+        if (self.config.vastOptions.hasOwnProperty('adList')) {
+            for (let key in self.config.vastOptions.adList) {
+                let adItem = self.config.vastOptions.adList[key];
 
                 if (validateRequiredParams(adItem)) {
-                    self.announceLocalError(102, 'Wrong adList parameters.');
+                    self.debug.error('Wrong adList parameters.');
                     continue;
                 }
                 const id = 'ID' + idPart;
 
                 ads[id] = Object.assign({}, def);
-                ads[id] = Object.assign(ads[id], self.displayOptions.vastOptions.adList[key]);
+                ads[id] = Object.assign(ads[id], self.config.vastOptions.adList[key]);
                 if (adItem.roll == 'midRoll') {
                     ads[id].error = validateVastList('midRoll', adItem);
                 }
                 ads[id].id = id;
                 idPart++;
-
             }
         }
 
@@ -813,16 +810,7 @@ export default function (self, options) {
     };
 
     self.vastLogoBehaviour = (vastPlaying) => {
-        if (!self.displayOptions.layoutControls.logo.showOverAds) {
-            const logoHolder = document.getElementById(self.videoPlayerId + '_logo');
-            const logoImage = document.getElementById(self.videoPlayerId + '_logo_image');
-
-            if (!logoHolder || !logoImage) {
-                return;
-            }
-
-            logoHolder.style.display = vastPlaying ? 'none' : 'inline';
-        }
+        toggleHidden(self.logo.el, vastPlaying);
     };
 
     self.deleteVastAdElements = () => {

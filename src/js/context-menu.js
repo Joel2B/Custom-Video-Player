@@ -1,90 +1,91 @@
-export default function(self) {
-    self.setCustomContextMenu = () => {
-        const playerWrapper = self.domRef.wrapper;
+import { createElement, getEventOffsetX, getEventOffsetY, insertAfter } from './utils/dom';
+import { on } from './utils/events';
+import is from './utils/is';
 
-        const showDefaultControls = self.displayOptions.layoutControls.contextMenu.controls;
-        const extraLinks = self.displayOptions.layoutControls.contextMenu.links;
+class ContextMenu {
+    constructor(player) {
+        this.player = player;
+        this.create();
+    }
+
+    create = () => {
+        const { player } = this;
+        const { config } = player;
+        const wrapper = player.wrapper;
+        const links = config.layoutControls.contextMenu.links;
 
         // Create own context menu
-        self.domRef.contextMenu = self.createElement({
-            tag: 'div',
-            id: self.videoPlayerId + '_fluid_context_menu',
-            className: 'fluid_context_menu',
-            style: {
-                display: 'none',
-                position: 'absolute',
-            },
+        this.menu = createElement('div', {
+            class: 'fluid_context_menu',
         });
 
-        const contextMenuList = self.createElement({
-            tag: 'ul',
-            parent: self.domRef.contextMenu,
-        });
+        this.list = createElement('ul');
 
-        if (extraLinks) {
-            for (const [key, link] of extraLinks.entries()) {
-                self.createElement({
-                    tag: 'li',
-                    id: self.videoPlayerId + '_context_option_extra_' + key,
-                    innerHTML: link.label,
-                    parent: contextMenuList,
-                }, () => window.open(link.href, '_blank'));
+        if (!is.empty(links)) {
+            for (const link of links) {
+                const li = createElement('li', null, link.label);
+                on.call(player, li, 'click', () => window.open(link.href, '_blank'));
+                this.list.appendChild(li);
             }
         }
 
-        if (showDefaultControls) {
-            self.createElement({
-                tag: 'li',
-                id: self.videoPlayerId + '_context_option_play',
-                innerHTML: self.displayOptions.captions.play,
-                parent: contextMenuList,
-            }, () => self.playPauseToggle());
+        this.defaultOptions();
 
-            self.createElement({
-                tag: 'li',
-                id: self.videoPlayerId + '_context_option_mute',
-                innerHTML: self.displayOptions.captions.mute,
-                parent: contextMenuList,
-            }, () => self.muteToggle());
+        this.version = createElement('li', null, 'CVP ' + player.version);
+        on.call(player, this.version, 'click', () => window.open(player.homepage, '_blank'));
+        this.list.appendChild(this.version);
 
-            self.createElement({
-                tag: 'li',
-                id: self.videoPlayerId + '_context_option_shortcuts_info',
-                innerHTML: self.displayOptions.captions.shortcutsInfo,
-                parent: contextMenuList,
-            }, () => self.openShortcuts());
+        this.menu.appendChild(this.list);
 
-            self.createElement({
-                tag: 'li',
-                id: self.videoPlayerId + '_context_option_fullscreen',
-                innerHTML: self.displayOptions.captions.fullscreen,
-                parent: contextMenuList,
-            }, () => self.fullscreenToggle());
-        }
-
-        self.createElement({
-            tag: 'li',
-            id: self.videoPlayerId + '_context_option_homepage',
-            innerHTML: 'CVP ' + self.version,
-            parent: contextMenuList,
-        }, () => window.open(self.homepage, '_blank'));
-
-        self.domRef.player.parentNode.insertBefore(self.domRef.contextMenu, self.domRef.player.nextSibling);
+        insertAfter(this.menu, player.media);
 
         // Disable the default context menu
-        playerWrapper.addEventListener('contextmenu', e => {
-            e.preventDefault();
+        on.call(
+            player,
+            wrapper,
+            'contextmenu',
+            (event) => {
+                event.preventDefault();
 
-            self.domRef.contextMenu.style.left = self.getEventOffsetX(e, self.domRef.player) + 'px';
-            self.domRef.contextMenu.style.top = self.getEventOffsetY(e, self.domRef.player) + 'px';
-            self.domRef.contextMenu.style.display = 'block';
-        }, false);
+                this.menu.style.left = getEventOffsetX(player.media, event) + 'px';
+                this.menu.style.top = getEventOffsetY(player.media, event) + 'px';
+                this.menu.style.display = 'block';
+            },
+            false,
+        );
 
         // Hide the context menu on clicking elsewhere
-        document.addEventListener('click', e => {
-            if ((e.target !== self.domRef.player) || e.button !== 2) {
-                self.domRef.contextMenu.style.display = 'none';
+        on.call(player, document, 'click', (event) => {
+            if (event.target !== player.media || event.button !== 2) {
+                this.menu.style.display = 'none';
             }
-        }, false);
+        });
+    };
+
+    defaultOptions = () => {
+        const { player } = this;
+        const { config } = player;
+
+        if (!config.layoutControls.contextMenu.controls) {
+            return;
+        }
+
+        this.play = createElement('li', null, config.captions.play);
+        on.call(player, this.play, 'click', player.playPause.toggle);
+        this.list.appendChild(this.play);
+
+        this.mute = createElement('li', null, config.captions.mute);
+        on.call(player, this.mute, 'click', player.toggleMute);
+        this.list.appendChild(this.mute);
+
+        this.shortcuts = createElement('li', null, config.captions.shortcutsInfo);
+        on.call(player, this.shortcuts, 'click', player.shortcuts.open);
+        this.list.appendChild(this.shortcuts);
+
+        this.fs = createElement('li', null, config.captions.fullscreen);
+        on.call(player, this.fs, 'click', player.fullscreen.toggle);
+        this.list.appendChild(this.fs);
     };
 }
+
+export default ContextMenu;

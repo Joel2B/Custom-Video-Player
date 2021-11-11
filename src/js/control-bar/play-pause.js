@@ -1,228 +1,182 @@
-export default function(self) {
+import { on } from '../utils/events';
+import { createElement, toggleClass } from '../utils/dom';
+import { TOUCH_ENABLED } from '../utils/browser';
+import is from '../utils/is';
+
+class PlayPause {
+    constructor(player) {
+        this.player = player;
+        this.playButtonTimer = null;
+
+        this.initPlayButton();
+    }
+
     /**
-     * Dispatches a custom pause event which is not present when seeking.
+     * Play button in the middle when the video loads
      */
-    self.onFluidPlayerPause = () => {
-        setTimeout(function() {
-            if (self.recentWaiting) {
+    initPlayButton = () => {
+        const { player } = this;
+        const { title, logo } = player;
+        const primaryColor = player.config.layoutControls.primaryColor;
+        const backgroundColor = primaryColor || '#333333';
+
+        // Create the html for the play button
+        const container = createElement('div', {
+            class: 'fluid_initial_play_container',
+        });
+
+        this.initialPlay = createElement('div', {
+            class: 'fluid_initial_play',
+            style: `background-color: ${backgroundColor}`,
+        });
+
+        this.playButton = createElement('div', {
+            class: 'fluid_initial_play_button',
+        });
+
+        this.initialPlay.appendChild(this.playButton);
+        container.appendChild(this.initialPlay);
+
+        on.call(player, container, 'click', () => {
+            if (TOUCH_ENABLED && !player.userActivity.active && !player.paused) {
                 return;
             }
 
-            const event = document.createEvent('CustomEvent');
-            event.initEvent('fluidplayerpause', false, true);
-            self.domRef.player.dispatchEvent(event);
-        }, 100);
-    };
+            this.toggle();
+        });
+        // If the user has chosen to not show the play button we'll make it invisible
+        // We don't hide altogether because animations might still be used
+        if (!player.config.layoutControls.playButtonShowing) {
+            toggleClass(player.controls.container, 'initial_controls_show', true);
+            toggleClass(title.el, 'initial_controls_show', true);
+            toggleClass(logo.el, 'initial_controls_show', true);
 
-    self.controlPlayPauseToggle = () => {
-        const playPauseButton = self.domRef.player.parentNode.getElementsByClassName('fluid_control_playpause');
-        const menuOptionPlay = document.getElementById(self.videoPlayerId + 'context_option_play');
-        const controlsDisplay = self.domRef.player.parentNode.getElementsByClassName('fluid_controls_container');
-        const fpLogo = document.getElementById(self.videoPlayerId + '_logo');
-
-        const initialPlay = document.getElementById(self.videoPlayerId + '_fluid_initial_play');
-        if (initialPlay && !self.multipleVideoSources) {
-            document.getElementById(self.videoPlayerId + '_fluid_initial_play').style.display = 'none';
-            document.getElementById(self.videoPlayerId + '_fluid_initial_play_button').style.opacity = '1';
+            this.hideInitPlayButton();
         }
 
-        if (!self.domRef.player.paused) {
-            for (let i = 0; i < playPauseButton.length; i++) {
-                playPauseButton[i].className = playPauseButton[i].className.replace(/\bfluid_button_play\b/g, 'fluid_button_pause');
-            }
+        player.wrapper.appendChild(container);
+    };
 
-            for (let i = 0; i < controlsDisplay.length; i++) {
-                controlsDisplay[i].classList.remove('initial_controls_show');
-            }
+    hideInitPlayButton = () => {
+        this.initialPlay.style.opacity = '0';
+        this.initialPlay.style.cursor = 'default';
+    };
 
-            if (fpLogo) {
-                fpLogo.classList.remove('initial_controls_show');
-            }
+    toggleInitPlayButton = () => {
+        const { player } = this;
+        const { initialPlay, playButton } = this;
 
-            if (menuOptionPlay !== null) {
-                menuOptionPlay.innerHTML = self.displayOptions.captions.pause;
-            }
-
+        if (
+            player.isCurrentlyPlayingAd ||
+            !player.config.layoutControls.playPauseAnimation ||
+            player.isSwitchingSource
+        ) {
+            this.hideInitPlayButton();
             return;
         }
 
-        for (let i = 0; i < playPauseButton.length; i++) {
-            playPauseButton[i].className = playPauseButton[i].className.replace(/\bfluid_button_pause\b/g, 'fluid_button_play');
+        let paused = false;
+        if (!player.paused) {
+            paused = true;
         }
 
-        for (let i = 0; i < controlsDisplay.length; i++) {
-            controlsDisplay[i].classList.add('initial_controls_show');
-        }
+        toggleClass(playButton, 'fluid_initial_play_button', paused);
+        toggleClass(playButton, 'fluid_initial_pause_button', !paused);
 
-        if (self.isCurrentlyPlayingAd && self.displayOptions.vastOptions.showPlayButton) {
-            document.getElementById(self.videoPlayerId + '_fluid_initial_play').style.display = 'block';
-            document.getElementById(self.videoPlayerId + '_fluid_initial_play_button').style.opacity = '1';
-        }
-
-        if (fpLogo) {
-            fpLogo.classList.add('initial_controls_show');
-        }
-
-        if (menuOptionPlay !== null) {
-            menuOptionPlay.innerHTML = self.displayOptions.captions.play;
-        }
-    };
-
-    self.playPauseAnimationToggle = (play) => {
-        if (self.isCurrentlyPlayingAd || !self.displayOptions.layoutControls.playPauseAnimation || self.isSwitchingSource) {
+        if (player.ended) {
             return;
         }
 
-        self.domRef.controls.initialPlayButton.classList.remove('transform-active');
-
-        if (play) {
-            self.domRef.controls.stateButton.classList.remove('fluid_initial_pause_button');
-            self.domRef.controls.stateButton.classList.add('fluid_initial_play_button');
-        } else {
-            self.domRef.controls.stateButton.classList.remove('fluid_initial_play_button');
-            self.domRef.controls.stateButton.classList.add('fluid_initial_pause_button');
-        }
-
+        toggleClass(initialPlay, 'transform-active', false);
         setTimeout(() => {
-            self.domRef.controls.initialPlayButton.classList.add('transform-active');
+            toggleClass(initialPlay, 'transform-active', true);
         }, 50);
 
-        clearTimeout(self.playButtonTimer);
-        self.playButtonTimer = setTimeout(() => {
-            self.domRef.controls.initialPlayButton.classList.remove('transform-active');
-        }, 800);
+        clearTimeout(this.playButtonTimer);
+        this.playButtonTimer = setTimeout(() => {
+            toggleClass(initialPlay, 'transform-active', false);
+            this.hideInitPlayButton();
+        }, 500);
     };
 
-    self.initialPlay = () => {
-        self.domRef.player.addEventListener('playing', () => {
-            self.toggleLoader(false);
-        });
+    toggleControls = () => {
+        this.toggleInitPlayButton();
+        const { player } = this;
+        const { controls, title, logo, contextMenu } = player;
 
-        self.domRef.player.addEventListener('timeupdate', () => {
-            // some places we are manually displaying toggleLoader
-            // user experience toggleLoader being displayed even when content is playing in background
-            self.toggleLoader(false);
-        });
+        const playPauseButton = controls.playPause;
+        const controlsDisplay = controls.container;
 
-        self.domRef.player.addEventListener('waiting', () => {
-            self.toggleLoader(true);
-        });
-
-        if (!self.displayOptions.layoutControls.playButtonShowing) {
-            // Controls always showing until the video is first played
-            const initialControlsDisplay = document.getElementById(self.videoPlayerId + '_fluid_controls_container');
-            initialControlsDisplay.classList.remove('initial_controls_show');
-            // The logo shows before playing but may need to be removed
-            const fpPlayer = document.getElementById(self.videoPlayerId + '_logo');
-            if (fpPlayer) {
-                fpPlayer.classList.remove('initial_controls_show');
-            }
+        let paused = false;
+        if (!player.paused) {
+            paused = true;
         }
 
-        if (!self.firstPlayLaunched) {
-            self.playPauseToggle();
-            self.domRef.player.removeEventListener('play', self.initialPlay);
-        }
+        toggleClass(playPauseButton, 'fluid_button_play', !paused);
+        toggleClass(playPauseButton, 'fluid_button_pause', paused);
+
+        toggleClass(controlsDisplay, 'initial_controls_show', !paused);
+
+        toggleClass(title.el, 'initial_controls_show', !paused);
+        toggleClass(logo.el, 'initial_controls_show', !paused);
+
+        contextMenu.play.textContent = player.config.captions[paused ? 'pause' : 'play'];
     };
 
-    self.playPauseToggle = () => {
-        if (self.multipleVideoSources) {
-            self.domRef.controls.initialPlayButton.style.display = 'none';
-            self.domRef.controls.initialPlayButton.style.cursor = 'default';
-        }
-
-        const isFirstStart = !self.firstPlayLaunched;
-        const preRolls = self.findRoll('preRoll');
-
-        if (!isFirstStart || preRolls.length === 0) {
-            if (isFirstStart && preRolls.length === 0) {
-                self.firstPlayLaunched = true;
-                self.displayOptions.vastOptions.vastAdvanced.noVastVideoCallback();
-            }
-
-            if (self.domRef.player.paused) {
-                if (self.isCurrentlyPlayingAd && self.vastOptions !== null && self.vastOptions.vpaid) {
-                    // resume the vpaid linear ad
-                    self.resumeVpaidAd();
-                } else {
-                    // resume the regular linear vast or content video player
-                    if (self.dashPlayer) {
-                        self.dashPlayer.play();
-                    } else {
-                        self.domRef.player.play();
-                    }
-                }
-
-                self.playPauseAnimationToggle(true);
-            } else if (!isFirstStart) {
-                if (self.isCurrentlyPlayingAd && self.vastOptions !== null && self.vastOptions.vpaid) {
-                    // pause the vpaid linear ad
-                    self.pauseVpaidAd();
-                } else {
-                    // pause the regular linear vast or content video player
-                    self.domRef.player.pause();
-                }
-                // run more tests to see if it doesn't break any functions
-                self.controlPlayPauseToggle();
-                self.playPauseAnimationToggle(false);
-            }
-
-            self.toggleOnPauseAd();
-        } else {
-            self.isCurrentlyPlayingAd = true;
-
-            // Workaround for Safari or Mobile Chrome - otherwise it blocks the subsequent
-            // play() command, because it considers it not being triggered by the user.
-            // The URL is hardcoded here to cover widest possible use cases.
-            // If you know of an alternative workaround for this issue - let us know!
-            const browserVersion = self.getBrowserVersion();
-            const isChromeAndroid = self.mobileInfo.userOs !== false &&
-                self.mobileInfo.userOs === 'Android' &&
-                browserVersion.browserName === 'Google Chrome';
-
-            if (browserVersion.browserName === 'Safari' || isChromeAndroid) {
-                self.domRef.player.src = 'https://cdn.fluidplayer.com/static/blank.mp4';
-                self.domRef.player.play();
-                self.playPauseAnimationToggle(true);
-            }
-
-            self.firstPlayLaunched = true;
-
-            // trigger the loading of the VAST Tag
-            self.prepareVast('preRoll');
-            self.preRollAdPodsLength = preRolls.length;
-        }
-
-        const prepareVastAdsThatKnowDuration = () => {
-            self.prepareVast('onPauseRoll');
-            self.prepareVast('postRoll');
-            self.prepareVast('midRoll');
-        };
+    toggle = () => {
+        const { player } = this;
+        const isFirstStart = !player.firstPlayLaunched;
+        const preRolls = player.findRoll('preRoll');
 
         if (isFirstStart) {
+            player.firstPlayLaunched = true;
+            if (preRolls.length === 0) {
+                player.config.vastOptions.vastAdvanced.noVastVideoCallback();
+            } else {
+                player.isCurrentlyPlayingAd = true;
+                // trigger the loading of the VAST Tag
+                player.prepareVast('preRoll');
+                player.preRollAdPodsLength = preRolls.length;
+            }
+
             // Remove the div that was placed as a fix for poster image and DASH streaming, if it exists
-            const pseudoPoster = document.getElementById(self.videoPlayerId + '_fluid_pseudo_poster');
-            if (pseudoPoster) {
-                pseudoPoster.parentNode.removeChild(pseudoPoster);
-            }
-
-            if (self.mainVideoDuration > 0) {
-                prepareVastAdsThatKnowDuration();
-            } else {
-                self.domRef.player.addEventListener('mainVideoDurationSet', prepareVastAdsThatKnowDuration);
+            const poster = player.controls.poster;
+            if (poster) {
+                poster.parentNode.removeChild(poster);
             }
         }
 
-        self.adTimer();
+        if (!isFirstStart || !player.isCurrentlyPlayingAd) {
+            const ads =
+                player.isCurrentlyPlayingAd && !is.nullOrUndefined(player.vastOptions) && player.vastOptions.vpaid;
 
-        const blockOnPause = document.getElementById(self.videoPlayerId + '_fluid_html_on_pause');
-
-        if (blockOnPause && !self.isCurrentlyPlayingAd) {
-            if (self.domRef.player.paused) {
-                blockOnPause.style.display = 'flex';
+            if (player.paused) {
+                if (ads) {
+                    // resume the vpaid linear ad
+                    player.resumeVpaidAd();
+                } else {
+                    // resume the regular linear vast or content video player
+                    if (player.streaming.dash) {
+                        player.streaming.dash.play();
+                    } else {
+                        player.play();
+                    }
+                    player.HtmlOnPause.toggle(false);
+                }
             } else {
-                blockOnPause.style.display = 'none';
+                if (ads) {
+                    // pause the vpaid linear ad
+                    player.pauseVpaidAd();
+                } else {
+                    // pause the regular linear vast or content video player
+                    player.pause();
+                    player.HtmlOnPause.toggle(true);
+                }
             }
+            player.toggleOnPauseAd();
         }
+
+        player.adTimer();
     };
 }
+export default PlayPause;

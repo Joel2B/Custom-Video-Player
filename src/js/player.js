@@ -2,15 +2,10 @@
 import ControlBar from './control-bar/control-bar';
 import Controls from './control-bar/controls';
 import Download from './control-bar/download';
-import EventsControls from './control-bar/events-controls';
 import Fullscreen from './fullscreen';
-import Keyboard from './keyboard';
-import Mute from './control-bar/mute';
-import PlayPause from './control-bar/play-pause';
-import ProgressControl from './control-bar/progress-control';
 import Theatre from './control-bar/theatre';
-import Timeline from './control-bar/timeline';
-import VolumeControl from './control-bar/volume-control';
+import Preview from './control-bar/preview';
+import VolumeControl from './control-bar/volume';
 import ContextMenu from './context-menu';
 
 import Menu from './menu/menu';
@@ -19,597 +14,332 @@ import Autoplay from './menu/autoplay';
 import Speed from './menu/playback-rate';
 import Quality from './menu/quality-levels';
 
-import Browser from './utils/browser';
-import Dom from './utils/dom';
-import Events from './utils/events';
-import Media from './utils/media';
-import Request from './utils/request';
-import Storage from './utils/storage';
-import Time from './utils/time';
-import Version from './utils/version';
+import Storage from './storage';
 
 import AdSupport from './vast/adsupport';
 import Vast from './vast/vast';
 import Vpaid from './vast/vpaid';
 
-import CardBoard from './cardboard';
-import Debug from './debug';
-import Handlers from './handlers';
 import HtmlOnPause from './html-on-pause';
 import Logo from './logo';
 import Fps from './fps';
-import PersistentSettings from './persistent-settings';
 import Shortcuts from './shortcuts';
-import Streaming from './streaming';
+import Streaming from './streaming/streaming';
 import Subtitles from './subtitles';
 import Title from './title';
 
-const FP_MODULES = [
-    ControlBar,
-    Controls,
-    Download,
-    EventsControls,
-    Fullscreen,
-    Keyboard,
-    Mute,
-    PlayPause,
-    ProgressControl,
-    Theatre,
-    Timeline,
-    VolumeControl,
-    ContextMenu,
+import Console from './console';
+import defaults from './config/defaults';
+import PlayPause from './control-bar/play-pause';
+import ProgressBar from './control-bar/progress-bar';
+import Listeners from './listeners/listeners';
+import Skip from './control-bar/skip';
+import Keyboard from './listeners/keyboard';
+import UserActivity from './user-activity';
 
-    Browser,
-    Dom,
-    Events,
-    Media,
-    Request,
-    Storage,
-    Time,
-    Version,
+import { isDASH, isHLS, isMKV, isSource } from './utils/media';
+import { createElement, insertAfter, toggleClass } from './utils/dom';
+import { off, on, once, unbindListeners } from './utils/events';
+import { IS_IOS, IS_ANY_SAFARI, TOUCH_ENABLED } from './utils/browser';
+import is from './utils/is';
 
-    AdSupport,
-    Vast,
-    Vpaid,
+// TODO: remove after tweaking adsupport, vast and vpaid
+const FP_MODULES = [AdSupport, Vast, Vpaid];
 
-    CardBoard,
-    Debug,
-    Handlers,
-    HtmlOnPause,
-    Logo,
-    PersistentSettings,
-    Shortcuts,
-    Streaming,
-    Subtitles,
-    Title,
-];
+class CVP {
+    constructor(target, options) {
+        this.version = FP_BUILD_VERSION;
+        this.homepage = FP_HOMEPAGE;
 
-// Determine build mode
-// noinspection JSUnresolvedVariable
-const FP_DEVELOPMENT_MODE = typeof FP_ENV !== 'undefined' && FP_ENV === 'development';
+        // Set the media element
+        this.media = target;
 
-// Are we running in debug mode?
-// noinspection JSUnresolvedVariable
-const FP_RUNTIME_DEBUG = typeof FP_DEBUG !== 'undefined' && FP_DEBUG === true;
+        if (is.string(this.media)) {
+            this.media = document.getElementById(target);
+        }
 
-let playerInstances = 0;
+        // Set config
+        this.config = defaults;
 
-const PlayerClass = function() {
-    // "self" always points to current instance of the player within the scope of the instance
-    // This should help readability and context awareness slightly...
-    const self = this;
+        // Overwrite config
+        this.overwrite(options, this.config);
 
-    self.domRef = {
-        player: null,
-        controls: {},
-    };
+        if (FP_ENV === 'development') {
+            this.config.debug = true;
+        }
 
-    // noinspection JSUnresolvedVariable
-    self.version = typeof FP_BUILD_VERSION !== 'undefined' ? FP_BUILD_VERSION : '';
-    // noinspection JSUnresolvedVariable
-    self.homepage =
-        typeof FP_HOMEPAGE !== 'undefined'
-            ? FP_HOMEPAGE + '/?utm_source=player&utm_medium=context_menu&utm_campaign=organic'
-            : '';
-    self.destructors = [];
+        // Debugging
+        this.debug = new Console(this.config.debug);
 
-    self.init = (playerTarget, options) => {
-        // Install player modules and features
-        const moduleOptions = {
-            development: FP_DEVELOPMENT_MODE,
-            debug: FP_RUNTIME_DEBUG,
-        };
+        if (!(this.media instanceof HTMLVideoElement)) {
+            this.debug.error('Invalid initializer - player target must be HTMLVideoElement or ID');
+            return;
+        }
 
+        if (this.media.cvp) {
+            this.debug.warn('Target already setup');
+            return;
+        }
+
+        // Store reference
+        this.media.cvp = this;
+
+        // TODO: don't use this anymore, remove after tweaking adsupport, vast and vpaid
+        this.videoPlayerId = !is.empty(this.media.id) ? this.media.id : `fp_instance_${playerInstances++}`;
+        this.originalSrc = this.getCurrentSrc();
+        this.originalWidth = this.media.offsetWidth;
+        this.originalHeight = this.media.offsetHeight;
+        this.config.layoutControls.mediaType = this.getCurrentSrcType();
+
+        // Global variables
+        this.defineVariables();
+
+        // All control elements
+        this.controls = new Controls(this);
+
+        // Install modules
         for (const playerModule of FP_MODULES) {
-            playerModule(self, moduleOptions);
+            playerModule(this);
         }
 
-        let playerNode;
-        if (playerTarget instanceof HTMLVideoElement) {
-            playerNode = playerTarget;
-
-            // Automatically assign ID if none exists
-            if (!playerTarget.id) {
-                playerTarget.id = 'fluid_player_instance_' + (playerInstances++).toString();
-            }
-        } else if (typeof playerTarget === 'string' || playerTarget instanceof String) {
-            playerNode = document.getElementById(playerTarget);
-        } else {
-            throw 'Invalid initializer - player target must be HTMLVideoElement or ID';
+        // Listen for events if debugging
+        if (this.config.debug) {
+            on.call(this, this.media, this.config.events.join(' '), (event) => {
+                this.debug.log(`event: ${event.type}`);
+            });
         }
 
-        if (!playerNode) {
-            throw 'Could not find a HTML node to attach to for target ' + playerTarget + '"';
+        // Setup local storage for user settings
+        this.storage = new Storage(this);
+
+        this.setupWrapper();
+        this.setupTouchDevice();
+        this.setupMedia();
+        this.setupControlBar();
+
+        // Setup user activity
+        this.userActivity = new UserActivity(this);
+
+        // Create listeners
+        this.listeners = new Listeners(this);
+
+        // Setup the keyboard and its listeners
+        this.keyboard = new Keyboard(this);
+        if (this.config.layoutControls.keyboardControl) {
+            this.keyboard.listeners();
         }
 
-        playerNode.setAttribute('playsinline', '');
-        playerNode.setAttribute('webkit-playsinline', '');
+        // Apply persistent settings
+        this.setPersistentSettings();
 
-        self.domRef.player = playerNode;
-        self.vrROTATION_POSITION = 0.1;
-        self.vrROTATION_SPEED = 80;
-        self.vrMode = false;
-        self.vrPanorama = null;
-        self.vrViewer = null;
-        self.vpaidTimer = null;
-        self.vpaidAdUnit = null;
-        self.vastOptions = null;
-        /**
-         * @deprecated Nothing should RELY on this. An internal ID generator
-         * should be used where absolutely necessary and DOM objects under FP control
-         * MUST be referenced in domRef.
-         */
-        self.videoPlayerId = playerNode.id;
-        self.originalSrc = self.getCurrentSrc();
-        self.isCurrentlyPlayingAd = false;
-        self.recentWaiting = false;
-        self.latestVolume = 1;
-        self.currentVideoDuration = 0;
-        self.firstPlayLaunched = false;
-        self.suppressClickthrough = false;
-        self.timelinePreviewData = [];
-        self.mainVideoCurrentTime = 0;
-        self.mainVideoDuration = 0;
-        self.isTimer = false;
-        self.timer = null;
-        self.timerPool = {};
-        self.adList = {};
-        self.adPool = {};
-        self.adGroupedByRolls = {};
-        self.onPauseRollAdPods = [];
-        self.currentOnPauseRollAd = '';
-        self.preRollAdsResolved = false;
-        self.preRollAdPods = [];
-        self.preRollAdPodsLength = 0;
-        self.preRollVastResolved = 0;
-        self.temporaryAdPods = [];
-        self.availableRolls = ['preRoll', 'midRoll', 'postRoll', 'onPauseRoll'];
-        self.supportedNonLinearAd = ['300x250', '468x60', '728x90'];
-        self.autoplayAfterAd = true;
-        self.nonLinearDuration = 15;
-        self.supportedStaticTypes = ['image/gif', 'image/jpeg', 'image/png'];
-        self.inactivityTimeout = null;
-        self.isUserActive = null;
-        self.nonLinearVerticalAlign = 'bottom';
-        self.vpaidNonLinearCloseButton = true;
-        self.showTimeOnHover = true;
-        self.initialAnimationSet = true;
-        self.theatreMode = false;
-        self.theatreModeAdvanced = false;
-        self.fullscreenMode = false;
-        self.originalWidth = playerNode.offsetWidth;
-        self.originalHeight = playerNode.offsetHeight;
-        self.dashPlayer = false;
-        self.hlsPlayer = false;
-        self.dashScriptLoaded = false;
-        self.hlsScriptLoaded = false;
-        self.isPlayingMedia = false;
-        self.isSwitchingSource = false;
-        self.isLoading = false;
-        self.isInIframe = self.inIframe();
-        self.mainVideoReadyState = false;
-        self.xmlCollection = [];
-        self.inLineFound = null;
-        self.fluidStorage = {};
-        self.fluidPseudoPause = false;
-        self.mobileInfo = self.getMobileOs();
-        self.events = {};
-        self.updateInterval = null;
-        self.updateRefreshInterval = 60;
-        self.multipleVideoSources = false;
-        self.playButtonTimer = null;
-        self.useCapture = self.useCapture();
+        // Apply mute
+        this.initMute();
 
-        // Default options
-        self.displayOptions = {
-            layoutControls: {
-                mediaType: self.getCurrentSrcType(),
-                primaryColor: false,
-                posterImage: false,
-                posterImageSize: 'contain',
-                adProgressColor: '#f9d300',
-                playButtonShowing: true,
-                playPauseAnimation: false,
-                closeButtonCaption: 'Close', // Remove?
-                fillToContainer: false,
-                autoPlay: false,
-                preload: 'auto',
-                mute: false,
-                loop: false,
-                keyboardControl: true,
-                allowDownload: false,
-                showCardBoardView: false,
-                showCardBoardJoystick: false,
-                allowTheatre: true,
-                doubleclickFullscreen: true,
-                menu: {
-                    loop: true,
-                    autoPlay: true,
-                    playbackRate: true,
-                    qualityLevels: true,
-                    subtitles: false,
-                },
-                theatreSettings: {
-                    width: '100%',
-                    height: '60%',
-                    marginTop: 0,
-                    horizontalAlign: 'center',
-                    keepPosition: false,
-                },
-                theatreAdvanced: false,
-                title: null,
-                logo: {
-                    imageUrl: null,
-                    position: 'top left',
-                    clickUrl: null,
-                    opacity: 1,
-                    mouseOverImageUrl: null,
-                    imageMargin: '2px',
-                    hideWithControls: false,
-                    showOverAds: false,
-                },
-                controlBar: {
-                    autoHide: false,
-                    autoHideTimeout: 3,
-                    animated: true,
-                },
-                timelinePreview: {
-                    spriteImage: false,
-                    spriteRelativePath: false,
-                },
-                htmlOnPauseBlock: {
-                    html: null,
-                    height: null,
-                    width: null,
-                },
-                layout: 'default', // options: 'default', '<custom>'
-                playerInitCallback: function() {},
-                persistentSettings: {
-                    speed: true,
-                    quality: true,
-                    volume: true,
-                    theatre: true,
-                },
-                controlForwardBackward: {
-                    show: false,
-                },
-                contextMenu: {
-                    controls: true,
-                    links: [],
-                },
-            },
-            vastOptions: {
-                adList: {},
-                skipButtonCaption: 'Skip ad in [seconds]',
-                skipButtonClickCaption: 'Skip Ad <span class="skip_button_icon"></span>',
-                adText: null,
-                adTextPosition: 'top left',
-                adCTAText: 'Visit now!',
-                adCTATextPosition: 'bottom right',
-                adClickable: true,
-                vastTimeout: 5000,
-                showProgressbarMarkers: false,
-                allowVPAID: false,
-                showPlayButton: false,
-                maxAllowedVastTagRedirects: 3,
-                vpaidTimeout: 3000,
+        // Set sources
+        this.sourcesInVideoTag();
 
-                vastAdvanced: {
-                    vastLoadedCallback: function() {},
-                    noVastVideoCallback: function() {},
-                    vastVideoSkippedCallback: function() {},
-                    vastVideoEndedCallback: function() {},
-                },
-            },
-            captions: {
-                play: 'Play',
-                pause: 'Pause',
-                mute: 'Mute',
-                unmute: 'Unmute',
-                fullscreen: 'Fullscreen',
-                subtitles: 'Subtitles',
-                exitFullscreen: 'Exit Fullscreen',
-                shortcutsInfo: 'Keyboard Shortcuts',
-            },
-            debug: FP_RUNTIME_DEBUG,
-            modules: {
-                configureHls: (options) => {
-                    return options;
-                },
-                onBeforeInitHls: (hls) => {},
-                onAfterInitHls: (hls) => {},
-                configureDash: (options) => {
-                    return options;
-                },
-                onBeforeInitDash: (dash) => {},
-                onAfterInitDash: (dash) => {},
-            },
-            onBeforeXMLHttpRequestOpen: (request) => {},
-            onBeforeXMLHttpRequest: (request) => {
-                if (FP_RUNTIME_DEBUG || FP_DEVELOPMENT_MODE) {
-                    console.debug('[FP_DEBUG] Request made', request);
-                }
-            },
-        };
+        // Setup vast
+        this.setVastList();
 
-        if (options.hlsjsConfig) {
-            console.error(
-                '[FP_ERROR] player option hlsjsConfig is removed and has no effect. ' + 'Use module callbacks instead!',
-            );
-        }
-
-        // Overriding the default options
-        self.overrideOptions(self.displayOptions, options);
-
-        self.setupPlayerWrapper();
-
-        playerNode.addEventListener('webkitfullscreenchange', self.recalculateAdDimensions);
-        playerNode.addEventListener('fullscreenchange', self.recalculateAdDimensions);
-        playerNode.addEventListener('waiting', self.onRecentWaiting);
-        playerNode.addEventListener('pause', self.onFluidPlayerPause);
-        playerNode.addEventListener('loadedmetadata', self.mainVideoReady);
-        playerNode.addEventListener('error', self.onErrorDetection);
-        playerNode.addEventListener('ended', self.onMainVideoEnded);
-        playerNode.addEventListener('durationchange', () => {
-            self.currentVideoDuration = self.getCurrentVideoDuration();
-        });
-
-        if (self.displayOptions.layoutControls.showCardBoardView) {
-            // This fixes cross origin errors on three.js
-            playerNode.setAttribute('crossOrigin', 'anonymous');
-        }
-
-        // Manually load the video duration if the video was loaded before adding the event listener
-        self.currentVideoDuration = self.getCurrentVideoDuration();
-
-        if (isNaN(self.currentVideoDuration) || !isFinite(self.currentVideoDuration)) {
-            self.currentVideoDuration = 0;
-        }
-
-        self.setLayout();
-
-        // Set the volume control state
-        self.latestVolume = playerNode.volume;
-
-        // Set the default animation setting
-        self.initialAnimationSet = self.displayOptions.layoutControls.playPauseAnimation;
-
-        // Set the custom fullscreen behaviour
-        self.handleFullscreen();
-
-        self.initLogo();
-
-        self.initTitle();
-
-        self.displayOptions.layoutControls.playerInitCallback();
-
-        self.menu = new Menu(self);
-        self.loop = new Loop(self);
-        self.autoPlay = new Autoplay(self);
-        self.speed = new Speed(self);
-        self.quality = new Quality(self);
-        self.menu.init();
-
-        self.setupShortcuts();
-
-        self.sourcesInVideoTag();
-
-        self.createSubtitles();
-
-        self.createCardboard();
-
-        self.userActivityChecker();
-
-        self.setVastList();
-
-        self.setPersistentSettings();
-
-        self.initMute();
-
-        self.fps = new Fps(self);
+        this.config.layoutControls.playerInitCallback();
 
         // DO NOT initialize streamers if there are pre-rolls. It will break the streamers!
         // Streamers will re-initialize once ad has been shown.
-        const preRolls = self.findRoll('preRoll');
+        const preRolls = this.findRoll('preRoll');
         if (!preRolls || preRolls.length === 0) {
-            self.initialiseStreamers();
-        }
-
-        const playVideoPlayer = playerNode.play;
-
-        playerNode.play = function() {
-            let promise = null;
-
-            if (self.displayOptions.layoutControls.showCardBoardView) {
-                if (
-                    typeof DeviceOrientationEvent !== 'undefined' &&
-                    typeof DeviceOrientationEvent.requestPermission === 'function'
-                ) {
-                    DeviceOrientationEvent.requestPermission()
-                        .then(function(response) {
-                            if (response === 'granted') {
-                                self.debugMessage('DeviceOrientationEvent permission granted!');
-                            }
-                        })
-                        .catch(console.error);
-                }
-            }
-
-            try {
-                promise = playVideoPlayer.apply(this, arguments);
-
-                if (promise !== undefined && promise !== null) {
-                    promise
-                        .then(() => {
-                            self.isPlayingMedia = true;
-                            clearTimeout(self.promiseTimeout);
-                        })
-                        .catch((error) => {
-                            console.error('[FP_ERROR] Playback error', error);
-                            const isAbortError = typeof error.name !== 'undefined' && error.name === 'AbortError';
-                            // Ignore abort errors which caused for example Safari or autoplay functions
-                            // (example: interrupted by a new load request)
-                            if (isAbortError) {
-                                // Ignore AbortError error reporting
-                            } else {
-                                self.announceLocalError(202, 'Failed to play video.');
-                            }
-
-                            clearTimeout(self.promiseTimeout);
-                        });
-
-                    self.promiseTimeout = setTimeout(function() {
-                        if (self.isPlayingMedia === false) {
-                            self.announceLocalError(204, '[FP_ERROR] Timeout error. Failed to play video?');
-                        }
-                    }, 5000);
-                }
-
-                return promise;
-            } catch (error) {
-                console.error('[FP_ERROR] Playback error', error);
-                self.announceLocalError(201, 'Failed to play video.');
-            }
-        };
-
-        const videoPauseOriginal = playerNode.pause;
-        playerNode.pause = function() {
-            if (self.isPlayingMedia === true) {
-                self.isPlayingMedia = false;
-                return videoPauseOriginal.apply(this, arguments);
-            }
-
-            // just in case
-            if (self.isCurrentlyPlayingVideo(self.domRef.player)) {
-                try {
-                    self.isPlayingMedia = false;
-                    return videoPauseOriginal.apply(this, arguments);
-                } catch (e) {
-                    self.announceLocalError(203, 'Failed to play video.');
-                }
-            }
-        };
-
-        if (self.autoPlay.apply() && !self.dashScriptLoaded && !self.hlsScriptLoaded) {
-            // There is known issue with Safari 11+, will prevent autoPlay, so we wont try
-            const browserVersion = self.getBrowserVersion();
-
-            if (browserVersion.browserName === 'Safari') {
-                return;
-            }
-
-            playerNode.play();
-        }
-
-        const videoWrapper = self.domRef.wrapper;
-
-        if (!self.mobileInfo.userOs) {
-            videoWrapper.addEventListener('mouseleave', self.handleMouseleave, false);
-            videoWrapper.addEventListener('mouseenter', self.showControlBar, false);
-            videoWrapper.addEventListener('mouseenter', self.showTitle, false);
+            this.streaming.init();
         } else {
-            // On mobile mouseleave behavior does not make sense, so it's better to keep controls
-            // Once the playback starts
-            // Autohide behavior on timer is a separate functionality
-            self.hideControlBar();
-            videoWrapper.addEventListener('touchstart', self.showControlBar, self.useCapture);
-        }
-
-        // Keyboard Controls
-        if (self.displayOptions.layoutControls.keyboardControl) {
-            self.keyboardControl();
-        }
-
-        if (self.displayOptions.layoutControls.controlBar.autoHide) {
-            self.linkControlBarUserActivity();
-        }
-
-        // Hide the captions on init if user added subtitles track.
-        // We are taking captions track kind of as metadata
-        try {
-            if (self.domRef.player.textTracks) {
-                for (const textTrack of self.domRef.player.textTracks) {
-                    textTrack.mode = 'hidden';
-                }
+            if (isHLS(this.originalSrc) || isDASH(this.originalSrc)) {
+                this.autoPlay.apply();
             }
-        } catch (_ignored) {}
+        }
+
+        const play = this.media.play;
+        this.media.play = () => {
+            const promise = play.apply(this.media, arguments);
+
+            if (!is.promise(promise)) {
+                return null;
+            }
+
+            promise
+                .then(() => {
+                    clearTimeout(this.promiseTimeout);
+                })
+                .catch((error) => {
+                    this.debug.error(error);
+                    clearTimeout(this.promiseTimeout);
+                });
+
+            this.promiseTimeout = setTimeout(() => {
+                this.debug.error('Timeout error. Failed to play video?');
+            }, 5000);
+
+            return promise;
+        };
+    }
+
+    defineVariables = () => {
+        this.recentWaiting = false;
+        this.firstPlayLaunched = false;
+        this.isSwitchingSource = false;
+        this.isLoading = false;
+        this.eventListeners = [];
+        this.multipleVideoSources = false;
+
+        // TODO: ads, remove after tweaking adsupport, vast and vpaid
+        this.suppressClickthrough = false;
+        this.vpaidTimer = null;
+        this.vpaidAdUnit = null;
+        this.vastOptions = null;
+        this.isCurrentlyPlayingAd = false;
+        this.mainVideoCurrentTime = 0;
+        this.isTimer = false;
+        this.timer = null;
+        this.timerPool = {};
+        this.adList = {};
+        this.adPool = {};
+        this.adGroupedByRolls = {};
+        this.onPauseRollAdPods = [];
+        this.currentOnPauseRollAd = '';
+        this.preRollAdsResolved = false;
+        this.preRollAdPods = [];
+        this.preRollAdPodsLength = 0;
+        this.preRollVastResolved = 0;
+        this.temporaryAdPods = [];
+        this.availableRolls = ['preRoll', 'midRoll', 'postRoll', 'onPauseRoll'];
+        this.supportedNonLinearAd = ['300x250', '468x60', '728x90'];
+        this.autoplayAfterAd = true;
+        this.nonLinearDuration = 15;
+        this.supportedStaticTypes = ['image/gif', 'image/jpeg', 'image/png'];
+        this.nonLinearVerticalAlign = 'bottom';
+        this.vpaidNonLinearCloseButton = true;
+        this.inLineFound = null;
     };
 
-    self.overrideOptions = (opt1, opt2) => {
-        for (const key in opt2) {
-            if (opt1[key] !== 'undefined' && opt2[key] !== null && typeof opt2[key] === 'object') {
-                if (Object.keys(opt1[key]).length === 0) {
-                    opt1[key] = opt2[key];
-                } else {
-                    self.overrideOptions(opt1[key], opt2[key]);
-                }
+    setupWrapper = () => {
+        this.wrapper = createElement('div', {
+            class: 'fluid_video_wrapper',
+        });
+
+        this.wrapper.className += ' fluid_player_layout_' + this.config.layoutControls.layout;
+
+        // Assign the height/width dimensions to the wrapper
+        let width = `${this.media.clientWidth}px`;
+        let height = `${this.media.clientHeight}px`;
+
+        if (this.config.layoutControls.fillToContainer) {
+            width = '100%';
+            height = '100%';
+        }
+
+        this.wrapper.style.width = width;
+        this.wrapper.style.height = height;
+
+        insertAfter(this.wrapper, this.media);
+        this.wrapper.appendChild(this.media);
+
+        insertAfter(this.controls.container, this.media);
+        insertAfter(this.controls.loader, this.media);
+
+        this.posterImage();
+
+        this.logo = new Logo(this);
+
+        this.title = new Title(this);
+
+        this.shortcuts = new Shortcuts(this);
+    };
+
+    setupMedia = () => {
+        this.media.style.width = '100%';
+        this.media.style.height = '100%';
+
+        this.media.setAttribute('playsinline', '');
+        this.media.setAttribute('webkit-playsinline', '');
+
+        this.setVideoPreload();
+
+        // Remove the default controls
+        this.media.removeAttribute('controls');
+
+        this.streaming = new Streaming(this);
+
+        this.fps = new Fps(this);
+    };
+
+    setupControlBar = () => {
+        this.controlBar = new ControlBar(this);
+        if (this.config.layoutControls.controlBar.autoHide) {
+            this.controlBar.linkControlBarUserActivity();
+        }
+
+        this.playPause = new PlayPause(this);
+
+        this.progressBar = new ProgressBar(this);
+
+        this.preview = new Preview(this);
+
+        if (this.config.layoutControls.controlForwardBackward.show) {
+            this.skipControls = new Skip(this);
+        }
+
+        this.volumeControl = new VolumeControl(this);
+
+        this.menu = new Menu(this);
+        this.loopMenu = new Loop(this);
+        this.autoPlay = new Autoplay(this);
+        this.speedMenu = new Speed(this);
+        this.quality = new Quality(this);
+        this.menu.init();
+
+        this.subtitles = new Subtitles(this);
+        this.download = new Download(this);
+        this.theatre = new Theatre(this);
+        this.fullscreen = new Fullscreen(this);
+
+        this.HtmlOnPause = new HtmlOnPause(this);
+
+        this.contextMenu = new ContextMenu(this);
+    };
+
+    overwrite = (from, to) => {
+        for (const key in from) {
+            if (is.object(from[key])) {
+                this.overwrite(from[key], to[key]);
             } else {
-                opt1[key] = opt2[key];
+                to[key] = from[key];
             }
         }
     };
 
-    self.getCurrentVideoDuration = () => {
-        if (self.domRef.player) {
-            return self.domRef.player.duration;
-        }
-
-        return 0;
+    toggleLoader = (show) => {
+        this.isLoading = show;
+        this.controls.loader.style.opacity = show ? '1' : '0';
     };
 
-    self.toggleLoader = (showLoader) => {
-        self.isLoading = !!showLoader;
-
-        const loaderDiv = self.domRef.controls.loader;
-
-        loaderDiv.style.opacity = showLoader ? '1' : '0';
-    };
-
-    self.onMainVideoEnded = (event) => {
-        self.debugMessage('onMainVideoEnded is called');
-
-        if (self.isCurrentlyPlayingAd && self.autoplayAfterAd) {
+    // TODO: ads, remove after tweaking adsupport, vast and vpaid
+    onMainVideoEnded = () => {
+        if (this.isCurrentlyPlayingAd && this.autoplayAfterAd) {
             // It may be in-stream ending, and if it's not postroll then we don't execute anything
             return;
         }
 
         // we can remove timer as no more ad will be shown
-        if (Math.floor(self.getCurrentTime()) >= Math.floor(self.mainVideoDuration)) {
+        if (Math.floor(this.getCurrentTime()) >= Math.floor(this.duration)) {
             // play pre-roll ad
             // sometime pre-roll ad will be missed because we are clearing the timer
-            self.adKeytimePlay(Math.floor(self.mainVideoDuration));
+            this.adKeytimePlay(Math.floor(this.duration));
 
-            clearInterval(self.timer);
+            clearInterval(this.timer);
         }
 
-        if (self.loop.apply()) {
-            self.switchToMainVideo();
-            self.playPauseToggle();
-        }
+        this.loopMenu.apply();
     };
 
-    self.getCurrentTime = () => {
-        return self.isCurrentlyPlayingAd ? self.mainVideoCurrentTime : self.domRef.player.currentTime;
+    // TODO: ads, remove after tweaking adsupport, vast and vpaid
+    getCurrentTime = () => {
+        return this.isCurrentlyPlayingAd ? this.mainVideoCurrentTime : this.currentTime;
     };
 
     /**
@@ -617,8 +347,8 @@ const PlayerClass = function() {
      *
      * @returns string|null
      */
-    self.getCurrentSrc = () => {
-        const sources = self.domRef.player.getElementsByTagName('source');
+    getCurrentSrc = () => {
+        const sources = this.media.getElementsByTagName('source');
 
         if (sources.length) {
             return sources[0].getAttribute('src');
@@ -630,44 +360,36 @@ const PlayerClass = function() {
     /**
      * Src types required for streaming elements
      */
-    self.getCurrentSrcType = () => {
-        const sources = self.domRef.player.getElementsByTagName('source');
+    getCurrentSrcType = () => {
+        const sources = this.media.getElementsByTagName('source');
 
         if (!sources.length) {
             return null;
         }
 
-        for (let i = 0; i < sources.length; i++) {
-            if (sources[i].getAttribute('src') === self.originalSrc) {
-                return sources[i].getAttribute('type').toLowerCase();
+        for (const source of sources) {
+            if (source.getAttribute('src') === this.originalSrc) {
+                return source.getAttribute('type').toLowerCase();
             }
         }
 
         return null;
     };
 
-    self.onRecentWaiting = () => {
-        self.recentWaiting = true;
-
-        setTimeout(function() {
-            self.recentWaiting = false;
-        }, 1000);
-    };
-
-    self.findRoll = (roll) => {
+    findRoll = (roll) => {
         const ids = [];
         ids.length = 0;
 
-        if (!roll || !self.hasOwnProperty('adList')) {
+        if (!roll || !this.hasOwnProperty('adList')) {
             return;
         }
 
-        for (const key in self.adList) {
-            if (!self.adList.hasOwnProperty(key)) {
+        for (const key in this.adList) {
+            if (!this.adList.hasOwnProperty(key)) {
                 continue;
             }
 
-            if (self.adList[key].roll === roll) {
+            if (this.adList[key].roll === roll) {
                 ids.push(key);
             }
         }
@@ -675,525 +397,388 @@ const PlayerClass = function() {
         return ids;
     };
 
-    self.setDefaultLayout = () => {
-        self.domRef.wrapper.className += ' fluid_player_layout_' + self.displayOptions.layoutControls.layout;
-
-        self.setCustomContextMenu();
-
-        const controls = self.generateCustomControlTags({
-            displayVolumeBar: self.checkShouldDisplayVolumeBar(),
-            primaryColor: self.displayOptions.layoutControls.primaryColor
-                ? self.displayOptions.layoutControls.primaryColor
-                : '#f00',
-            controlForwardBackward: !!self.displayOptions.layoutControls.controlForwardBackward.show,
-        });
-
-        // Remove the default controls
-        self.domRef.player.removeAttribute('controls');
-
-        // Insert custom controls and append loader
-        self.domRef.player.parentNode.insertBefore(controls.root, self.domRef.player.nextSibling);
-        self.domRef.player.parentNode.insertBefore(controls.loader, self.domRef.player.nextSibling);
-
-        // Register controls locally
-        self.domRef.controls = Object.assign(controls, self.domRef.controls);
-
-        /**
-         * Set the volumebar after its elements are properly rendered.
-         */
-        let remainingAttemptsToInitiateVolumeBar = 100;
-
-        const initiateVolumebar = function() {
-            if (!remainingAttemptsToInitiateVolumeBar) {
-                clearInterval(initiateVolumebarTimerId);
-            } else if (self.checkIfVolumebarIsRendered()) {
-                clearInterval(initiateVolumebarTimerId);
-                self.contolVolumebarUpdate(self.videoPlayerId);
-            } else {
-                remainingAttemptsToInitiateVolumeBar--;
-            }
-        };
-        const initiateVolumebarTimerId = setInterval(initiateVolumebar, 100);
-
-        if (self.displayOptions.layoutControls.doubleclickFullscreen) {
-            self.domRef.player.addEventListener('dblclick', self.fullscreenToggle);
+    setupTouchDevice = () => {
+        if (!TOUCH_ENABLED) {
+            return;
         }
 
-        self.initHtmlOnPauseBlock();
+        toggleClass(this.wrapper, 'mobile', true);
+        toggleClass(this.wrapper, 'fluid_touch', true);
 
-        self.setCustomControls();
-
-        self.setupThumbnailPreview();
-
-        self.createTimePositionPreview();
-
-        self.posterImage();
-
-        self.initPlayButton();
-
-        self.setVideoPreload();
-
-        self.createDownload();
-
-        if (self.displayOptions.layoutControls.controlForwardBackward.show) {
-            self.initSkipControls();
-        }
+        this.config.layoutControls.controlBar.autoHide = true;
+        this.config.layoutControls.playButtonShowing = true;
+        this.config.layoutControls.playPauseAnimation = false;
     };
 
-    self.initSkipControls = () => {
-        const skipFunction = (period) => {
-            if (self.isCurrentlyPlayingAd) {
-                return;
-            }
-
-            let skipTo = self.domRef.player.currentTime + period;
-            if (skipTo < 0) {
-                skipTo = 0;
-            }
-            self.domRef.player.currentTime = skipTo;
-        };
-
-        self.domRef.controls.skipBack.addEventListener('click', skipFunction.bind(this, -10));
-        self.domRef.controls.skipForward.addEventListener('click', skipFunction.bind(this, 10));
-    };
-
-    self.setLayout = () => {
-        // All other browsers
-        const listenTo = self.isTouchDevice() ? 'touchend' : 'click';
-        self.domRef.player.addEventListener(listenTo, () => self.playPauseToggle(), false);
-        // Mobile Safari - because it does not emit a click event on initial click of the video
-        self.domRef.player.addEventListener('play', self.initialPlay, false);
-        self.setDefaultLayout();
-    };
-
-    self.setupPlayerWrapper = () => {
-        const fillToContainer = self.displayOptions.layoutControls.fillToContainer;
-        self.domRef.wrapper = self.createElement({
-            tag: 'div',
-            id: self.videoPlayerId + '_fluid_video_wrapper',
-            className: self.isTouchDevice() ? 'fluid_video_wrapper mobile' : 'fluid_video_wrapper',
-            style: {
-                // Assign the height/width dimensions to the wrapper
-                ...(fillToContainer && {
-                    width: '100%',
-                    height: '100%',
-                }),
-                ...(!fillToContainer && {
-                    width: self.domRef.player.clientWidth + 'px',
-                    height: self.domRef.player.clientHeight + 'px',
-                }),
-            },
-        });
-
-        self.domRef.player.style.height = '100%';
-        self.domRef.player.style.width = '100%';
-
-        self.domRef.player.parentNode.insertBefore(self.domRef.wrapper, self.domRef.player);
-        self.domRef.wrapper.appendChild(self.domRef.player);
-    };
-
-    self.onErrorDetection = () => {
-        if (self.domRef.player.networkState === self.domRef.player.NETWORK_NO_SOURCE && self.isCurrentlyPlayingAd) {
+    onErrorDetection = () => {
+        if (this.media.networkState === this.media.NETWORK_NO_SOURCE && this.isCurrentlyPlayingAd) {
             // Probably the video ad file was not loaded successfully
-            self.playMainVideoWhenVastFails(401);
+            this.playMainVideoWhenVastFails(401);
         }
     };
 
-    self.sourcesInVideoTag = () => {
-        const sourcesList = self.domRef.player.querySelectorAll('source');
+    setPersistentSettings = () => {
+        if (this.config.layoutControls.persistentSettings.volume) {
+            this.volumeControl.apply();
+            this.volumeControl.update();
+        }
+
+        if (this.config.layoutControls.persistentSettings.speed) {
+            this.speedMenu.apply();
+        }
+
+        if (this.config.layoutControls.persistentSettings.theatre) {
+            this.theatre.apply();
+        }
+    };
+
+    sourcesInVideoTag = () => {
+        const sourcesList = this.media.querySelectorAll('source');
         if (sourcesList.length === 0) {
             return;
         }
 
         if (sourcesList.length === 1) {
-            if (!self.isHLS(sourcesList[0].src)) {
-                self.menu.remove('qualityLevels');
+            if (!isHLS(sourcesList[0].src)) {
+                this.menu.remove('qualityLevels');
             }
             return;
         }
 
-        self.multipleVideoSources = true;
+        this.multipleVideoSources = true;
 
         let firstStreamingSource = false;
+
         const sources = [];
+
         for (const [index, source] of sourcesList.entries()) {
-            if (
-                !self.isSource(source.src) ||
-                !source.type ||
-                (self.mobileInfo.userOs === 'iOS' && self.isMKV(source.src))
-            ) {
+            if (!isSource(source.src) || !source.type || (IS_IOS && isMKV(source.src))) {
                 continue;
             }
+
             if (index === 0) {
-                if (self.isHLS(source.src) || self.isDASH(source.src)) {
+                if (isHLS(source.src) || isDASH(source.src)) {
                     firstStreamingSource = true;
                 }
             }
+
             sources.push({
                 title: source.title,
                 src: source.src,
                 isHD: source.getAttribute('data-fluid-hd') !== null,
             });
         }
+
         if (sources.length === 0) {
             return;
         }
 
         sources.reverse();
-        self.videoSources = sources;
-        self.quality.add(sources);
+
+        this.videoSources = sources;
+
+        this.quality.add(sources);
 
         if (firstStreamingSource) {
             const interval = setInterval(() => {
-                if (window.Hls || window.dashjs.MediaPlayer) {
-                    self.quality.set(sources);
+                if (window.Hls || (window.dashjs && is.function(window.dashjs.MediaPlayer))) {
+                    this.quality.set(sources);
                     clearInterval(interval);
                 }
             }, 100);
         } else {
-            self.quality.set(sources);
+            this.quality.set(sources);
         }
     };
 
-    self.setVideoSource = (url) => {
-        if (self.mobileInfo.userOs === 'iOS' && self.isMKV(url)) {
-            console.log('[FP_ERROR] .mkv files not supported by iOS devices.');
+    setVideoSource = (url) => {
+        if (IS_IOS && isMKV(url)) {
+            this.debug.error('.mkv files not supported by iOS devices.');
             return false;
         }
 
-        if (url === self.originalSrc) {
+        if (url === this.originalSrc) {
+            if (!isHLS(this.originalSrc) && !isDASH(this.originalSrc)) {
+                this.autoPlay.apply();
+            }
             return;
         }
 
-        if (self.isCurrentlyPlayingAd) {
-            self.originalSrc = url;
+        if (this.isCurrentlyPlayingAd) {
+            this.originalSrc = url;
             return;
         }
 
-        self.isSwitchingSource = true;
+        this.isSwitchingSource = true;
+
         let play = false;
-        if (!self.domRef.player.paused) {
-            self.domRef.player.pause();
+        if (!this.paused) {
+            this.pause();
             play = true;
         }
 
-        const currentTime = self.domRef.player.currentTime;
-        self.setCurrentTimeAndPlay(currentTime, play);
+        this.setCurrentTimeAndPlay(this.currentTime, play);
 
-        self.domRef.player.src = url;
-        self.originalSrc = url;
-        self.displayOptions.layoutControls.mediaType = self.getCurrentSrcType();
-        self.initialiseStreamers();
+        this.media.src = url;
+        this.originalSrc = url;
+        this.config.layoutControls.mediaType = this.getCurrentSrcType();
+
+        this.streaming.init();
     };
 
-    self.setCurrentTimeAndPlay = (newCurrentTime, shouldPlay) => {
-        const loadedMetadata = () => {
-            self.domRef.player.currentTime = newCurrentTime;
-            self.domRef.player.removeEventListener('loadedmetadata', loadedMetadata);
+    setCurrentTimeAndPlay = (newCurrentTime, shouldPlay) => {
+        once.call(this, this.media, 'loadedmetadata', () => {
+            this.currentTime = newCurrentTime;
+
             // Safari ios and mac fix to set currentTime
-            if (self.mobileInfo.userOs === 'iOS' || self.getBrowserVersion().browserName.toLowerCase() === 'safari') {
-                self.domRef.player.addEventListener('playing', videoPlayStart);
+            if (IS_IOS || IS_ANY_SAFARI) {
+                once.call(this, this.media, 'playing', () => {
+                    this.currentTime = newCurrentTime;
+                });
             }
 
             if (shouldPlay) {
-                self.domRef.player.play();
+                this.play();
             } else {
-                self.domRef.player.pause();
-                self.controlPlayPauseToggle(self.videoPlayerId);
+                this.pause();
             }
 
-            self.isSwitchingSource = false;
-            self.domRef.player.style.width = '100%';
-            self.domRef.player.style.height = '100%';
-        };
+            if (!isHLS(this.originalSrc) && !isDASH(this.originalSrc)) {
+                this.autoPlay.apply();
+            }
 
-        const videoPlayStart = () => {
-            self.currentTime = newCurrentTime;
-            self.domRef.player.removeEventListener('playing', videoPlayStart);
-        };
+            this.isSwitchingSource = false;
 
-        self.domRef.player.addEventListener('loadedmetadata', loadedMetadata, false);
-        self.domRef.player.load();
-    };
-
-    /**
-     * Play button in the middle when the video loads
-     */
-    self.initPlayButton = () => {
-        // Create the html for the play button
-        self.domRef.controls.initialPlayButtonContainer = self.createElement({
-            tag: 'div',
-            id: self.videoPlayerId + '_fluid_initial_play_button',
-            className: 'fluid_html_on_pause',
+            this.media.style.width = '100%';
+            this.media.style.height = '100%';
         });
 
-        const backgroundColor = self.displayOptions.layoutControls.primaryColor
-            ? self.displayOptions.layoutControls.primaryColor
-            : '#333333';
-
-        self.domRef.controls.initialPlayButton = self.createElement({
-            tag: 'div',
-            id: self.videoPlayerId + '_fluid_initial_play',
-            className: 'fluid_initial_play',
-            style: {
-                backgroundColor: backgroundColor,
-            },
-            parent: self.domRef.controls.initialPlayButtonContainer,
-        });
-
-        self.domRef.controls.stateButton = self.createElement({
-            tag: 'div',
-            id: self.videoPlayerId + '_fluid_state_button',
-            className: 'fluid_initial_play_button',
-            parent: self.domRef.controls.initialPlayButton,
-        });
-
-        const initPlayFunction = () => {
-            self.playPauseToggle();
-            self.domRef.controls.initialPlayButtonContainer.removeEventListener('click', initPlayFunction);
-
-            self.domRef.controls.initialPlayButton.addEventListener('click', () => {
-                self.domRef.controls.initialPlayButton.style.cursor = 'default';
-                self.playPauseToggle();
-                self.domRef.controls.initialPlayButton.addEventListener('dblclick', self.fullscreenToggle);
-            });
-        };
-        self.domRef.controls.initialPlayButtonContainer.addEventListener('click', initPlayFunction);
-        // If the user has chosen to not show the play button we'll make it invisible
-        // We don't hide altogether because animations might still be used
-        if (!self.displayOptions.layoutControls.playButtonShowing) {
-            const initialControlsDisplay = self.domRef.controls.root;
-            initialControlsDisplay.classList.add('initial_controls_show');
-            self.domRef.controls.initialPlayButtonContainer.style.opacity = '0';
-        }
-
-        self.domRef.player.parentNode.insertBefore(self.domRef.controls.initialPlayButtonContainer, null);
+        this.media.load();
     };
 
-    /**
-     * Set the mainVideoDuration property one the video is loaded
-     */
-    self.mainVideoReady = () => {
-        if (!(self.mainVideoDuration === 0 && !self.isCurrentlyPlayingAd && self.mainVideoReadyState === false)) {
-            return;
-        }
-        const event = new CustomEvent('mainVideoDurationSet');
-
-        self.mainVideoDuration = self.domRef.player.duration;
-        self.mainVideoReadyState = true;
-        self.domRef.player.dispatchEvent(event);
-        self.domRef.player.removeEventListener('loadedmetadata', self.mainVideoReady);
-    };
-
-    self.userActivityChecker = () => {
-        const videoPlayer = self.domRef.wrapper;
-        self.newActivity = null;
-
-        let isMouseStillDown = false;
-
-        const activity = (event) => {
-            if (event.type === 'touchstart' || event.type === 'mousedown') {
-                isMouseStillDown = true;
-            }
-            if (event.type === 'touchend' || event.type === 'mouseup') {
-                isMouseStillDown = false;
-            }
-            self.newActivity = true;
-        };
-
-        setInterval(() => {
-            if (self.newActivity !== true) {
-                return;
-            }
-
-            if (!isMouseStillDown && !self.isLoading) {
-                self.newActivity = false;
-            }
-
-            if (self.isUserActive === false || !self.isControlBarVisible()) {
-                const event = new CustomEvent('userActive');
-                self.domRef.player.dispatchEvent(event);
-                self.isUserActive = true;
-            }
-
-            clearTimeout(self.inactivityTimeout);
-
-            self.inactivityTimeout = setTimeout(() => {
-                if (self.newActivity === true) {
-                    clearTimeout(self.inactivityTimeout);
-                    return;
-                }
-
-                self.isUserActive = false;
-
-                const event = new CustomEvent('userInactive');
-                self.domRef.player.dispatchEvent(event);
-            }, self.displayOptions.layoutControls.controlBar.autoHideTimeout * 1000);
-        }, 300);
-
-        const listenTo = self.isTouchDevice()
-            ? ['touchstart', 'touchmove', 'touchend']
-            : ['mousemove', 'mousedown', 'mouseup'];
-
-        for (let i = 0; i < listenTo.length; i++) {
-            videoPlayer.addEventListener(listenTo[i], activity, self.useCapture);
-        }
-    };
-
-    self.setVideoPreload = () => {
-        self.domRef.player.setAttribute('preload', self.displayOptions.layoutControls.preload);
-    };
-
-    self.setLoop = (loop) => {
-        self.domRef.player.loop = loop;
-    };
-
-    self.setPlaybackSpeed = (speed) => {
-        self.domRef.player.playbackRate = speed;
-    };
-
-    self.setBuffering = () => {
-        let progressInterval;
-        const bufferBar = self.domRef.player.parentNode.getElementsByClassName('fluid_controls_buffered');
-
-        for (let j = 0; j < bufferBar.length; j++) {
-            bufferBar[j].style.width = 0;
-        }
-
-        // Buffering
-        const logProgress = () => {
-            const duration = self.domRef.player.duration;
-            if (duration <= 0) {
-                return;
-            }
-
-            for (let i = 0; i < self.domRef.player.buffered.length; i++) {
-                if (
-                    self.domRef.player.buffered.start(self.domRef.player.buffered.length - 1 - i) >=
-                    self.domRef.player.currentTime
-                ) {
-                    continue;
-                }
-
-                const newBufferLength =
-                    (self.domRef.player.buffered.end(self.domRef.player.buffered.length - 1 - i) / duration) * 100 +
-                    '%';
-
-                for (let j = 0; j < bufferBar.length; j++) {
-                    bufferBar[j].style.width = newBufferLength;
-                }
-
-                // Stop checking for buffering if the video is fully buffered
-                if (
-                    !!progressInterval &&
-                    self.domRef.player.buffered.end(self.domRef.player.buffered.length - 1 - i) / duration === 1
-                ) {
-                    clearInterval(progressInterval);
-                }
-
-                break;
-            }
-        };
-        progressInterval = setInterval(logProgress, 500);
+    setVideoPreload = () => {
+        this.media.setAttribute('preload', this.config.layoutControls.preload);
     };
 
     // Set the poster for the video, taken from custom params
-    // Cannot use the standard video tag poster image as it can be removed by the persistent settings
-    self.posterImage = () => {
-        if (!self.displayOptions.layoutControls.posterImage) {
+    posterImage = () => {
+        if (!this.config.layoutControls.posterImage) {
             return;
         }
 
-        const containerDiv = document.createElement('div');
-        containerDiv.id = self.videoPlayerId + '_fluid_pseudo_poster';
-        containerDiv.className = 'fluid_pseudo_poster';
-        if (['auto', 'contain', 'cover'].indexOf(self.displayOptions.layoutControls.posterImageSize) === -1) {
-            console.log('[FP_ERROR] Not allowed value in posterImageSize');
+        const poster = createElement('div', {
+            class: 'fluid_pseudo_poster',
+        });
+
+        if (['auto', 'contain', 'cover'].indexOf(this.config.layoutControls.posterImageSize) === -1) {
+            this.debug.error('Not allowed value in posterImageSize');
             return;
         }
-        containerDiv.style.background =
-            "url('" +
-            self.displayOptions.layoutControls.posterImage +
-            "') center center / " +
-            self.displayOptions.layoutControls.posterImageSize +
-            ' no-repeat black';
-        self.domRef.player.parentNode.insertBefore(containerDiv, null);
+
+        poster.style.backgroundImage = `url('${this.config.layoutControls.posterImage}')`;
+        poster.style.backgroundSize = `${this.config.layoutControls.posterImageSize}`;
+
+        this.controls.poster = poster;
+        this.wrapper.appendChild(poster);
     };
 
     // This is called when a media type is unsupported
     // We'll find the current source and try set the next source if it exists
-    self.nextSource = () => {
-        const sources = self.domRef.player.getElementsByTagName('source');
+    nextSource = () => {
+        const sources = this.media.getElementsByTagName('source');
 
         if (!sources.length) {
             return null;
         }
 
         for (let i = 0; i < sources.length - 1; i++) {
-            if (sources[i].getAttribute('src') === self.originalSrc && sources[i + 1].getAttribute('src')) {
-                self.setVideoSource(sources[i + 1].getAttribute('src'));
+            if (sources[i].getAttribute('src') === this.originalSrc && sources[i + 1].getAttribute('src')) {
+                this.setVideoSource(sources[i + 1].getAttribute('src'));
                 return;
             }
         }
     };
 
     // "API" Functions
-    self.play = () => {
-        if (!self.domRef.player.paused) {
-            return;
+    play = () => {
+        if (!is.function(this.media.play)) {
+            return null;
         }
-        self.playPauseToggle();
-        return true;
+
+        return this.media.play();
     };
 
-    self.pause = () => {
-        if (!self.domRef.player.paused) {
-            self.playPauseToggle();
+    pause = () => {
+        if (!this.playing || !is.function(this.media.pause)) {
+            return null;
         }
-        return true;
+
+        return this.media.pause();
     };
 
-    self.skipTo = (time) => {
-        self.domRef.player.currentTime = time;
-    };
-
-    self.isCurrentlyPlayingVideo = (instance) => {
-        return instance && instance.currentTime > 0 && !instance.paused && !instance.ended && instance.readyState > 2;
-    };
-
-    self.destroy = () => {
-        const numDestructors = self.destructors.length;
-
-        if (numDestructors === 0) {
+    set currentTime(input) {
+        if (!this.duration) {
             return;
         }
 
-        for (let i = 0; i < numDestructors; ++i) {
-            self.destructors[i].bind(this)();
-        }
+        this.media.currentTime = is.number(input) && input >= 0 ? input : 0;
+    }
 
-        const container = self.domRef.wrapper;
+    get currentTime() {
+        return Number(this.media.currentTime);
+    }
 
-        if (!container) {
-            console.warn(
-                'Unable to remove wrapper element for Fluid Player instance - element not found ' + self.videoPlayerId,
-            );
+    get duration() {
+        const duration = (this.media || {}).duration;
+        return !is.number(duration) || duration === Infinity ? 0 : duration;
+    }
+
+    set volume(volume) {
+        this.media.volume = volume;
+    }
+
+    get volume() {
+        return Number(this.media.volume);
+    }
+
+    initMute = () => {
+        if (!this.config.layoutControls.mute) {
             return;
         }
 
-        if (typeof container.remove === 'function') {
-            container.remove();
-            return;
-        }
-
-        if (container.parentNode) {
-            container.parentNode.removeChild(container);
-            return;
-        }
-
-        console.error('Unable to remove wrapper element for Fluid Player instance - no parent' + self.videoPlayerId);
+        this.volume = 0;
+        this.muted = true;
     };
-};
+
+    toggleMute = () => {
+        if (this.volume !== 0 && !this.muted) {
+            this.volume = 0;
+            this.muted = true;
+        } else {
+            this.volume = this.volumeControl.latestVolume;
+            this.muted = false;
+        }
+
+        // Persistent settings
+        this.storage.set('volume', this.volumeControl.latestVolume);
+        this.storage.set('mute', this.muted);
+    };
+
+    set muted(mute) {
+        this.media.muted = mute;
+    }
+
+    get muted() {
+        return Boolean(this.media.muted);
+    }
+
+    set speed(input) {
+        setTimeout(() => {
+            if (this.media) {
+                this.media.playbackRate = input;
+            }
+        }, 500);
+    }
+
+    get speed() {
+        return Number(this.media.playbackRate);
+    }
+
+    set loop(loop) {
+        this.media.loop = loop;
+    }
+
+    get loop() {
+        return Boolean(this.media.loop);
+    }
+
+    get playing() {
+        return Boolean(!this.paused && !this.ended);
+    }
+
+    get paused() {
+        return Boolean(this.media.paused);
+    }
+
+    get ended() {
+        return Boolean(this.media.ended);
+    }
+
+    skipTo = (time) => {
+        this.currentTime = time;
+    };
+
+    /**
+     * Add event listeners
+     * @param {String} event - Event type
+     * @param {Function} callback - Callback for when event occurs
+     */
+    on = (event, callback) => {
+        on.call(this, this.media, event, callback);
+    };
+
+    /**
+     * Add event listeners once
+     * @param {String} event - Event type
+     * @param {Function} callback - Callback for when event occurs
+     */
+    once = (event, callback) => {
+        once.call(this, this.media, event, callback);
+    };
+
+    /**
+     * Remove event listeners
+     * @param {String} event - Event type
+     * @param {Function} callback - Callback for when event occurs
+     */
+    off = (event, callback) => {
+        off(this.media, event, callback);
+    };
+
+    destroy = () => {
+        const wrapper = this.wrapper;
+
+        if (!is.element(wrapper)) {
+            console.warn('Unable to remove wrapper element for Fluid Player instance - element not found');
+            return;
+        }
+
+        unbindListeners.call(this);
+
+        // destroy video
+        if (is.element(this.media)) {
+            this.pause();
+
+            this.streaming.detach();
+
+            for (const source of this.media.querySelectorAll('source')) {
+                source.remove();
+            }
+
+            this.media.setAttribute('src', this.config.blankVideo);
+            this.media.load();
+            this.media.remove();
+        } else {
+            console.error('Unable to remove media element for Fluid Player instance');
+        }
+
+        if (is.element(wrapper)) {
+            wrapper.remove();
+        } else {
+            console.error('Unable to remove wrapper element for Fluid Player instance');
+        }
+
+        // TODO: ads, remove after tweaking adsupport, vast and vpaid
+        clearInterval(this.timer);
+
+        // Clear for garbage collection
+        setTimeout(() => {
+            this.media = null;
+            this.controls = null;
+            this.wrapper = null;
+        }, 200);
+    };
+}
 
 /**
  * Public Fluid Player API interface
@@ -1208,46 +793,50 @@ const PlayerInterface = function(instance) {
         return instance.pause();
     };
 
-    this.skipTo = (position) => {
-        return instance.skipTo(position);
+    this.skipTo = (time) => {
+        instance.skipTo(time);
     };
 
     this.setPlaybackSpeed = (speed) => {
-        return instance.setPlaybackSpeed(speed);
+        instance.speed = speed;
     };
 
     this.setVolume = (volume) => {
-        return instance.setVolume(volume);
+        instance.volume = volume;
     };
 
     this.setHtmlOnPauseBlock = (options) => {
-        return instance.setHtmlOnPauseBlock(options);
+        return instance.HtmlOnPause.setHtmlOnPauseBlock(options);
     };
 
     this.toggleControlBar = (state) => {
-        return instance.toggleControlBar(state);
+        instance.controlBar.toggleControlBar(state);
     };
 
     this.toggleFullScreen = (state) => {
-        return instance.fullscreenToggle(state);
+        instance.fullscreen.toggle(state);
     };
 
     this.destroy = () => {
-        return instance.destroy();
+        instance.destroy();
     };
 
     this.dashInstance = () => {
-        return instance.dashPlayer ? instance.dashPlayer : null;
+        return instance.streaming.dash ? instance.streaming.dash : null;
     };
 
     this.hlsInstance = () => {
-        return instance.hlsPlayer ? instance.hlsPlayer : null;
+        return instance.streaming.hls ? instance.streaming.hls : null;
     };
 
     this.on = (event, callback) => {
-        return instance.on(event, callback);
+        instance.on(event, callback);
     };
 };
+
+const FP_DEVELOPMENT_MODE = FP_ENV === 'development';
+
+let playerInstances = 0;
 
 /**
  * Initialize and attach Fluid Player to instance of HTMLVideoElement
@@ -1256,14 +845,8 @@ const PlayerInterface = function(instance) {
  * @param options Fluid Player configuration options
  * @returns {playerInterface}
  */
-const playerInitializer = function(target, options) {
-    const instance = new PlayerClass();
-
-    if (!options) {
-        options = {};
-    }
-
-    instance.init(target, options);
+const playerInitializer = function(target, options = {}) {
+    const instance = new CVP(target, options);
 
     const publicInstance = new PlayerInterface(instance);
 
@@ -1275,17 +858,15 @@ const playerInitializer = function(target, options) {
             internals: instance,
         };
 
-        if (typeof window.fluidPlayerDebug === 'undefined') {
+        if (is.nullOrUndefined(window.fluidPlayerDebug)) {
             window.fluidPlayerDebug = [];
         }
 
         window.fluidPlayerDebug.push(debugApi);
 
         console.log(
-            'Created instance of Fluid Player. ' +
-                'Debug API available at window.fluidPlayerDebug[' +
-                (window.fluidPlayerDebug.length - 1) +
-                '].',
+            'Created instance of Fluid Player.',
+            `Debug API available at window.fluidPlayerDebug[${window.fluidPlayerDebug.length - 1}].`,
             debugApi,
         );
     }
@@ -1294,7 +875,7 @@ const playerInitializer = function(target, options) {
 };
 
 if (FP_DEVELOPMENT_MODE) {
-    console.log('Fluid Player - Development Build' + (FP_RUNTIME_DEBUG ? ' (in debug mode)' : ''));
+    console.log(`Fluid Player - Development Build ${FP_DEBUG ? '(in debug mode)' : ''}`);
 }
 
 export default playerInitializer;

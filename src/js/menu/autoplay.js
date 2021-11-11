@@ -1,57 +1,77 @@
+import { hasClass, toggleClass } from '../utils/dom';
+import { on } from '../utils/events';
 import { switcher } from './menu-item';
 
 class Autoplay {
     constructor(player) {
         this.player = player;
         this.id = 'autoPlay';
-        if (this.player.getLocalStorage(this.id) === null) {
-            const value = this.player.displayOptions.layoutControls[this.id];
-            this.player.setLocalStorage(this.id, value);
-        }
+        this.applied = false;
 
-        if (!this.player.menu.isEnabled(this.id)) {
-            return;
+        this.init();
+    }
+
+    init = () => {
+        if (this.player.storage.get(this.id) === null) {
+            const value = this.player.config.layoutControls[this.id];
+            this.player.storage.set(this.id, value);
         }
 
         this.createItems();
-        this.apply();
     }
 
-    createItems() {
+    createItems = () => {
+        const { player } = this;
+
         const item = switcher({
             id: this.id,
             title: 'Autoplay',
-            enabled: this.player.getLocalStorage(this.id),
-        });
-        item.addEventListener('click', () => {
-            let value = false;
-            if (item.className.indexOf('cvp_enabled') !== -1) {
-                item.classList.remove('cvp_enabled');
-                if (this.player.getLocalStorage('volume') === 1 && this.player.getLocalStorage('mute')) {
-                    this.player.muteToggle();
-                } else {
-                    this.player.applyVolume();
-                }
-            } else {
-                item.classList.add('cvp_enabled');
-                value = true;
-            }
-            this.player.setLocalStorage(this.id, value);
+            enabled: player.storage.get(this.id),
         });
 
-        this.player.menu.add({
+        on.call(player, item, 'click', () => {
+            let value = false;
+            if (hasClass(item, 'cvp_enabled')) {
+                toggleClass(item, 'cvp_enabled', false);
+                if (player.storage.get('volume') === 1 && player.storage.get('mute')) {
+                    player.toggleMute();
+                } else {
+                    player.volumeControl.apply();
+                }
+            } else {
+                toggleClass(item, 'cvp_enabled', true);
+                value = true;
+            }
+            player.storage.set(this.id, value);
+        });
+
+        player.menu.add({
             id: this.id,
             field: 'switcher',
             item: item,
         });
     }
 
-    apply() {
-        if (!this.player.menu.isEnabled(this.id) || !this.player.getLocalStorage(this.id)) {
-            return;
+    apply = (force = true) => {
+        const { player } = this;
+
+        if (
+            !player.menu.isEnabled(this.id) ||
+            !player.storage.get(this.id) ||
+            this.applied
+        ) {
+            return false;
         }
 
-        this.player.setMute();
+        player.muted = true;
+        player.volume = 0;
+
+        player.controlBar.toggle(false);
+
+        if (force) {
+            this.applied = true;
+            player.playPause.toggle();
+        }
 
         return true;
     }

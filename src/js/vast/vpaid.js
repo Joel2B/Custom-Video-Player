@@ -27,63 +27,77 @@ export default function (self, options) {
         AdPaused: () => self.onVpaidAdPaused,
         AdPlaying: () => self.onVpaidAdPlaying,
         AdError: () => self.onVpaidAdError,
-        AdLog: () => self.onVpaidAdLog
+        AdLog: () => self.onVpaidAdLog,
     };
 
     self.checkVPAIDInterface = (vpaidAdUnit) => {
         const VPAIDCreative = vpaidAdUnit;
         // checks if all the mandatory params present
-        return !!(VPAIDCreative.handshakeVersion && typeof VPAIDCreative.handshakeVersion == "function"
-            && VPAIDCreative.initAd && typeof VPAIDCreative.initAd == "function"
-            && VPAIDCreative.startAd && typeof VPAIDCreative.startAd == "function"
-            && VPAIDCreative.stopAd && typeof VPAIDCreative.stopAd == "function"
-            && VPAIDCreative.skipAd && typeof VPAIDCreative.skipAd == "function"
-            && VPAIDCreative.resizeAd && typeof VPAIDCreative.resizeAd == "function"
-            && VPAIDCreative.pauseAd && typeof VPAIDCreative.pauseAd == "function"
-            && VPAIDCreative.resumeAd && typeof VPAIDCreative.resumeAd == "function"
-            && VPAIDCreative.expandAd && typeof VPAIDCreative.expandAd == "function"
-            && VPAIDCreative.collapseAd && typeof VPAIDCreative.collapseAd == "function"
-            && VPAIDCreative.subscribe && typeof VPAIDCreative.subscribe == "function"
-            && VPAIDCreative.unsubscribe && typeof VPAIDCreative.unsubscribe == "function");
+        return !!(
+            VPAIDCreative.handshakeVersion &&
+            typeof VPAIDCreative.handshakeVersion == 'function' &&
+            VPAIDCreative.initAd &&
+            typeof VPAIDCreative.initAd == 'function' &&
+            VPAIDCreative.startAd &&
+            typeof VPAIDCreative.startAd == 'function' &&
+            VPAIDCreative.stopAd &&
+            typeof VPAIDCreative.stopAd == 'function' &&
+            VPAIDCreative.skipAd &&
+            typeof VPAIDCreative.skipAd == 'function' &&
+            VPAIDCreative.resizeAd &&
+            typeof VPAIDCreative.resizeAd == 'function' &&
+            VPAIDCreative.pauseAd &&
+            typeof VPAIDCreative.pauseAd == 'function' &&
+            VPAIDCreative.resumeAd &&
+            typeof VPAIDCreative.resumeAd == 'function' &&
+            VPAIDCreative.expandAd &&
+            typeof VPAIDCreative.expandAd == 'function' &&
+            VPAIDCreative.collapseAd &&
+            typeof VPAIDCreative.collapseAd == 'function' &&
+            VPAIDCreative.subscribe &&
+            typeof VPAIDCreative.subscribe == 'function' &&
+            VPAIDCreative.unsubscribe &&
+            typeof VPAIDCreative.unsubscribe == 'function'
+        );
     };
 
     // Callback for AdPaused
     self.onVpaidAdPaused = () => {
         self.vpaidTimeoutTimerClear();
-        self.debugMessage("onAdPaused");
+        self.debug.log('onAdPaused');
     };
 
     // Callback for AdPlaying
     self.onVpaidAdPlaying = () => {
         self.vpaidTimeoutTimerClear();
-        self.debugMessage("onAdPlaying");
+        self.debug.log('onAdPlaying');
     };
 
     // Callback for AdError
     self.onVpaidAdError = (message) => {
-        self.debugMessage("onAdError: " + message);
+        self.debug.log('onAdError: ' + message);
         self.vpaidTimeoutTimerClear();
         self.onVpaidEnded();
     };
 
     // Callback for AdLog
     self.onVpaidAdLog = (message) => {
-        self.debugMessage("onAdLog: " + message);
+        self.debug.log('onAdLog: ' + message);
     };
 
     // Callback for AdUserAcceptInvitation
     self.onVpaidAdUserAcceptInvitation = () => {
-        self.debugMessage("onAdUserAcceptInvitation");
+        self.debug.log('onAdUserAcceptInvitation');
     };
 
     // Callback for AdUserMinimize
     self.onVpaidAdUserMinimize = () => {
-        self.debugMessage("onAdUserMinimize");
+        self.debug.log('onAdUserMinimize');
     };
 
     // Callback for AdUserClose
     self.onVpaidAdUserClose = () => {
-        self.debugMessage("onAdUserClose");
+        self.debug.log('onAdUserClose');
     };
 
     // Callback for AdUserClose
@@ -91,7 +105,7 @@ export default function (self, options) {
         if (!self.vpaidAdUnit) {
             return;
         }
-        self.debugMessage("Ad Skippable State Changed to: " + self.vpaidAdUnit.getAdSkippableState());
+        self.debug.log('Ad Skippable State Changed to: ' + self.vpaidAdUnit.getAdSkippableState());
     };
 
     // Callback for AdUserClose
@@ -99,12 +113,12 @@ export default function (self, options) {
         if (!self.vpaidAdUnit) {
             return;
         }
-        self.debugMessage("Ad Expanded Changed to: " + self.vpaidAdUnit.getAdExpanded());
+        self.debug.log('Ad Expanded Changed to: ' + self.vpaidAdUnit.getAdExpanded());
     };
 
     // Pass through for getAdExpanded
     self.getVpaidAdExpanded = () => {
-        self.debugMessage("getAdExpanded");
+        self.debug.log('getAdExpanded');
 
         if (!self.vpaidAdUnit) {
             return;
@@ -115,7 +129,7 @@ export default function (self, options) {
 
     // Pass through for getAdSkippableState
     self.getVpaidAdSkippableState = () => {
-        self.debugMessage("getAdSkippableState");
+        self.debug.log('getAdSkippableState');
 
         if (!self.vpaidAdUnit) {
             return;
@@ -128,7 +142,9 @@ export default function (self, options) {
         if (!self.vpaidAdUnit) {
             return;
         }
-        self.debugMessage("Ad size changed to: w=" + self.vpaidAdUnit.getAdWidth() + " h=" + self.vpaidAdUnit.getAdHeight());
+        self.debug.log(
+            'Ad size changed to: w=' + self.vpaidAdUnit.getAdWidth() + ' h=' + self.vpaidAdUnit.getAdHeight(),
+        );
     };
 
     // Callback for AdDurationChange
@@ -136,7 +152,7 @@ export default function (self, options) {
         if (!self.vpaidAdUnit) {
             return;
         }
-        self.debugMessage("Ad Duration Changed to: " + self.vpaidAdUnit.getAdDuration());
+        self.debug.log('Ad Duration Changed to: ' + self.vpaidAdUnit.getAdDuration());
     };
 
     // Callback for AdRemainingTimeChange
@@ -144,12 +160,12 @@ export default function (self, options) {
         if (!self.vpaidAdUnit) {
             return;
         }
-        self.debugMessage("Ad Remaining Time Changed to: " + self.vpaidAdUnit.getAdRemainingTime());
+        self.debug.log('Ad Remaining Time Changed to: ' + self.vpaidAdUnit.getAdRemainingTime());
     };
 
     // Pass through for getAdRemainingTime
     self.getVpaidAdRemainingTime = () => {
-        self.debugMessage("getAdRemainingTime");
+        self.debug.log('getAdRemainingTime');
         if (!self.vpaidAdUnit) {
             return;
         }
@@ -158,7 +174,7 @@ export default function (self, options) {
 
     // Callback for AdImpression
     self.onVpaidAdImpression = () => {
-        self.debugMessage("Ad Impression");
+        self.debug.log('Ad Impression');
 
         //Announce the impressions
         self.trackSingleEvent('impression');
@@ -166,7 +182,7 @@ export default function (self, options) {
 
     // Callback for AdClickThru
     self.onVpaidAdClickThru = (url, id, playerHandles) => {
-        self.debugMessage("Clickthrough portion of the ad was clicked");
+        self.debug.log('Clickthrough portion of the ad was clicked');
 
         // if playerHandles flag is set to true
         // then player need to open click thorough url in new window
@@ -181,45 +197,45 @@ export default function (self, options) {
 
     // Callback for AdInteraction
     self.onVpaidAdInteraction = (id) => {
-        self.debugMessage("A non-clickthrough event has occured");
+        self.debug.log('A non-clickthrough event has occured');
     };
 
     // Callback for AdVideoStart
     self.onVpaidAdVideoStart = () => {
-        self.debugMessage("Video 0% completed");
+        self.debug.log('Video 0% completed');
         self.trackSingleEvent('start');
     };
 
     // Callback for AdUserClose
     self.onVpaidAdVideoFirstQuartile = () => {
-        self.debugMessage("Video 25% completed");
+        self.debug.log('Video 25% completed');
         self.trackSingleEvent('firstQuartile');
     };
 
     // Callback for AdUserClose
     self.onVpaidAdVideoMidpoint = () => {
-        self.debugMessage("Video 50% completed");
+        self.debug.log('Video 50% completed');
         self.trackSingleEvent('midpoint');
     };
 
     // Callback for AdUserClose
     self.onVpaidAdVideoThirdQuartile = () => {
-        self.debugMessage("Video 75% completed");
+        self.debug.log('Video 75% completed');
         self.trackSingleEvent('thirdQuartile');
     };
 
     // Callback for AdVideoComplete
     self.onVpaidAdVideoComplete = () => {
-        self.debugMessage("Video 100% completed");
+        self.debug.log('Video 100% completed');
         self.trackSingleEvent('complete');
     };
 
     // Callback for AdLinearChange
     self.onVpaidAdLinearChange = () => {
-        const vpaidNonLinearSlot = document.getElementsByClassName("fluid_vpaidNonLinear_ad")[0];
+        const vpaidNonLinearSlot = document.getElementsByClassName('fluid_vpaidNonLinear_ad')[0];
         const closeBtn = document.getElementById('close_button_' + self.videoPlayerId);
         const adListId = vpaidNonLinearSlot.getAttribute('adlistid');
-        self.debugMessage("Ad linear has changed: " + self.vpaidAdUnit.getAdLinear());
+        self.debug.log('Ad linear has changed: ' + self.vpaidAdUnit.getAdLinear());
 
         if (!self.vpaidAdUnit.getAdLinear()) {
             return;
@@ -233,39 +249,36 @@ export default function (self, options) {
         }
 
         vpaidNonLinearSlot.className = 'fluid_vpaid_slot';
-        vpaidNonLinearSlot.id = self.videoPlayerId + "_fluid_vpaid_slot";
-        self.domRef.player.loop = false;
-        self.domRef.player.removeAttribute('controls');
+        vpaidNonLinearSlot.id = self.videoPlayerId + '_fluid_vpaid_slot';
 
-        const progressbarContainer = self.domRef.player.parentNode.getElementsByClassName('fluid_controls_currentprogress');
+        self.media.loop = false;
+        self.media.removeAttribute('controls');
 
-        for (let i = 0; i < progressbarContainer.length; i++) {
-            progressbarContainer[i].style.backgroundColor = self.displayOptions.layoutControls.adProgressColor;
-        }
-        const progressCurrentMarker = self.domRef.player.parentNode.getElementsByClassName('fluid_controls_currentpos');
-        for (let i = 0; i < progressCurrentMarker.length; i++) {
-            progressCurrentMarker[i].style.backgroundColor = self.displayOptions.layoutControls.adProgressColor;
-        }
+        const backgroundColor = self.config.layoutControls.adProgressColor;
+
+        self.controls.playProgress.style.backgroundColor = backgroundColor;
+        self.controls.scrubberProgress.style.backgroundColor = backgroundColor;
 
         self.toggleLoader(false);
+        self.HtmlOnPause.toggle(false);
     };
 
     // Pass through for getAdLinear
     self.getVpaidAdLinear = () => {
-        self.debugMessage("getAdLinear");
+        self.debug.log('getAdLinear');
         return self.vpaidAdUnit.getAdLinear();
     };
 
     // Pass through for startAd()
     self.startVpaidAd = () => {
-        self.debugMessage("startAd");
+        self.debug.log('startAd');
         self.vpaidTimeoutTimerStart();
         self.vpaidAdUnit.startAd();
     };
 
     // Callback for AdLoaded
     self.onVpaidAdLoaded = () => {
-        self.debugMessage("ad has been loaded");
+        self.debug.log('ad has been loaded');
         // start the video play as vpaid is loaded successfully
         self.vpaidTimeoutTimerClear();
         self.startVpaidAd();
@@ -273,7 +286,7 @@ export default function (self, options) {
 
     // Callback for StartAd()
     self.onStartVpaidAd = () => {
-        self.debugMessage("Ad has started");
+        self.debug.log('Ad has started');
         self.vpaidTimeoutTimerClear();
     };
 
@@ -293,9 +306,9 @@ export default function (self, options) {
             self.vpaidAdUnit = null;
         }
 
-        const vpaidIframes = document.getElementsByClassName("fluid_vpaid_iframe");
-        const vpaidSlots = document.getElementsByClassName("fluid_vpaid_slot");
-        const vpaidNonLinearSlots = document.getElementsByClassName("fluid_vpaidNonLinear_ad");
+        const vpaidIframes = document.getElementsByClassName('fluid_vpaid_iframe');
+        const vpaidSlots = document.getElementsByClassName('fluid_vpaid_slot');
+        const vpaidNonLinearSlots = document.getElementsByClassName('fluid_vpaidNonLinear_ad');
 
         for (let i = 0; i < vpaidIframes.length; i++) {
             if (vpaidIframes[i].getAttribute('adListId') !== deleteOtherVpaidAdsApart) {
@@ -318,14 +331,14 @@ export default function (self, options) {
 
     // Callback for AdUserClose
     self.onStopVpaidAd = () => {
-        self.debugMessage("Ad has stopped");
+        self.debug.log('Ad has stopped');
         self.vpaidTimeoutTimerClear();
         self.onVpaidEnded();
     };
 
     // Callback for AdUserClose
     self.onSkipVpaidAd = () => {
-        self.debugMessage("Ad was skipped");
+        self.debug.log('Ad was skipped');
 
         self.vpaidTimeoutTimerClear();
         self.onVpaidEnded();
@@ -337,7 +350,7 @@ export default function (self, options) {
         if (!self.vpaidAdUnit) {
             return;
         }
-        self.vpaidAdUnit.skipAd()
+        self.vpaidAdUnit.skipAd();
         self.vpaidTimeoutTimerClear();
         self.onVpaidEnded();
     };
@@ -363,14 +376,14 @@ export default function (self, options) {
         if (!self.vpaidAdUnit) {
             return;
         }
-        self.debugMessage("Ad Volume has changed to - " + self.vpaidAdUnit.getAdVolume());
+        self.debug.log('Ad Volume has changed to - ' + self.vpaidAdUnit.getAdVolume());
     };
 
     self.resizeVpaidAuto = () => {
         if (self.vastOptions !== null && self.vastOptions.vpaid && self.vastOptions.linear) {
-            const adWidth = self.domRef.player.offsetWidth;
-            const adHeight = self.domRef.player.offsetHeight;
-            const mode = (self.fullscreenMode ? 'fullscreen' : 'normal');
+            const adWidth = self.media.offsetWidth;
+            const adHeight = self.media.offsetHeight;
+            const mode = self.fullscreen.active ? 'fullscreen' : 'normal';
             self.resizeVpaidAd(adWidth, adHeight, mode);
         }
     };
@@ -428,9 +441,9 @@ export default function (self, options) {
         // clear previous timer if any
         self.vpaidTimeoutTimerClear();
         self.vpaidTimer = setTimeout(function () {
-            self.announceLocalError('901');
+            self.debug.error(901);
             self.onVpaidEnded();
-        }, self.displayOptions.vastOptions.vpaidTimeout);
+        }, self.config.vastOptions.vpaidTimeout);
     };
 
     self.vpaidCallbackListenersAttach = () => {
@@ -452,24 +465,22 @@ export default function (self, options) {
 
     self.loadVpaid = (adListId, vpaidJsUrl) => {
         const vpaidIframe = document.createElement('iframe');
-        vpaidIframe.id = self.videoPlayerId + "_" + adListId + "_fluid_vpaid_iframe";
+        vpaidIframe.id = self.videoPlayerId + '_' + adListId + '_fluid_vpaid_iframe';
         vpaidIframe.className = 'fluid_vpaid_iframe';
         vpaidIframe.setAttribute('adListId', adListId);
         vpaidIframe.setAttribute('frameborder', '0');
 
-        self.domRef.player.parentNode.insertBefore(vpaidIframe, self.domRef.player.nextSibling);
+        self.media.parentNode.insertBefore(vpaidIframe, self.media.nextSibling);
 
         vpaidIframe.contentWindow.document.write('<script src="' + vpaidJsUrl + '"></scr' + 'ipt>');
 
         // set interval with timeout
         self.tempVpaidCounter = 0;
         self.getVPAIDAdInterval = setInterval(function () {
-
             const fn = vpaidIframe.contentWindow['getVPAIDAd'];
 
             // check if JS is loaded fully in iframe
             if (fn && typeof fn == 'function') {
-
                 if (self.vpaidAdUnit) {
                     self.hardStopVpaidAd(adListId);
                 }
@@ -477,19 +488,15 @@ export default function (self, options) {
                 self.vpaidAdUnit = fn();
                 clearInterval(self.getVPAIDAdInterval);
                 if (self.checkVPAIDInterface(self.vpaidAdUnit)) {
-
                     if (self.getVpaidAdLinear()) {
                         self.isCurrentlyPlayingAd = true;
                         self.switchPlayerToVpaidMode(adListId);
                     } else {
-                        self.debugMessage('non linear vpaid ad is loaded');
+                        self.debug.log('non linear vpaid ad is loaded');
                         self.loadVpaidNonlinearAssets(adListId);
                     }
-
                 }
-
             } else {
-
                 // video player will wait for 2seconds if vpaid is not loaded, then it will declare vast error and move ahead
                 self.tempVpaidCounter++;
                 if (self.tempVpaidCounter >= 20) {
@@ -498,13 +505,10 @@ export default function (self, options) {
                     self.playMainVideoWhenVpaidFails(403);
                     return false;
                 } else {
-                    self.debugMessage(self.tempVpaidCounter);
+                    self.debug.log(self.tempVpaidCounter);
                 }
-
             }
-
         }, 100);
-
     };
 
     self.onVpaidEnded = (event) => {
@@ -512,7 +516,7 @@ export default function (self, options) {
             event.stopImmediatePropagation();
         }
 
-        const vpaidSlot = document.getElementById(self.videoPlayerId + "_fluid_vpaid_slot");
+        const vpaidSlot = document.getElementById(self.videoPlayerId + '_fluid_vpaid_slot');
 
         self.vpaidCallbackListenersDetach();
 
@@ -527,7 +531,7 @@ export default function (self, options) {
     };
 
     self.playMainVideoWhenVpaidFails = (errorCode) => {
-        const vpaidSlot = document.getElementById(self.videoPlayerId + "_fluid_vpaid_slot");
+        const vpaidSlot = document.getElementById(self.videoPlayerId + '_fluid_vpaid_slot');
 
         if (vpaidSlot) {
             vpaidSlot.remove();
@@ -538,6 +542,5 @@ export default function (self, options) {
     };
 
     // TODO: ???
-    self.switchPlayerToVpaidMode = () => {
-    };
+    self.switchPlayerToVpaidMode = () => {};
 }

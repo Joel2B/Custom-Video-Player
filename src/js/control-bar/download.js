@@ -1,34 +1,53 @@
-export default function(self) {
-    self.createDownload = () => {
-        const downloadOption = self.domRef.controls.download;
-        if (!self.displayOptions.layoutControls.allowDownload) {
+import { createElement, toggleClass } from '../utils/dom';
+import { on } from '../utils/events';
+
+class Download {
+    constructor(player) {
+        this.player = player;
+        this.create();
+    }
+
+    create = () => {
+        const { player } = this;
+
+        if (!player.config.layoutControls.allowDownload) {
             return;
         }
-        downloadOption.style.display = 'inline-block';
 
-        const downloadClick = self.createElement({
-            tag: 'a',
-            id: self.videoPlayerId + '_download',
-        }, (e) => {
-            const linkItem = downloadClick;
+        this.el = createElement('div', {
+            class: 'fluid_button fluid_button_download',
+        });
 
-            if (typeof e.stopImmediatePropagation !== 'undefined') {
-                e.stopImmediatePropagation();
+        toggleClass(this.el, 'show', true);
+
+        this.link = createElement('a');
+        this.el.appendChild(this.link);
+
+        this.listeners();
+
+        player.controls.rightContainer.appendChild(this.el);
+    }
+
+    listeners = () => {
+        const { player } = this;
+
+        on.call(player, this.link, 'click', (event) => {
+            if (typeof event.stopImmediatePropagation === 'function') {
+                event.stopImmediatePropagation();
             }
 
-            setInterval(function() {
-                linkItem.download = '';
-                linkItem.href = '';
+            setInterval(() => {
+                this.link.download = '';
+                this.link.href = '';
             }, 100);
         });
 
-        downloadOption.appendChild(downloadClick);
-
-        downloadOption.addEventListener('click', function() {
-            const downloadItem = downloadClick;
-            downloadItem.download = self.originalSrc;
-            downloadItem.href = self.originalSrc;
-            downloadClick.click();
+        on.call(player, this.el, 'click', (event) => {
+            this.link.download = player.originalSrc;
+            this.link.href = player.originalSrc;
+            this.link.click();
         });
-    };
+    }
 }
+
+export default Download;

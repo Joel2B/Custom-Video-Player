@@ -1,3 +1,7 @@
+import { IOS_VERSION, IS_IPHONE } from '../utils/browser';
+import { pad } from '../utils/time';
+import { compareVersion } from '../utils/version';
+
 /* eslint-disable */
 export default function (self, options) {
     const VPAID_VERSION = '2.0';
@@ -12,28 +16,28 @@ export default function (self, options) {
             self.backupMainVideoContentTime(adListId);
         }
 
-        const playVideoPlayer = adListId => {
-            self.switchPlayerToVpaidMode = adListId => {
-                self.debugMessage('starting function switchPlayerToVpaidMode');
-                const vpaidIframe = self.videoPlayerId + "_" + adListId + "_fluid_vpaid_iframe";
+        const playVideoPlayer = (adListId) => {
+            self.switchPlayerToVpaidMode = (adListId) => {
+                self.debug.log('starting function switchPlayerToVpaidMode');
+                const vpaidIframe = self.videoPlayerId + '_' + adListId + '_fluid_vpaid_iframe';
                 const creativeData = {};
                 creativeData.AdParameters = self.adPool[adListId].adParameters;
                 const slotElement = document.createElement('div');
-                slotElement.id = self.videoPlayerId + "_fluid_vpaid_slot";
+                slotElement.id = self.videoPlayerId + '_fluid_vpaid_slot';
                 slotElement.className = 'fluid_vpaid_slot';
                 slotElement.setAttribute('adListId', adListId);
 
-                self.domRef.player.parentNode.insertBefore(slotElement, vpaidIframe.nextSibling);
+                self.wrapper.insertBefore(slotElement, vpaidIframe.nextSibling);
 
                 const environmentVars = {
                     slot: slotElement,
-                    videoSlot: self.domRef.player,
-                    videoSlotCanAutoPlay: true
+                    videoSlot: self.media,
+                    videoSlotCanAutoPlay: true,
                 };
 
                 // calls this functions after ad unit is loaded in iframe
                 const ver = self.vpaidAdUnit.handshakeVersion(VPAID_VERSION);
-                const compare = self.compareVersion(VPAID_VERSION, ver);
+                const compare = compareVersion(VPAID_VERSION, ver);
                 if (compare === 1) {
                     //VPAID version of ad is lower than we need
                     self.adList[adListId].error = true;
@@ -45,23 +49,20 @@ export default function (self, options) {
                     self.addSkipButton();
                 }
 
-                self.domRef.player.loop = false;
-                self.domRef.player.removeAttribute('controls'); //Remove the default Controls
+                self.media.loop = false;
+                self.media.removeAttribute('controls'); //Remove the default Controls
 
                 self.vpaidCallbackListenersAttach();
-                const mode = (self.fullscreenMode ? 'fullscreen' : 'normal');
-                const adWidth = self.domRef.player.offsetWidth;
-                const adHeight = self.domRef.player.offsetHeight;
+                const mode = self.fullscreen.active ? 'fullscreen' : 'normal';
+                const adWidth = self.media.offsetWidth;
+                const adHeight = self.media.offsetHeight;
+
                 self.vpaidAdUnit.initAd(adWidth, adHeight, mode, 3000, creativeData, environmentVars);
 
-                const progressbarContainer = self.domRef.player.parentNode.getElementsByClassName('fluid_controls_currentprogress');
-                for (let i = 0; i < progressbarContainer.length; i++) {
-                    progressbarContainer[i].style.backgroundColor = self.displayOptions.layoutControls.adProgressColor;
-                }
-                const progressCurrentMarker = self.domRef.player.parentNode.getElementsByClassName('fluid_controls_currentpos');
-                for (let i = 0; i < progressCurrentMarker.length; i++) {
-                    progressCurrentMarker[i].style.backgroundColor = self.displayOptions.layoutControls.adProgressColor;
-                }
+                const backgroundColor = self.config.layoutControls.adProgressColor;
+
+                self.controls.playProgress.style.backgroundColor = backgroundColor;
+                self.controls.scrubberProgress.style.backgroundColor = backgroundColor;
 
                 self.toggleLoader(false);
                 self.adList[adListId].played = true;
@@ -71,52 +72,42 @@ export default function (self, options) {
             self.switchPlayerToVastMode = () => {
                 //Get the actual duration from the video file if it is not present in the VAST XML
                 if (!self.vastOptions.duration) {
-                    self.vastOptions.duration = self.domRef.player.duration;
+                    self.vastOptions.duration = self.media.duration;
                 }
 
-                if (self.displayOptions.layoutControls.showCardBoardView) {
+                const addClickthroughLayer =
+                    typeof self.adList[adListId].adClickable != 'undefined'
+                        ? self.adList[adListId].adClickable
+                        : self.config.vastOptions.adClickable;
 
-                    if (!self.adList[adListId].landingPage) {
-                        self.addCTAButton(self.adPool[adListId].clickthroughUrl);
-                    } else {
-                        self.addCTAButton(self.adList[adListId].landingPage);
-                    }
-
-                } else {
-
-                    const addClickthroughLayer = (typeof self.adList[adListId].adClickable != "undefined") ? self.adList[adListId].adClickable : self.displayOptions.vastOptions.adClickable;
-
-                    if (addClickthroughLayer) {
-                        self.addClickthroughLayer(self.videoPlayerId);
-                    }
-
-                    self.addCTAButton(self.adList[adListId].landingPage);
-
+                if (addClickthroughLayer) {
+                    self.addClickthroughLayer(self.videoPlayerId);
                 }
+
+                self.addCTAButton(self.adList[adListId].landingPage);
 
                 if (self.vastOptions.skipoffset !== false) {
                     self.addSkipButton();
                 }
 
-                self.domRef.player.loop = false;
+                self.media.loop = false;
 
                 self.addAdCountdown();
 
-                self.domRef.player.removeAttribute('controls'); //Remove the default Controls
+                self.media.removeAttribute('controls'); //Remove the default Controls
 
                 self.vastLogoBehaviour(true);
 
-                const progressbarContainer = self.domRef.player.parentNode.getElementsByClassName('fluid_controls_currentprogress');
-                for (let i = 0; i < progressbarContainer.length; i++) {
-                    progressbarContainer[i].style.backgroundColor = self.displayOptions.layoutControls.adProgressColor;
-                }
-                const progressCurrentMarker = self.domRef.player.parentNode.getElementsByClassName('fluid_controls_currentpos');
-                for (let i = 0; i < progressCurrentMarker.length; i++) {
-                    progressCurrentMarker[i].style.backgroundColor = self.displayOptions.layoutControls.adProgressColor;
-                }
+                const backgroundColor = self.config.layoutControls.adProgressColor;
 
-                if (self.displayOptions.vastOptions.adText || self.adList[adListId].adText) {
-                    const adTextToShow = (self.adList[adListId].adText !== null) ? self.adList[adListId].adText : self.displayOptions.vastOptions.adText;
+                self.controls.playProgress.style.backgroundColor = backgroundColor;
+                self.controls.scrubberProgress.style.backgroundColor = backgroundColor;
+
+                if (self.config.vastOptions.adText || self.adList[adListId].adText) {
+                    const adTextToShow =
+                        self.adList[adListId].adText !== null
+                            ? self.adList[adListId].adText
+                            : self.config.vastOptions.adText;
                     self.addAdPlayingText(adTextToShow);
                 }
 
@@ -125,52 +116,21 @@ export default function (self, options) {
                 self.toggleLoader(false);
                 self.adList[adListId].played = true;
                 self.adFinished = false;
-                self.domRef.player.play();
+                self.play();
 
                 //Announce the impressions
                 self.trackSingleEvent('impression');
 
-                self.domRef.player.removeEventListener('loadedmetadata', self.switchPlayerToVastMode);
-
-                // if in vr mode then do not show
-                if (self.vrMode) {
-                    const adCountDownTimerText = document.getElementById('ad_countdown' + self.videoPlayerId);
-                    const ctaButton = document.getElementById(self.videoPlayerId + '_fluid_cta');
-                    const addAdPlayingTextOverlay = document.getElementById(self.videoPlayerId + '_fluid_ad_playing');
-                    const skipBtn = document.getElementById('skip_button_' + self.videoPlayerId);
-
-                    if (adCountDownTimerText) {
-                        adCountDownTimerText.style.display = 'none';
-                    }
-
-                    if (ctaButton) {
-                        ctaButton.style.display = 'none';
-                    }
-
-                    if (addAdPlayingTextOverlay) {
-                        addAdPlayingTextOverlay.style.display = 'none';
-                    }
-
-                    if (skipBtn) {
-                        skipBtn.style.display = 'none';
-                    }
-                }
+                self.media.removeEventListener('loadedmetadata', self.switchPlayerToVastMode);
             };
 
-            self.domRef.player.pause();
+            self.pause();
 
             // Remove the streaming objects to prevent errors on the VAST content
-            self.detachStreamers();
+            self.streaming.detach();
 
             //Try to load multiple
             const selectedMediaFile = self.getSupportedMediaFileObject(self.vastOptions.mediaFileList);
-
-            // if player in cardboard mode then, linear ads media type should be a '360' video
-            if (self.displayOptions.layoutControls.showCardBoardView && self.adList[adListId].mediaType !== '360') {
-                self.adList[adListId].error = true;
-                self.playMainVideoWhenVastFails(403);
-                return false;
-            }
 
             const isVpaid = self.vastOptions.vpaid;
 
@@ -182,24 +142,23 @@ export default function (self, options) {
                     return false;
                 }
 
-                self.domRef.player.addEventListener('loadedmetadata', self.switchPlayerToVastMode);
+                self.media.addEventListener('loadedmetadata', self.switchPlayerToVastMode);
 
-                self.domRef.player.src = selectedMediaFile.src;
+                self.media.src = selectedMediaFile.src;
                 self.isCurrentlyPlayingAd = true;
 
-                if (self.displayOptions.vastOptions.showProgressbarMarkers) {
+                if (self.config.vastOptions.showProgressbarMarkers) {
                     self.hideAdMarkers();
                 }
 
-                self.domRef.player.load();
+                self.media.load();
 
                 //Handle the ending of the Pre-Roll ad
-                self.domRef.player.addEventListener('ended', self.onVastAdEnded);
-
+                self.media.addEventListener('ended', self.onVastAdEnded);
             } else {
                 self.loadVpaid(adListId, selectedMediaFile.src);
 
-                if (self.displayOptions.vastOptions.showProgressbarMarkers) {
+                if (self.config.vastOptions.showProgressbarMarkers) {
                     self.hideAdMarkers();
                 }
             }
@@ -210,33 +169,31 @@ export default function (self, options) {
          */
         const videoPlayerTimeUpdate = () => {
             if (self.adFinished) {
-                self.domRef.player.removeEventListener('timeupdate', videoPlayerTimeUpdate);
+                self.media.removeEventListener('timeupdate', videoPlayerTimeUpdate);
                 return;
             }
 
-            const currentTime = Math.floor(self.domRef.player.currentTime);
+            const currentTime = Math.floor(self.media.currentTime);
             if (self.vastOptions.duration !== 0) {
                 self.scheduleTrackingEvent(currentTime, self.vastOptions.duration);
             }
 
-            if (currentTime >= (self.vastOptions.duration - 1) && self.vastOptions.duration !== 0) {
-                self.domRef.player.removeEventListener('timeupdate', videoPlayerTimeUpdate);
+            if (currentTime >= self.vastOptions.duration - 1 && self.vastOptions.duration !== 0) {
+                self.media.removeEventListener('timeupdate', videoPlayerTimeUpdate);
                 self.adFinished = true;
             }
-
         };
 
         playVideoPlayer(adListId);
 
-        self.domRef.player.addEventListener('timeupdate', videoPlayerTimeUpdate);
-
+        self.media.addEventListener('timeupdate', videoPlayerTimeUpdate);
     };
 
     self.playRoll = (adListId) => {
         // register all the ad pods
         for (let i = 0; i < adListId.length; i++) {
             if (!self.adPool.hasOwnProperty(adListId[i])) {
-                self.announceLocalError(101);
+                this.debug.error(101);
                 return;
             }
             self.temporaryAdPods.push(self.adList[adListId[i]]);
@@ -259,18 +216,18 @@ export default function (self, options) {
         //spec configs by roll
         switch (roll) {
             case 'midRoll':
-                self.domRef.player.mainVideoCurrentTime = self.domRef.player.currentTime - 1;
+                self.media.mainVideoCurrentTime = self.media.currentTime - 1;
                 break;
 
             case 'postRoll':
-                self.domRef.player.mainVideoCurrentTime = self.mainVideoDuration;
+                self.media.mainVideoCurrentTime = self.duration;
                 self.autoplayAfterAd = false;
-                self.domRef.player.currentTime = self.mainVideoDuration;
+                self.media.currentTime = self.duration;
                 break;
 
             case 'preRoll':
-                if (self.domRef.player.currentTime > 0) {
-                    self.domRef.player.mainVideoCurrentTime = self.domRef.player.currentTime - 1;
+                if (self.media.currentTime > 0) {
+                    self.media.mainVideoCurrentTime = self.media.currentTime - 1;
                 }
                 break;
         }
@@ -281,7 +238,6 @@ export default function (self, options) {
         let adSupportedType = false;
         if (mediaFiles.length) {
             for (let i = 0; i < mediaFiles.length; i++) {
-
                 if (mediaFiles[i].apiFramework !== 'VPAID') {
                     const supportLevel = self.getMediaFileTypeSupportLevel(mediaFiles[i]['type']);
 
@@ -294,7 +250,6 @@ export default function (self, options) {
                     if (supportLevel === 'probably') {
                         break;
                     }
-
                 } else {
                     selectedMediaFile = mediaFiles[i];
                     adSupportedType = true;
@@ -322,7 +277,7 @@ export default function (self, options) {
         const tmpVideo = document.createElement('video');
         let response = tmpVideo.canPlayType(mediaType);
 
-        return !response ? "no" : response;
+        return !response ? 'no' : response;
     };
 
     self.scheduleTrackingEvent = (currentTime, duration) => {
@@ -330,30 +285,30 @@ export default function (self, options) {
             self.trackSingleEvent('start');
         }
 
-        if ((typeof self.vastOptions.tracking['progress'] !== 'undefined') &&
-            (self.vastOptions.tracking['progress'].length) &&
-            (typeof self.vastOptions.tracking['progress'][currentTime] !== 'undefined')) {
-
+        if (
+            typeof self.vastOptions.tracking['progress'] !== 'undefined' &&
+            self.vastOptions.tracking['progress'].length &&
+            typeof self.vastOptions.tracking['progress'][currentTime] !== 'undefined'
+        ) {
             self.trackSingleEvent('progress', currentTime);
         }
 
-        if (currentTime === (Math.floor(duration / 4))) {
+        if (currentTime === Math.floor(duration / 4)) {
             self.trackSingleEvent('firstQuartile');
         }
 
-        if (currentTime === (Math.floor(duration / 2))) {
+        if (currentTime === Math.floor(duration / 2)) {
             self.trackSingleEvent('midpoint');
         }
 
-        if (currentTime === (Math.floor(duration * 3 / 4))) {
+        if (currentTime === Math.floor((duration * 3) / 4)) {
             self.trackSingleEvent('thirdQuartile');
         }
 
-        if (currentTime >= (duration - 1)) {
+        if (currentTime >= duration - 1) {
             self.trackSingleEvent('complete');
         }
     };
-
 
     // ADS
     self.trackSingleEvent = (eventType, eventSubType) => {
@@ -382,8 +337,8 @@ export default function (self, options) {
             case 'progress':
                 self.vastOptions.tracking['progress'][eventSubType].elements.forEach(function (currentValue, index) {
                     if (
-                        (self.vastOptions.tracking['progress'][eventSubType].stopTracking === false) &&
-                        (self.vastOptions.tracking['progress'][eventSubType].elements.length)
+                        self.vastOptions.tracking['progress'][eventSubType].stopTracking === false &&
+                        self.vastOptions.tracking['progress'][eventSubType].elements.length
                     ) {
                         trackingUris = self.vastOptions.tracking['progress'][eventSubType].elements;
                     }
@@ -394,9 +349,9 @@ export default function (self, options) {
 
             case 'impression':
                 if (
-                    (typeof self.vastOptions.impression !== 'undefined') &&
-                    (self.vastOptions.impression !== null) &&
-                    (typeof self.vastOptions.impression.length !== 'undefined')
+                    typeof self.vastOptions.impression !== 'undefined' &&
+                    self.vastOptions.impression !== null &&
+                    typeof self.vastOptions.impression.length !== 'undefined'
                 ) {
                     trackingUris = self.vastOptions.impression;
                 }
@@ -425,7 +380,7 @@ export default function (self, options) {
      */
     self.createNonLinearStatic = (adListId) => {
         if (!self.adPool.hasOwnProperty(adListId) || self.adPool[adListId].error === true) {
-            self.announceLocalError(101);
+            self.debug.error(101);
             return;
         }
 
@@ -439,16 +394,18 @@ export default function (self, options) {
         let duration;
         if (!self.vastOptions.vpaid) {
             self.trackSingleEvent('start');
-            duration = (self.adList[adListId].nonLinearDuration) ? self.adList[adListId].nonLinearDuration : self.vastOptions.duration;
+            duration = self.adList[adListId].nonLinearDuration
+                ? self.adList[adListId].nonLinearDuration
+                : self.vastOptions.duration;
 
             self.nonLinearTracking = setInterval(function () {
                 if (self.adFinished === true) {
                     return;
                 }
 
-                const currentTime = Math.floor(self.domRef.player.currentTime);
+                const currentTime = Math.floor(self.media.currentTime);
                 self.scheduleTrackingEvent(currentTime, duration);
-                if (currentTime >= (duration - 1)) {
+                if (currentTime >= duration - 1) {
                     self.adFinished = true;
                 }
             }, 400);
@@ -466,12 +423,13 @@ export default function (self, options) {
         const vastSettings = self.adPool[adListId];
 
         self.loadVpaidNonlinearAssets = function (adListId) {
+            self.debug.log('starting function switchPlayerToVpaidMode');
 
-            self.debugMessage('starting function switchPlayerToVpaidMode');
-
-            const vAlign = (self.adList[adListId].vAlign) ? self.adList[adListId].vAlign : self.nonLinearVerticalAlign;
-            const showCloseButton = (self.adList[adListId].vpaidNonLinearCloseButton) ? self.adList[adListId].vpaidNonLinearCloseButton : self.vpaidNonLinearCloseButton;
-            const vpaidIframe = self.videoPlayerId + "_" + adListId + "_fluid_vpaid_iframe";
+            const vAlign = self.adList[adListId].vAlign ? self.adList[adListId].vAlign : self.nonLinearVerticalAlign;
+            const showCloseButton = self.adList[adListId].vpaidNonLinearCloseButton
+                ? self.adList[adListId].vpaidNonLinearCloseButton
+                : self.vpaidNonLinearCloseButton;
+            const vpaidIframe = self.videoPlayerId + '_' + adListId + '_fluid_vpaid_iframe';
             const creativeData = {};
             creativeData.AdParameters = self.adPool[adListId].adParameters;
             const slotWrapper = document.createElement('div');
@@ -481,8 +439,8 @@ export default function (self, options) {
             slotWrapper.setAttribute('adListId', adListId);
 
             // Default values in case nothing defined in VAST data or ad settings
-            let adWidth = Math.min(468, self.domRef.player.offsetWidth);
-            let adHeight = Math.min(60, Math.floor(self.domRef.player.offsetHeight / 4));
+            let adWidth = Math.min(468, self.media.offsetWidth);
+            let adHeight = Math.min(60, Math.floor(self.media.offsetHeight / 4));
 
             if (typeof self.adList[adListId].size !== 'undefined') {
                 const dimensions = self.adList[adListId].size.split('x');
@@ -508,10 +466,8 @@ export default function (self, options) {
                 closeBtn.id = 'close_button_' + self.videoPlayerId;
                 closeBtn.className = 'close_button';
                 closeBtn.innerHTML = '';
-                closeBtn.title = self.displayOptions.layoutControls.closeButtonCaption;
                 const tempadListId = adListId;
                 closeBtn.onclick = function (event) {
-
                     self.hardStopVpaidAd('');
 
                     if (typeof event.stopImmediatePropagation !== 'undefined') {
@@ -531,22 +487,24 @@ export default function (self, options) {
                 };
 
                 slotFrame.appendChild(closeBtn);
-
             }
 
             const slotIframe = document.createElement('iframe');
-            slotIframe.id = self.videoPlayerId + "non_linear_vapid_slot_iframe";
+            slotIframe.id = self.videoPlayerId + 'non_linear_vapid_slot_iframe';
             slotIframe.className = 'fluid_vpaid_nonlinear_slot_iframe';
             slotIframe.setAttribute('width', adWidth + 'px');
             slotIframe.setAttribute('height', adHeight + 'px');
-            slotIframe.setAttribute('sandbox', 'allow-forms allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts');
+            slotIframe.setAttribute(
+                'sandbox',
+                'allow-forms allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts',
+            );
             slotIframe.setAttribute('frameborder', '0');
             slotIframe.setAttribute('scrolling', 'no');
             slotIframe.setAttribute('marginwidth', '0');
             slotIframe.setAttribute('marginheight', '0');
             slotWrapper.appendChild(slotIframe);
 
-            self.domRef.player.parentNode.insertBefore(slotWrapper, vpaidIframe.nextSibling);
+            self.wrapper.insertBefore(slotWrapper, vpaidIframe.nextSibling);
 
             const slotElement = slotIframe.contentWindow.document.createElement('div');
 
@@ -557,15 +515,15 @@ export default function (self, options) {
 
             const environmentVars = {
                 slot: slotElement,
-                videoSlot: self.domRef.player,
-                videoSlotCanAutoPlay: true
+                videoSlot: self.media,
+                videoSlotCanAutoPlay: true,
             };
 
-            self.debugMessage(self.adList[adListId]);
+            self.debug.log(self.adList[adListId]);
 
             // calls this functions after ad unit is loaded in iframe
             const ver = self.vpaidAdUnit.handshakeVersion(VPAID_VERSION);
-            const compare = self.compareVersion(VPAID_VERSION, ver);
+            const compare = compareVersion(VPAID_VERSION, ver);
             if (compare === 1) {
                 //VPAID version of ad is lower than we need
                 self.adList[adListId].error = true;
@@ -573,11 +531,11 @@ export default function (self, options) {
                 return false;
             }
 
-            self.domRef.player.loop = false;
-            self.domRef.player.removeAttribute('controls'); //Remove the default Controls
+            self.media.loop = false;
+            self.media.removeAttribute('controls'); //Remove the default Controls
 
             self.vpaidCallbackListenersAttach();
-            const mode = (self.fullscreenMode ? 'fullscreen' : 'normal');
+            const mode = self.fullscreen.active ? 'fullscreen' : 'normal';
             self.vpaidAdUnit.initAd(adWidth, adHeight, mode, 3000, creativeData, environmentVars);
 
             self.toggleLoader(false);
@@ -587,7 +545,7 @@ export default function (self, options) {
 
         self.loadVpaid(adListId, vastSettings.staticResource);
 
-        self.debugMessage('create non linear vpaid');
+        self.debug.log('create non linear vpaid');
     };
 
     // ADS
@@ -595,10 +553,10 @@ export default function (self, options) {
         const vastSettings = self.adPool[adListId];
 
         self.adList[adListId].played = true;
-        const playerWidth = self.domRef.player.clientWidth;
-        const playerHeight = self.domRef.player.clientHeight;
+        const playerWidth = self.media.clientWidth;
+        const playerHeight = self.media.clientHeight;
         const board = document.createElement('div');
-        const vAlign = (self.adList[adListId].vAlign) ? self.adList[adListId].vAlign : self.nonLinearVerticalAlign;
+        const vAlign = self.adList[adListId].vAlign ? self.adList[adListId].vAlign : self.nonLinearVerticalAlign;
 
         const creative = new Image();
         creative.src = vastSettings.staticResource;
@@ -632,7 +590,7 @@ export default function (self, options) {
 
             if (origWidth > playerWidth) {
                 newBannerWidth = playerWidth - 5;
-                newBannerHeight = origHeight * newBannerWidth / origWidth;
+                newBannerHeight = (origHeight * newBannerWidth) / origWidth;
             } else {
                 newBannerWidth = origWidth;
                 newBannerHeight = origHeight;
@@ -676,7 +634,6 @@ export default function (self, options) {
         closeBtn.id = 'close_button_' + self.videoPlayerId;
         closeBtn.className = 'close_button';
         closeBtn.innerHTML = '';
-        closeBtn.title = self.displayOptions.layoutControls.closeButtonCaption;
         const tempadListId = adListId;
         closeBtn.onclick = function (event) {
             this.parentElement.remove();
@@ -698,7 +655,7 @@ export default function (self, options) {
         };
 
         board.appendChild(closeBtn);
-        self.domRef.player.parentNode.insertBefore(board, self.domRef.player.nextSibling);
+        self.wrapper.insertBefore(board, self.media.nextSibling);
     };
 
     // ADS
@@ -715,15 +672,15 @@ export default function (self, options) {
         if (vastSettings.vpaid) {
             self.hardStopVpaidAd('');
             self.createVpaidNonLinearBoard(adListId);
-
         } else {
-
-            if (typeof vastSettings.staticResource === 'undefined'
-                || self.supportedStaticTypes.indexOf(vastSettings.creativeType) === -1) {
+            if (
+                typeof vastSettings.staticResource === 'undefined' ||
+                self.supportedStaticTypes.indexOf(vastSettings.creativeType) === -1
+            ) {
                 //Couldn’t find NonLinear resource with supported type.
                 self.adList[adListId].error = true;
                 if (!self.vastOptions || typeof self.vastOptions.errorUrl === 'undefined') {
-                    self.announceLocalError(503);
+                    self.debug.error(503);
                 } else {
                     self.announceError(503);
                 }
@@ -731,9 +688,7 @@ export default function (self, options) {
             }
 
             self.createNonLinearBoard(adListId);
-
         }
-
     };
 
     self.closeNonLinear = (adListId) => {
@@ -789,15 +744,14 @@ export default function (self, options) {
         const adListIds = self.preRollAdPods;
         const adsByType = {
             linear: [],
-            nonLinear: []
+            nonLinear: [],
         };
 
         self.firstPlayLaunched = true;
 
         for (let index = 0; index < adListIds.length; index++) {
-
             if (self.adList[adListIds[index]].played === true) {
-                return
+                return;
             }
 
             if (self.adList[adListIds[index]].adType === 'linear') {
@@ -816,12 +770,11 @@ export default function (self, options) {
         } else {
             self.playMainVideoWhenVastFails(900);
         }
-
     };
 
     self.preRoll = (event) => {
         const vastObj = event.vastObj;
-        self.domRef.player.removeEventListener(event.type, self.preRoll);
+        self.media.removeEventListener(event.type, self.preRoll);
 
         const adListId = [];
         adListId[0] = event.type.replace('adId_', '');
@@ -837,11 +790,11 @@ export default function (self, options) {
     };
 
     self.createAdMarker = (adListId, time) => {
-        const markersHolder = document.getElementById(self.videoPlayerId + '_ad_markers_holder');
+        const markersHolder = self.controls.adProgress;
         const adMarker = document.createElement('div');
-        adMarker.id = 'ad_marker_' + self.videoPlayerId + "_" + adListId;
+        adMarker.id = 'ad_marker_' + self.videoPlayerId + '_' + adListId;
         adMarker.className = 'fluid_controls_ad_marker';
-        adMarker.style.left = (time / self.mainVideoDuration * 100) + '%';
+        adMarker.style.left = (time / self.duration) * 100 + '%';
         if (self.isCurrentlyPlayingAd) {
             adMarker.style.display = 'none';
         }
@@ -849,16 +802,16 @@ export default function (self, options) {
     };
 
     self.hideAdMarker = (adListId) => {
-        const element = document.getElementById('ad_marker_' + self.videoPlayerId + "_" + adListId);
+        const element = document.getElementById('ad_marker_' + self.videoPlayerId + '_' + adListId);
         if (element) {
             element.style.display = 'none';
         }
     };
 
     self.showAdMarkers = () => {
-        const markersHolder = document.getElementById(self.videoPlayerId + '_ad_markers_holder');
+        const markersHolder = self.controls.adProgress;
         const adMarkers = markersHolder.getElementsByClassName('fluid_controls_ad_marker');
-        const idPrefix = 'ad_marker_' + self.videoPlayerId + "_";
+        const idPrefix = 'ad_marker_' + self.videoPlayerId + '_';
         for (let i = 0; i < adMarkers.length; ++i) {
             const item = adMarkers[i];
             const adListId = item.id.replace(idPrefix, '');
@@ -869,7 +822,7 @@ export default function (self, options) {
     };
 
     self.hideAdMarkers = () => {
-        const markersHolder = document.getElementById(self.videoPlayerId + '_ad_markers_holder');
+        const markersHolder = self.controls.adProgress;
         const adMarkers = markersHolder.getElementsByClassName('fluid_controls_ad_marker');
         for (let i = 0; i < adMarkers.length; ++i) {
             const item = adMarkers[i];
@@ -878,7 +831,7 @@ export default function (self, options) {
     };
 
     self.midRoll = (event) => {
-        self.domRef.player.removeEventListener(event.type, self.midRoll);
+        self.media.removeEventListener(event.type, self.midRoll);
 
         const adListId = event.type.replace('adId_', '');
         if (self.adList[adListId].played === true) {
@@ -887,13 +840,12 @@ export default function (self, options) {
 
         let time = self.adList[adListId].timer;
 
-        if (typeof time == 'string' && time.indexOf("%") !== -1) {
+        if (typeof time == 'string' && time.indexOf('%') !== -1) {
             time = time.replace('%', '');
-            time = Math.floor(self.mainVideoDuration / 100 * time);
+            time = Math.floor((self.duration / 100) * time);
         }
 
-        if (self.displayOptions.vastOptions.showProgressbarMarkers &&
-            self.adList[adListId].adType === "nonLinear") {
+        if (self.config.vastOptions.showProgressbarMarkers && self.adList[adListId].adType === 'nonLinear') {
             self.createAdMarker(adListId, time);
         }
 
@@ -901,22 +853,22 @@ export default function (self, options) {
     };
 
     self.postRoll = (event) => {
-        self.domRef.player.removeEventListener(event.type, self.postRoll);
+        self.media.removeEventListener(event.type, self.postRoll);
         const adListId = event.type.replace('adId_', '');
         self.scheduleTask({
-            time: Math.floor(self.mainVideoDuration),
+            time: Math.floor(self.duration),
             playRoll: 'postRoll',
-            adListId: adListId
+            adListId: adListId,
         });
     };
 
     self.onPauseRoll = (event) => {
-        self.domRef.player.removeEventListener(event.type, self.onPauseRoll);
+        self.media.removeEventListener(event.type, self.onPauseRoll);
         const adListId = event.type.replace('adId_', '');
 
         if (self.adList[adListId].adType === 'nonLinear') {
             if (!self.adPool.hasOwnProperty(adListId) || self.adPool[adListId].error === true) {
-                self.announceLocalError(101);
+                self.debug.error(101);
                 return;
             }
 
@@ -931,7 +883,6 @@ export default function (self, options) {
             } else {
                 self.onPauseRollAdPods.push(adListId);
             }
-
         }
     };
 
@@ -942,7 +893,7 @@ export default function (self, options) {
         // TODO should be only one. Add validator to allow only one onPause roll
         const onPauseAd = self.findRoll('onPauseRoll');
 
-        return (onPauseAd.length !== 0 && self.adList[onPauseAd[0]] && self.adList[onPauseAd[0]].error === false);
+        return onPauseAd.length !== 0 && self.adList[onPauseAd[0]] && self.adList[onPauseAd[0]].error === false;
     };
 
     /**
@@ -961,13 +912,13 @@ export default function (self, options) {
             self.vastOptions = self.adPool[adListId];
             const onPauseAd = document.getElementById('fluid_nonLinear_' + adListId);
 
-            if (onPauseAd && self.domRef.player.paused) {
+            if (onPauseAd && self.paused) {
                 setTimeout(function () {
                     onPauseAd.style.display = 'flex';
                     self.adList[adListId].played = false;
                     self.trackingOnPauseNonLinearAd(adListId, 'start');
                 }, 500);
-            } else if (onPauseAd && !self.domRef.player.paused) {
+            } else if (onPauseAd && !self.paused) {
                 onPauseAd.style.display = 'none';
                 self.adFinished = true;
                 self.trackingOnPauseNonLinearAd(adListId, 'complete');
@@ -980,7 +931,7 @@ export default function (self, options) {
      */
     self.trackingOnPauseNonLinearAd = (adListId, status) => {
         if (!self.adPool.hasOwnProperty(adListId) || self.adPool[adListId].error === true) {
-            self.announceLocalError(101);
+            self.debug.error(101);
             return;
         }
 
@@ -1010,7 +961,11 @@ export default function (self, options) {
         const timerPoolKeytimeNonlinearAdsLength = self.timerPool[keyTime]['nonLinear'].length;
 
         // remove the item from keytime if no ads to play
-        if (timerPoolKeytimeCloseStaticAdsLength === 0 && timerPoolKeytimeLinearAdsLength === 0 && timerPoolKeytimeNonlinearAdsLength === 0) {
+        if (
+            timerPoolKeytimeCloseStaticAdsLength === 0 &&
+            timerPoolKeytimeLinearAdsLength === 0 &&
+            timerPoolKeytimeNonlinearAdsLength === 0
+        ) {
             delete self.timerPool[keyTime];
             return;
         }
@@ -1049,9 +1004,9 @@ export default function (self, options) {
                 const vastOptions = self.adPool[adListId];
 
                 // we are not supporting nonLinear ads in cardBoard mode
-                if (self.adList[adListId].played === false && !self.displayOptions.layoutControls.showCardBoardView) {
+                if (self.adList[adListId].played === false) {
                     self.createNonLinearStatic(adListId);
-                    if (self.displayOptions.vastOptions.showProgressbarMarkers) {
+                    if (self.config.vastOptions.showProgressbarMarkers) {
                         self.hideAdMarker(adListId);
                     }
 
@@ -1064,7 +1019,6 @@ export default function (self, options) {
                 }
             }
         }
-
     };
 
     self.adTimer = () => {
@@ -1074,11 +1028,10 @@ export default function (self, options) {
 
         self.isTimer = !self.isTimer;
 
-        self.timer = setInterval(
-            function () {
-                const keyTime = Math.floor(self.getCurrentTime());
-                self.adKeytimePlay(keyTime)
-            }, 800);
+        self.timer = setInterval(function () {
+            const keyTime = Math.floor(self.getCurrentTime());
+            self.adKeytimePlay(keyTime);
+        }, 800);
     };
 
     // ADS
@@ -1094,25 +1047,24 @@ export default function (self, options) {
         } else if (task.hasOwnProperty('closeStaticAd')) {
             self.timerPool[task.time]['closeStaticAd'].push(task);
         }
-
     };
 
     // ADS
     self.switchToMainVideo = () => {
-        self.debugMessage('starting main video');
+        self.debug.log('starting main video');
 
-        self.domRef.player.src = self.originalSrc;
+        self.media.src = self.originalSrc;
 
-        self.initialiseStreamers();
+        self.streaming.init();
 
-        const newCurrentTime = (typeof self.domRef.player.mainVideoCurrentTime !== 'undefined')
-            ? self.domRef.player.mainVideoCurrentTime : 0;
+        const newCurrentTime =
+            typeof self.media.mainVideoCurrentTime !== 'undefined' ? self.media.mainVideoCurrentTime : 0;
 
-        if (self.domRef.player.hasOwnProperty('currentTime')) {
-            self.domRef.player.currentTime = newCurrentTime;
+        if (self.media.hasOwnProperty('currentTime')) {
+            self.media.currentTime = newCurrentTime;
         }
 
-        self.loop.apply();
+        self.loopMenu.apply();
 
         self.setCurrentTimeAndPlay(newCurrentTime, self.autoplayAfterAd);
 
@@ -1121,34 +1073,22 @@ export default function (self, options) {
         self.deleteVastAdElements();
 
         self.adFinished = true;
-        self.displayOptions.vastOptions.vastAdvanced.vastVideoEndedCallback();
+        self.config.vastOptions.vastAdvanced.vastVideoEndedCallback();
         self.vastOptions = null;
 
-        self.setBuffering();
-        const progressbarContainer = self.domRef.controls.progressContainer;
+        const progressbarContainer = self.controls.progressContainer;
 
         if (progressbarContainer !== null) {
-            const backgroundColor = (self.displayOptions.layoutControls.primaryColor) ? self.displayOptions.layoutControls.primaryColor : '#f00';
+            const backgroundColor = self.config.layoutControls.primaryColor || '#f00';
 
-            const currentProgressBar = self.domRef.player.parentNode.getElementsByClassName('fluid_controls_currentprogress');
-            for (let i = 0; i < currentProgressBar.length; i++) {
-                currentProgressBar[i].style.backgroundColor = backgroundColor;
-            }
-            const progressCurrentMarker = self.domRef.player.parentNode.getElementsByClassName('fluid_controls_currentpos');
-            for (let i = 0; i < progressCurrentMarker.length; i++) {
-                progressCurrentMarker[i].style.backgroundColor = backgroundColor;
-            }
+            self.controls.playProgress.style.backgroundColor = backgroundColor;
+            self.controls.scrubberProgress.style.backgroundColor = backgroundColor;
         }
 
-        self.domRef.player.removeEventListener('ended', self.onVastAdEnded);
+        self.media.removeEventListener('ended', self.onVastAdEnded);
 
-        if (self.displayOptions.vastOptions.showProgressbarMarkers) {
+        if (self.config.vastOptions.showProgressbarMarkers) {
             self.showAdMarkers();
-        }
-
-        if (self.hasTitle()) {
-            const title = document.getElementById(self.videoPlayerId + '_title');
-            title.style.display = 'inline';
         }
     };
 
@@ -1174,14 +1114,13 @@ export default function (self, options) {
             self.vastOptions = null;
             self.adFinished = true;
         } else {
-            self.domRef.player.removeEventListener('ended', self.onVastAdEnded);
+            self.media.removeEventListener('ended', self.onVastAdEnded);
             self.isCurrentlyPlayingAd = false;
             self.vastOptions = null;
             self.adFinished = true;
             self.renderLinearAd(availableNextAdID, false); // passing false so it doesn't backup the Ad playbacktime as video playback time
         }
     };
-
 
     /**
      * Adds a Skip Button
@@ -1191,22 +1130,25 @@ export default function (self, options) {
         const divSkipButton = document.createElement('div');
         divSkipButton.id = 'skip_button_' + self.videoPlayerId;
         divSkipButton.className = 'skip_button skip_button_disabled';
-        divSkipButton.innerHTML = self.displayOptions.vastOptions.skipButtonCaption.replace('[seconds]', self.vastOptions.skipoffset);
+        divSkipButton.innerHTML = self.config.vastOptions.skipButtonCaption.replace(
+            '[seconds]',
+            self.vastOptions.skipoffset,
+        );
 
-        self.domRef.wrapper.appendChild(divSkipButton);
+        self.wrapper.appendChild(divSkipButton);
 
-        self.domRef.player.addEventListener('timeupdate', self.decreaseSkipOffset, false);
+        self.media.addEventListener('timeupdate', self.decreaseSkipOffset, false);
     };
 
     /**
      * Ad Countdown
      */
     self.addAdCountdown = () => {
-        const videoWrapper = self.domRef.wrapper;
+        const videoWrapper = self.wrapper;
         const divAdCountdown = document.createElement('div');
 
         // Create element
-        const adCountdown = self.pad(parseInt(self.currentVideoDuration / 60)) + ':' + self.pad(parseInt(self.currentVideoDuration % 60));
+        const adCountdown = pad(parseInt(self.duration / 60)) + ':' + pad(parseInt(self.duration % 60));
         const durationText = parseInt(adCountdown);
         divAdCountdown.id = 'ad_countdown' + self.videoPlayerId;
         divAdCountdown.className = 'ad_countdown';
@@ -1214,20 +1156,25 @@ export default function (self, options) {
 
         videoWrapper.appendChild(divAdCountdown);
 
-        self.domRef.player.addEventListener('timeupdate', self.decreaseAdCountdown, false);
-        videoWrapper.addEventListener('mouseover', function () {
-            divAdCountdown.style.display = 'none';
-        }, false);
+        self.media.addEventListener('timeupdate', self.decreaseAdCountdown, false);
+        videoWrapper.addEventListener(
+            'mouseover',
+            function () {
+                divAdCountdown.style.display = 'none';
+            },
+            false,
+        );
     };
 
     self.decreaseAdCountdown = function decreaseAdCountdown() {
-        const sec = parseInt(self.currentVideoDuration) - parseInt(self.domRef.player.currentTime);
+        const sec = parseInt(self.duration) - parseInt(self.media.currentTime);
         const btn = document.getElementById('ad_countdown' + self.videoPlayerId);
 
         if (btn) {
-            btn.innerHTML = "<span class='ad_timer_prefix'>Ad - </span> " + self.pad(parseInt(sec / 60)) + ':' + self.pad(parseInt(sec % 60));
+            btn.innerHTML =
+                "<span class='ad_timer_prefix'>Ad - </span> " + pad(parseInt(sec / 60)) + ':' + pad(parseInt(sec % 60));
         } else {
-            self.domRef.player.removeEventListener('timeupdate', self.decreaseAdCountdown);
+            self.media.removeEventListener('timeupdate', self.decreaseAdCountdown);
         }
     };
 
@@ -1253,15 +1200,15 @@ export default function (self, options) {
         const adPlayingDiv = document.createElement('div');
         adPlayingDiv.id = self.videoPlayerId + '_fluid_ad_playing';
 
-        if (self.displayOptions.layoutControls.primaryColor) {
-            adPlayingDiv.style.backgroundColor = self.displayOptions.layoutControls.primaryColor;
+        if (self.config.layoutControls.primaryColor) {
+            adPlayingDiv.style.backgroundColor = self.config.layoutControls.primaryColor;
             adPlayingDiv.style.opacity = 1;
         }
 
         adPlayingDiv.className = 'fluid_ad_playing';
         adPlayingDiv.innerText = textToShow;
 
-        self.domRef.wrapper.appendChild(adPlayingDiv);
+        self.wrapper.appendChild(adPlayingDiv);
     };
 
     self.positionTextElements = (adListData) => {
@@ -1281,18 +1228,18 @@ export default function (self, options) {
         const defaultPositions = {
             top: {
                 left: { h: 34, v: 34 },
-                right: { h: 0, v: 34 }
+                right: { h: 0, v: 34 },
             },
             bottom: {
                 left: { h: 34, v: 50 },
-                right: { h: 0, v: 50 }
-            }
+                right: { h: 0, v: 50 },
+            },
         };
 
         if (skipButton !== null) {
             skipButtonHeightWithSpacing = skipButton.offsetHeight + pixelSpacing;
 
-            const wrapperElement = self.domRef.wrapper;
+            const wrapperElement = self.wrapper;
 
             if (wrapperElement.classList.contains('mobile')) {
                 defaultPositions.bottom.left.v = 75;
@@ -1302,10 +1249,10 @@ export default function (self, options) {
 
         let CTATextPosition;
         if (ctaButton !== null) {
-            CTATextPosition = self.displayOptions.vastOptions.adCTATextPosition.toLowerCase();
+            CTATextPosition = self.config.vastOptions.adCTATextPosition.toLowerCase();
 
             if (allowedPosition.indexOf(CTATextPosition) === -1) {
-                console.log('[FP Error] Invalid position for CTAText. Reverting to "bottom right"');
+                self.debug.error('Invalid position for CTAText. Reverting to "bottom right"');
                 CTATextPosition = 'bottom right';
             }
 
@@ -1317,7 +1264,8 @@ export default function (self, options) {
             ctaButton.style[positionsCTA[1]] = defaultPositions[positionsCTA[0]][positionsCTA[1]].h + 'px';
 
             if (isBottom && positionsCTA[1] === 'right') {
-                ctaButton.style[positionsCTA[0]] = defaultPositions[positionsCTA[0]][positionsCTA[1]].v + skipButtonHeightWithSpacing + 'px';
+                ctaButton.style[positionsCTA[0]] =
+                    defaultPositions[positionsCTA[0]][positionsCTA[1]].v + skipButtonHeightWithSpacing + 'px';
             }
 
             ctaButtonHeightWithSpacing = ctaButton.offsetHeight + pixelSpacing + 'px';
@@ -1326,10 +1274,13 @@ export default function (self, options) {
         let adPlayingDivPosition;
         let positionsAdText;
         if (adPlayingDiv !== null) {
-            adPlayingDivPosition = (adListData.adTextPosition !== null) ? adListData.adTextPosition.toLowerCase() : self.displayOptions.vastOptions.adTextPosition.toLowerCase();
+            adPlayingDivPosition =
+                adListData.adTextPosition !== null
+                    ? adListData.adTextPosition.toLowerCase()
+                    : self.config.vastOptions.adTextPosition.toLowerCase();
 
             if (allowedPosition.indexOf(adPlayingDivPosition) === -1) {
-                console.log('[FP Error] Invalid position for adText. Reverting to "top left"');
+                self.debug.error('Invalid position for adText. Reverting to "top left"');
                 adPlayingDivPosition = 'top left';
             }
 
@@ -1339,15 +1290,25 @@ export default function (self, options) {
             adPlayingDivHeightWithSpacing = adPlayingDiv.offsetHeight + pixelSpacing + 'px';
         }
 
-        if (ctaButtonHeightWithSpacing > 0 && adPlayingDivHeightWithSpacing > 0 && CTATextPosition === adPlayingDivPosition) {
+        if (
+            ctaButtonHeightWithSpacing > 0 &&
+            adPlayingDivHeightWithSpacing > 0 &&
+            CTATextPosition === adPlayingDivPosition
+        ) {
             if (isBottom) {
                 if (positionsCTA[1] === 'right') {
-                    adPlayingDiv.style.bottom = defaultPositions[positionsAdText[0]][positionsAdText[1]].v + skipButtonHeightWithSpacing + ctaButtonHeightWithSpacing + 'px';
+                    adPlayingDiv.style.bottom =
+                        defaultPositions[positionsAdText[0]][positionsAdText[1]].v +
+                        skipButtonHeightWithSpacing +
+                        ctaButtonHeightWithSpacing +
+                        'px';
                 } else {
-                    adPlayingDiv.style.bottom = defaultPositions[positionsAdText[0]][positionsAdText[1]].v + ctaButtonHeightWithSpacing + 'px';
+                    adPlayingDiv.style.bottom =
+                        defaultPositions[positionsAdText[0]][positionsAdText[1]].v + ctaButtonHeightWithSpacing + 'px';
                 }
             } else {
-                ctaButton.style.top = defaultPositions[positionsCTA[0]][positionsCTA[1]].v + adPlayingDivHeightWithSpacing + 'px';
+                ctaButton.style.top =
+                    defaultPositions[positionsCTA[0]][positionsCTA[1]].v + adPlayingDivHeightWithSpacing + 'px';
             }
         }
     };
@@ -1370,21 +1331,26 @@ export default function (self, options) {
         ctaButton.className = 'fluid_ad_cta';
 
         const link = document.createElement('span');
-        link.innerHTML = self.displayOptions.vastOptions.adCTAText + "<br/><span class=\"add_icon_clickthrough\">" + landingPage + "</span>";
+        link.innerHTML =
+            self.config.vastOptions.adCTAText + '<br/><span class="add_icon_clickthrough">' + landingPage + '</span>';
 
-        ctaButton.addEventListener('click', () => {
-            if (!self.domRef.player.paused) {
-                self.domRef.player.pause();
-            }
+        ctaButton.addEventListener(
+            'click',
+            () => {
+                if (!self.paused) {
+                    self.pause();
+                }
 
-            const win = window.open(self.vastOptions.clickthroughUrl, '_blank');
-            win.focus();
-            return true;
-        }, false);
+                const win = window.open(self.vastOptions.clickthroughUrl, '_blank');
+                win.focus();
+                return true;
+            },
+            false,
+        );
 
         ctaButton.appendChild(link);
 
-        self.domRef.wrapper.appendChild(ctaButton);
+        self.wrapper.appendChild(ctaButton);
     };
 
     self.removeCTAButton = () => {
@@ -1397,17 +1363,17 @@ export default function (self, options) {
     };
 
     self.decreaseSkipOffset = () => {
-        let sec = self.vastOptions.skipoffset - Math.floor(self.domRef.player.currentTime);
+        let sec = self.vastOptions.skipoffset - Math.floor(self.media.currentTime);
         const btn = document.getElementById('skip_button_' + self.videoPlayerId);
 
         if (!btn) {
-            self.domRef.player.removeEventListener('timeupdate', self.decreaseSkipOffset);
+            self.media.removeEventListener('timeupdate', self.decreaseSkipOffset);
             return;
         }
 
         if (sec >= 1) {
             //set the button label with the remaining seconds
-            btn.innerHTML = self.displayOptions.vastOptions.skipButtonCaption.replace('[seconds]', sec);
+            btn.innerHTML = self.config.vastOptions.skipButtonCaption.replace('[seconds]', sec);
             return;
         }
 
@@ -1415,7 +1381,7 @@ export default function (self, options) {
         const skipLink = document.createElement('a');
         skipLink.href = '#';
         skipLink.id = 'skipHref_' + self.videoPlayerId;
-        skipLink.innerHTML = self.displayOptions.vastOptions.skipButtonClickCaption;
+        skipLink.innerHTML = self.config.vastOptions.skipButtonClickCaption;
         skipLink.onclick = (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -1428,7 +1394,7 @@ export default function (self, options) {
         //removes the CSS class for a disabled button
         btn.className = btn.className.replace(/\bskip_button_disabled\b/, '');
 
-        self.domRef.player.removeEventListener('timeupdate', self.decreaseSkipOffset);
+        self.media.removeEventListener('timeupdate', self.decreaseSkipOffset);
     };
 
     self.pressSkipButton = () => {
@@ -1443,10 +1409,10 @@ export default function (self, options) {
         }
 
         // skip the regular linear vast
-        self.displayOptions.vastOptions.vastAdvanced.vastVideoSkippedCallback();
+        self.config.vastOptions.vastAdvanced.vastVideoSkippedCallback();
         const event = document.createEvent('Event');
         event.initEvent('ended', false, true);
-        self.domRef.player.dispatchEvent(event);
+        self.media.dispatchEvent(event);
     };
 
     self.removeSkipButton = () => {
@@ -1460,7 +1426,7 @@ export default function (self, options) {
      * Makes the player open the ad URL on clicking
      */
     self.addClickthroughLayer = () => {
-        const divWrapper = self.domRef.wrapper;
+        const divWrapper = self.wrapper;
 
         const divClickThrough = document.createElement('div');
         divClickThrough.className = 'vast_clickthrough_layer';
@@ -1468,8 +1434,10 @@ export default function (self, options) {
         divClickThrough.setAttribute(
             'style',
             'position: absolute; cursor: pointer; top: 0; left: 0; width: ' +
-            self.domRef.player.offsetWidth + 'px; height: ' +
-            (self.domRef.player.offsetHeight) + 'px;'
+                self.media.offsetWidth +
+                'px; height: ' +
+                self.media.offsetHeight +
+                'px;',
         );
 
         divWrapper.appendChild(divClickThrough);
@@ -1485,22 +1453,20 @@ export default function (self, options) {
         };
 
         const clickthroughLayer = document.getElementById('vast_clickthrough_layer_' + self.videoPlayerId);
-        const isIos9orLower = (self.mobileInfo.device === 'iPhone') && (self.mobileInfo.userOsMajor !== false) && (self.mobileInfo.userOsMajor <= 9);
+        const isIos9orLower = IS_IPHONE && IOS_VERSION <= 9;
 
         clickthroughLayer.onclick = () => {
-            if (self.domRef.player.paused) {
+            if (self.paused) {
                 //On Mobile Safari on iPhones with iOS 9 or lower open the clickthrough only once
                 if (isIos9orLower && !self.suppressClickthrough) {
                     openClickthrough();
                     self.suppressClickthrough = true;
-
                 } else {
-                    self.domRef.player.play();
+                    self.play();
                 }
-
             } else {
                 openClickthrough();
-                self.domRef.player.pause();
+                self.pause();
             }
         };
     };

@@ -15,7 +15,7 @@ const cdnJSON = require(path.resolve(__dirname, 'deploy.json'));
 
 // Validate package version is valid semver
 if (!semver.valid(packageJSON.version)) {
-    throw 'Invalid package version - ' + packageJSON.version;
+    throw new Error('Invalid package version - ' + packageJSON.version);
 }
 
 // Distribution options configure how build paths are going to be configured.
@@ -41,20 +41,20 @@ const getDistOptions = (mode) => {
                 publicPath: cdnRoot + '/' + fullVersion + '/',
             };
         default:
-            throw 'Unknown distribution type provided in --dist!';
+            throw new Error('Unknown distribution type provided in --dist!');
     }
 };
 
 // Webpack configuration
 module.exports = (env, argv) => {
-    const wpMode = typeof argv.mode !== 'undefined' ? argv.mode : 'development';
-    const wpDebug = wpMode === 'development' && typeof env.debug !== 'undefined' && !!env.debug;
-    const wpDist = typeof env.dist !== 'undefined' ? env.dist : 'development';
-    const wpDistOptions = getDistOptions(wpDist);
-    const wpObf = env.obf;
+    const mode = typeof argv.mode !== 'undefined' ? argv.mode : 'development';
+    const debug = mode === 'development' && !!env.debug;
+    const dist = typeof env.dist !== 'undefined' ? env.dist : 'development';
+    const distOptions = getDistOptions(dist);
+    const obf = !!env.obf;
 
-    if ('development' !== wpDist && (wpMode !== 'production' || wpDebug)) {
-        throw 'Building a production distribution in development mode or with debug enabled is not allowed!';
+    if (dist !== 'development' && (mode !== 'production' || debug)) {
+        throw new Error('Building a production distribution in development mode or with debug enabled is not allowed!');
     }
 
     const plugins = [
@@ -62,9 +62,8 @@ module.exports = (env, argv) => {
         new webpack.DefinePlugin({
             FP_BUILD_VERSION: JSON.stringify(packageJSON.version),
             FP_HOMEPAGE: JSON.stringify(packageJSON.homepage),
-            FP_ENV: JSON.stringify(wpMode),
-            FP_DEBUG: JSON.stringify(wpDebug),
-            FP_WITH_CSS: false,
+            FP_ENV: JSON.stringify(mode),
+            FP_DEBUG: JSON.stringify(debug),
         }),
         new webpack.optimize.LimitChunkCountPlugin({
             maxChunks: 1, // disable creating additional chunks
@@ -72,7 +71,7 @@ module.exports = (env, argv) => {
     ];
 
     // Development mode builds and development server specifics
-    if ('development' === wpMode) {
+    if (mode === 'development') {
         // Locate all E2E cases
         const caseFiles = [];
         fs.readdirSync(path.resolve(__dirname, 'test/html/')).forEach((file) => {
@@ -113,14 +112,14 @@ module.exports = (env, argv) => {
                 patterns: [
                     {
                         from: path.resolve(__dirname, 'test/static/'),
-                        to: path.resolve(wpDistOptions.path, 'static'),
+                        to: path.resolve(distOptions.path, 'static'),
                     },
                 ],
             }),
         );
     }
 
-    if (wpObf) {
+    if (obf) {
         plugins.push(
             new WebpackObfuscatorPlugin({
                 compact: true,
@@ -159,26 +158,25 @@ module.exports = (env, argv) => {
                 fs: false,
             },
         },
+        mode: mode,
         devServer: {
-            contentBase: wpDistOptions.path,
-            index: 'index.html',
-            watchContentBase: true,
+            static: distOptions.path,
         },
-        devtool: wpMode === 'development' ? 'source-map' : false,
+        devtool: mode === 'development' ? 'source-map' : false,
         plugins,
         entry: {
             player: './src/browser.js',
         },
         optimization: {
-            minimize: wpMode !== 'development',
+            minimize: mode !== 'development',
             splitChunks: false,
             minimizer: [new TerserPlugin()],
         },
         output: {
             filename: '[name].min.js',
             chunkFilename: '[name].[chunkhash].min.js',
-            path: wpDistOptions.path,
-            publicPath: wpDistOptions.publicPath,
+            path: distOptions.path,
+            publicPath: distOptions.publicPath,
             clean: true,
         },
         module: {

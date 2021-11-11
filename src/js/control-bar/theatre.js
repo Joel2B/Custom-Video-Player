@@ -1,104 +1,140 @@
-export default function(self) {
-    self.theatreToggle = () => {
-        if (self.isInIframe) {
+import { isInFrame, toggleClass } from '../utils/dom';
+import { on, triggerEvent } from '../utils/events';
+import is from '../utils/is';
+
+class Theatre {
+    constructor(player) {
+        this.player = player;
+        this.active = false;
+
+        this.init();
+    }
+
+    init = () => {
+        const { player } = this;
+
+        if (!player.config.layoutControls.allowTheatre || isInFrame()) {
+            player.controls.theatre.style.display = 'none';
             return;
         }
 
-        // Theatre and fullscreen, it's only one or the other
-        if (self.fullscreenMode) {
-            self.fullscreenToggle();
+        player.controls.theatre.style.display = 'inline-block';
+
+        on.call(player, player.controls.theatre, 'click', this.toggle);
+    };
+
+    toggle = () => {
+        if (isInFrame()) {
+            return;
+        }
+
+        const { player } = this;
+
+        // Keep in theatre mode
+        if (player.fullscreen.active) {
+            player.fullscreen.toggle();
+            if (this.active) {
+                return;
+            }
         }
 
         // Advanced Theatre mode if specified
-        if (self.displayOptions.layoutControls.theatreAdvanced) {
-            const elementForTheatre = document.getElementById(self.displayOptions.layoutControls.theatreAdvanced.theatreElement);
-            const theatreClassToApply = self.displayOptions.layoutControls.theatreAdvanced.classToApply;
-            if (elementForTheatre !== null && theatreClassToApply !== 'undefined') {
-                if (!self.theatreMode) {
-                    elementForTheatre.classList.add(theatreClassToApply);
-                } else {
-                    elementForTheatre.classList.remove(theatreClassToApply);
-                }
-                self.theatreModeAdvanced = !self.theatreModeAdvanced;
+        if (player.config.layoutControls.theatreAdvanced) {
+            const custom = document.getElementById(player.config.layoutControls.theatreAdvanced.theatreElement);
+            const customClass = player.config.layoutControls.theatreAdvanced.classToApply;
+            if (is.element(custom)) {
+                toggleClass(custom, customClass, !this.active);
             } else {
-                console.log('[FP_ERROR] Theatre mode elements could not be found, defaulting behaviour.');
+                player.debug.log(`Theatre element not found: ${custom}`);
                 // Default overlay behaviour
-                self.defaultTheatre();
+                this.defaultLayout();
             }
         } else {
             // Default overlay behaviour
-            self.defaultTheatre();
+            this.defaultLayout();
         }
 
         // Set correct variables
-        self.theatreMode = !self.theatreMode;
-        self.setLocalStorage('theatre', self.theatreMode, 30);
+        this.active = !this.active;
+        player.storage.set('theatre', this.active);
 
         // Trigger theatre event
-        const theatreEvent = (self.theatreMode) ? 'theatreModeOn' : 'theatreModeOff';
-        const event = document.createEvent('CustomEvent');
-        event.initEvent(theatreEvent, false, true);
-        self.domRef.player.dispatchEvent(event);
+        triggerEvent.call(player, player.media, this.active ? 'theatreModeOn' : 'theatreModeOff');
 
-        self.resizeVpaidAuto();
-        self.resizeMarkerContainer();
+        player.resizeVpaidAuto();
+        player.progressBar.resize();
     };
 
-    self.defaultTheatre = () => {
-        const videoWrapper = self.domRef.wrapper;
+    defaultLayout = () => {
+        const { player } = this;
+        const { wrapper } = player;
 
-        if (self.theatreMode) {
-            videoWrapper.classList.remove('fluid_theatre_mode');
-            videoWrapper.style.maxHeight = '';
-            videoWrapper.style.marginTop = '';
-            videoWrapper.style.left = '';
-            videoWrapper.style.right = '';
-            videoWrapper.style.position = '';
-            if (!self.displayOptions.layoutControls.fillToContainer) {
-                videoWrapper.style.width = self.originalWidth + 'px';
-                videoWrapper.style.height = self.originalHeight + 'px';
+        if (this.active) {
+            toggleClass(wrapper, 'fluid_theatre_mode', false);
+
+            wrapper.style.maxHeight = '';
+            wrapper.style.marginTop = '';
+            wrapper.style.left = '';
+            wrapper.style.right = '';
+            wrapper.style.position = '';
+
+            if (!player.config.layoutControls.fillToContainer) {
+                wrapper.style.width = player.originalWidth + 'px';
+                wrapper.style.height = player.originalHeight + 'px';
             } else {
-                videoWrapper.style.width = '100%';
-                videoWrapper.style.height = '100%';
+                wrapper.style.width = '100%';
+                wrapper.style.height = '100%';
             }
+
             return;
         }
 
-        videoWrapper.classList.add('fluid_theatre_mode');
-        const workingWidth = self.displayOptions.layoutControls.theatreSettings.width;
+        toggleClass(wrapper, 'fluid_theatre_mode', true);
+
+        const workingWidth = player.config.layoutControls.theatreSettings.width;
         let defaultHorizontalMargin = '10px';
-        videoWrapper.style.width = workingWidth;
-        videoWrapper.style.height = self.displayOptions.layoutControls.theatreSettings.height;
-        videoWrapper.style.maxHeight = screen.height + 'px';
-        videoWrapper.style.marginTop = self.displayOptions.layoutControls.theatreSettings.marginTop + 'px';
-        switch (self.displayOptions.layoutControls.theatreSettings.horizontalAlign) {
+
+        wrapper.style.width = workingWidth;
+        wrapper.style.height = player.config.layoutControls.theatreSettings.height;
+        wrapper.style.maxHeight = screen.height + 'px';
+        wrapper.style.marginTop = player.config.layoutControls.theatreSettings.marginTop + 'px';
+
+        switch (player.config.layoutControls.theatreSettings.horizontalAlign) {
             case 'center':
-            // We must calculate the margin differently based on whether they passed % or px
-                if (typeof (workingWidth) === 'string' && workingWidth.substr(workingWidth.length - 1) === '%') {
-                // A margin of half the remaining space
-                    defaultHorizontalMargin = ((100 - parseInt(workingWidth.substring(0, workingWidth.length - 1))) / 2) + '%';
-                } else if (typeof (workingWidth) === 'string' && workingWidth.substr(workingWidth.length - 2) === 'px') {
-                // Half the (Remaining width / fullwidth)
-                    defaultHorizontalMargin = (((screen.width - parseInt(workingWidth.substring(0, workingWidth.length - 2))) / screen.width) * 100 / 2) + '%';
+                // We must calculate the margin differently based on whether they passed % or px
+                if (workingWidth.endsWith('%')) {
+                    // A margin of half the remaining space
+                    defaultHorizontalMargin =
+                        (100 - parseInt(workingWidth.substring(0, workingWidth.length - 1))) / 2 + '%';
+                } else if (workingWidth.endsWith('px')) {
+                    // Half the (Remaining width / fullwidth)
+                    defaultHorizontalMargin =
+                        (((screen.width - parseInt(workingWidth.substring(0, workingWidth.length - 2))) /
+                            screen.width) *
+                            100) /
+                            2 +
+                        '%';
                 } else {
-                    console.log('[FP_ERROR] Theatre width specified invalid.');
+                    player.debug.log('Theatre width specified invalid.');
                 }
 
-                videoWrapper.style.left = defaultHorizontalMargin;
+                wrapper.style.left = defaultHorizontalMargin;
                 break;
             case 'right':
-                videoWrapper.style.right = defaultHorizontalMargin;
+                wrapper.style.right = defaultHorizontalMargin;
                 break;
             case 'left':
             default:
-                videoWrapper.style.left = defaultHorizontalMargin;
+                wrapper.style.left = defaultHorizontalMargin;
                 break;
         }
     };
 
-    self.applyTheatre = () => {
-        if (self.getLocalStorage('theatre')) {
-            self.theatreToggle();
+    apply = () => {
+        if (this.player.storage.get('theatre')) {
+            this.toggle();
         }
     };
 }
+
+export default Theatre;

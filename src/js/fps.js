@@ -1,3 +1,6 @@
+import { IS_ANDROID, IS_FIREFOX, IS_IOS, IS_SAFARI } from './utils/browser';
+import is from './utils/is';
+
 class Fps {
     constructor(player) {
         this.player = player;
@@ -11,10 +14,12 @@ class Fps {
         this.stop = false;
     }
 
-    calc(totalVideoFrames) {
+    calc = (totalVideoFrames) => {
+        const { player } = this;
         const previous = this.current;
+
         this.current = (totalVideoFrames - this.count) / this.update;
-        this.current /= this.player.domRef.player.playbackRate;
+        this.current /= player.speed;
         this.count = totalVideoFrames;
         if (this.current === 0) {
             return;
@@ -28,8 +33,8 @@ class Fps {
             this.regularAttempt = 0;
         }
 
-        if (process.env.NODE_ENV === 'development') {
-            console.log(`
+        if (player.debug) {
+            player.debug.log(`
                 averageFPS: ${Math.round(this.total / this.attempt)},
                 currentFrameRate: ${this.current},
                 previousFrameRate: ${previous},
@@ -47,44 +52,42 @@ class Fps {
             this.stop = true;
         }
 
-        if (this.player.domRef.player.paused) {
+        if (player.paused) {
             this.current = this.total / this.attempt;
             clearInterval(this.interval);
         }
-    }
+    };
 
-    check() {
-        if (this.player.isCurrentlyPlayingAd) {
+    check = () => {
+        const { player } = this;
+
+        if (player.isCurrentlyPlayingAd) {
             return;
         }
 
         clearInterval(this.interval);
-        const browserVersion = this.player.getBrowserVersion();
-        const mobile = this.player.mobileInfo.userOs;
-        const browser = browserVersion.browserName;
-        const isFirefoxAndroid = mobile === 'Android' && browser === 'Mozilla Firefox';
-        const isSafariIOS = mobile === 'IOS' && browser === 'Safari';
 
-        if (this.stop || isFirefoxAndroid || isSafariIOS) {
+        if (this.stop || (IS_FIREFOX && IS_ANDROID) || (IS_IOS && IS_SAFARI)) {
             return;
         }
 
         this.interval = setInterval(() => {
-            const video = this.player.domRef.player;
+            const video = player.media;
+
             if (
-                typeof video.getVideoPlaybackQuality === 'function' &&
-                typeof video.getVideoPlaybackQuality().totalVideoFrames === 'number'
+                is.function(video.getVideoPlaybackQuality) &&
+                is.number(video.getVideoPlaybackQuality().totalVideoFrames)
             ) {
                 this.calc(video.getVideoPlaybackQuality().totalVideoFrames);
-            } else if (typeof video.webkitDecodedFrameCount === 'number') {
+            } else if (is.number(video.webkitDecodedFrameCount)) {
                 this.calc(video.webkitDecodedFrameCount);
             } else {
                 this.stop = true;
                 clearInterval(this.interval);
-                console.log('[FP_ERROR] The browser does not support webkitDecodedFrameCount.');
+                player.debug.log('The browser does not support webkitDecodedFrameCount.');
             }
         }, this.update * 1000);
-    }
+    };
 }
 
 export default Fps;

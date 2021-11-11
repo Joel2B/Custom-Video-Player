@@ -1,112 +1,72 @@
-export default function(self) {
-    self.hasControlBar = () => {
-        return !!self.domRef.controls.root;
-    };
+import { removeTransition } from '../utils/css';
+import { toggleClass } from '../utils/dom';
 
-    self.isControlBarVisible = () => {
-        if (self.hasControlBar() === false) {
-            return false;
+class ControlBar {
+    constructor(player) {
+        this.player = player;
+    }
+
+    toggle = (input) => {
+        // true: show
+        // false: hide
+        const { player } = this;
+
+        if (player.isCurrentlyPlayingAd && !player.paused) {
+            player.toggleAdCountdown(input);
         }
 
-        const controlBar = self.domRef.controls.root;
-        const style = window.getComputedStyle(controlBar, null);
-        return !(style.opacity === 0 || style.visibility === 'hidden');
-    };
+        const controls = player.controls.container;
+        const title = player.title.el;
+        const logo = player.logo.el;
 
-    self.hideControlBar = () => {
-        self.menu.close();
+        toggleClass(controls, 'fade_out', !input);
+        toggleClass(controls, 'fade_in', input);
 
-        if (self.isCurrentlyPlayingAd && !self.domRef.player.paused) {
-            self.toggleAdCountdown(true);
-        }
+        toggleClass(title, 'fade_out', !input);
+        toggleClass(title, 'fade_in', input);
 
-        self.domRef.player.style.cursor = 'none';
-
-        // handles both VR and Normal condition
-        if (!self.hasControlBar()) {
-            return;
-        }
-
-        const divVastControls = self.domRef.player.parentNode.getElementsByClassName('fluid_controls_container');
-        const fpLogo = self.domRef.player.parentNode.getElementsByClassName('fp_logo');
-
-        for (let i = 0; i < divVastControls.length; i++) {
-            if (self.displayOptions.layoutControls.controlBar.animated) {
-                divVastControls[i].classList.remove('fade_in');
-                divVastControls[i].classList.add('fade_out');
-            } else {
-                divVastControls[i].style.display = 'none';
+        if (player.isCurrentlyPlayingAd && player.config.layoutControls.logo.showOverAds) {
+            toggleClass(logo, 'fade_out', true);
+        } else {
+            if (player.config.layoutControls.logo.hideWithControls) {
+                toggleClass(logo, 'fade_out', !input);
+                toggleClass(logo, 'fade_in', input);
             }
         }
 
-        for (let i = 0; i < fpLogo.length; i++) {
-            if (self.displayOptions.layoutControls.controlBar.animated) {
-                if (fpLogo[i]) {
-                    fpLogo[i].classList.remove('fade_in');
-                    fpLogo[i].classList.add('fade_out');
-                }
-            } else {
-                if (fpLogo[i]) {
-                    fpLogo[i].style.display = 'none';
-                }
-            }
+        let cursor = 'default';
+        if (!input) {
+            cursor = 'none';
+            player.menu.close();
+        }
+        player.wrapper.style.cursor = cursor;
+        player.playPause.initialPlay.style.cursor =
+            player.firstPlayLaunched || !player.config.layoutControls.playButtonShowing ? cursor : 'pointer';
+
+        if (!player.config.layoutControls.controlBar.animated) {
+            removeTransition(controls);
+            removeTransition(logo);
+            removeTransition(title);
         }
     };
 
-    self.showControlBar = () => {
-        if (self.isCurrentlyPlayingAd && !self.domRef.player.paused) {
-            self.toggleAdCountdown(false);
-        }
+    linkControlBarUserActivity = () => {
+        const { player } = this;
 
-        if (!self.isTouchDevice()) {
-            self.domRef.player.style.cursor = 'default';
-        }
-
-        if (!self.hasControlBar()) {
-            return;
-        }
-
-        const divVastControls = self.domRef.player.parentNode.getElementsByClassName('fluid_controls_container');
-        const fpLogo = self.domRef.player.parentNode.getElementsByClassName('fp_logo');
-        for (let i = 0; i < divVastControls.length; i++) {
-            if (self.displayOptions.layoutControls.controlBar.animated) {
-                divVastControls[i].classList.remove('fade_out');
-                divVastControls[i].classList.add('fade_in');
-            } else {
-                divVastControls[i].style.display = 'block';
+        player.on('userInactive', () => {
+            if (!player.paused) {
+                this.toggle(false);
             }
-        }
+        });
 
-        for (let i = 0; i < fpLogo.length; i++) {
-            if (self.displayOptions.layoutControls.controlBar.animated) {
-                if (fpLogo[i]) {
-                    fpLogo[i].classList.remove('fade_out');
-                    fpLogo[i].classList.add('fade_in');
-                }
-            } else {
-                if (fpLogo[i]) {
-                    fpLogo[i].style.display = 'block';
-                }
-            }
-        }
+        player.on('userActive', () => {
+            this.toggle(true);
+        });
     };
 
-    self.linkControlBarUserActivity = () => {
-        self.domRef.player.addEventListener('userInactive', self.hideControlBar);
-        self.domRef.player.addEventListener('userInactive', self.hideTitle);
-
-        self.domRef.player.addEventListener('userActive', self.showControlBar);
-        self.domRef.player.addEventListener('userActive', self.showTitle);
-    };
-
-    self.toggleControlBar = (show) => {
-        const controlBar = self.domRef.controls.root;
-
-        if (show) {
-            controlBar.className += ' initial_controls_show';
-            return;
-        }
-
-        controlBar.className = controlBar.className.replace(' initial_controls_show', '');
+    toggleControlBar = (input) => {
+        toggleClass(this.player.controls.container, 'initial_controls_show', input);
     };
 }
+
+export default ControlBar;

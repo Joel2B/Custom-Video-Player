@@ -1,126 +1,216 @@
-export default function(self, options) {
-    self.isTouchDevice = () => {
-        return !!(
-            'ontouchstart' in window || // works on most browsers
-            navigator.maxTouchPoints
-        ); // works on IE10/11 and Surface
-    };
+/**
+ * @file browser.js
+ * @module browser
+ */
+import * as Dom from './dom';
+import window from 'global/window';
 
-    /**
-     * Distinguishes iOS from Android devices and the OS version.
-     *
-     * This should be avoided in favor of capability detection.
-     *
-     * @deprecated deprecated as of v3.0
-     * @returns object
-     */
-    self.getMobileOs = () => {
-        const ua = navigator.userAgent || '';
-        const result = { device: false, userOs: false, userOsVer: false, userOsMajor: false };
+const USER_AGENT = (window.navigator && window.navigator.userAgent) || '';
+const webkitVersionMap = /AppleWebKit\/([\d.]+)/i.exec(USER_AGENT);
+const appleWebkitVersion = webkitVersionMap ? parseFloat(webkitVersionMap.pop()) : null;
 
-        let versionIndex;
-        // determine OS
-        if (ua.match(/Android/i)) {
-            result.userOs = 'Android';
-            versionIndex = ua.indexOf('Android ');
-        } else if (ua.match(/iPhone/i)) {
-            result.device = 'iPhone';
-            result.userOs = 'iOS';
-            versionIndex = ua.indexOf('OS ');
-        } else if (ua.match(/iPad/i)) {
-            result.device = 'iPad';
-            result.userOs = 'iOS';
-            versionIndex = ua.indexOf('OS ');
-        } else {
-            result.userOs = false;
-        }
+/**
+ * Whether or not this device is an iPod.
+ *
+ * @static
+ * @const
+ * @type {Boolean}
+ */
+export const IS_IPOD = /iPod/i.test(USER_AGENT);
 
-        // determine version
-        if (result.userOs === 'iOS' && versionIndex > -1) {
-            const userOsTemp = ua.substr(versionIndex + 3);
-            const indexOfEndOfVersion = userOsTemp.indexOf(' ');
+/**
+ * The detected iOS version - or `null`.
+ *
+ * @static
+ * @const
+ * @type {string|null}
+ */
+export const IOS_VERSION = (function() {
+    const match = USER_AGENT.match(/OS (\d+)_/i);
 
-            if (indexOfEndOfVersion !== -1) {
-                result.userOsVer = userOsTemp.substring(0, userOsTemp.indexOf(' ')).replace(/_/g, '.');
-                result.userOsMajor = parseInt(result.userOsVer);
-            }
-        } else if (result.userOs === 'Android' && versionIndex > -1) {
-            result.userOsVer = ua.substr(versionIndex + 8, 3);
-        } else {
-            result.userOsVer = false;
-        }
+    if (match && match[1]) {
+        return match[1];
+    }
+    return null;
+})();
 
-        return result;
-    };
+/**
+ * Whether or not this is an Android device.
+ *
+ * @static
+ * @const
+ * @type {Boolean}
+ */
+export const IS_ANDROID = /Android/i.test(USER_AGENT);
 
-    /**
-     * Browser detection.
-     * This should be avoided in favor of capability detection.
-     *
-     * @deprecated deprecated as of v3.0
-     *
-     * @returns object
-     */
-    self.getBrowserVersion = () => {
-        const ua = navigator.userAgent || '';
-        const result = { browserName: false, fullVersion: false, majorVersion: false, userOsMajor: false };
+/**
+ * The detected Android version - or `null`.
+ *
+ * @static
+ * @const
+ * @type {number|string|null}
+ */
+export const ANDROID_VERSION = (function() {
+    // This matches Android Major.Minor.Patch versions
+    // ANDROID_VERSION is Major.Minor as a Number, if Minor isn't available, then only Major is returned
+    const match = USER_AGENT.match(/Android (\d+)(?:\.(\d+))?(?:\.(\d+))*/i);
 
-        let idx, uaindex;
+    if (!match) {
+        return null;
+    }
 
-        try {
-            result.browserName = navigator.appName;
+    const major = match[1] && parseFloat(match[1]);
+    const minor = match[2] && parseFloat(match[2]);
 
-            if ((idx = ua.indexOf('OPR/')) !== -1) {
-                result.browserName = 'Opera';
-                result.fullVersion = ua.substring(idx + 4);
-            } else if ((idx = ua.indexOf('Opera')) !== -1) {
-                result.browserName = 'Opera';
-                result.fullVersion = ua.substring(idx + 6);
-                if ((idx = ua.indexOf('Version')) !== -1) {
-                    result.fullVersion = ua.substring(idx + 8);
-                }
-            } else if ((idx = ua.indexOf('MSIE')) !== -1) {
-                result.browserName = 'Microsoft Internet Explorer';
-                result.fullVersion = ua.substring(idx + 5);
-            } else if ((idx = ua.indexOf('Chrome')) !== -1) {
-                result.browserName = 'Google Chrome';
-                result.fullVersion = ua.substring(idx + 7);
-            } else if ((idx = ua.indexOf('Safari')) !== -1) {
-                result.browserName = 'Safari';
-                result.fullVersion = ua.substring(idx + 7);
-                if ((idx = ua.indexOf('Version')) !== -1) {
-                    result.fullVersion = ua.substring(idx + 8);
-                }
-            } else if ((idx = ua.indexOf('Firefox')) !== -1) {
-                result.browserName = 'Mozilla Firefox';
-                result.fullVersion = ua.substring(idx + 8);
-            } else if ((uaindex = ua.lastIndexOf(' ') + 1) < (idx = ua.lastIndexOf('/'))) {
-                // Others "name/version" is at the end of userAgent
-                result.browserName = ua.substring(uaindex, idx);
-                result.fullVersion = ua.substring(idx + 1);
-                if (result.browserName.toLowerCase() === result.browserName.toUpperCase()) {
-                    result.browserName = navigator.appName;
-                }
-            }
+    if (major && minor) {
+        return parseFloat(match[1] + '.' + match[2]);
+    } else if (major) {
+        return major;
+    }
+    return null;
+})();
 
-            // trim the fullVersion string at semicolon/space if present
-            if ((uaindex = result.fullVersion.indexOf(';')) !== -1) {
-                result.fullVersion = result.fullVersion.substring(0, uaindex);
-            }
-            if ((uaindex = result.fullVersion.indexOf(' ')) !== -1) {
-                result.fullVersion = result.fullVersion.substring(0, uaindex);
-            }
+/**
+ * Whether or not this is a native Android browser.
+ *
+ * @static
+ * @const
+ * @type {Boolean}
+ */
+export const IS_NATIVE_ANDROID = IS_ANDROID && ANDROID_VERSION < 5 && appleWebkitVersion < 537;
 
-            result.majorVersion = parseInt('' + result.fullVersion, 10);
+/**
+ * Whether or not this is Mozilla Firefox.
+ *
+ * @static
+ * @const
+ * @type {Boolean}
+ */
+export const IS_FIREFOX = /Firefox/i.test(USER_AGENT);
 
-            if (isNaN(result.majorVersion)) {
-                result.fullVersion = '' + parseFloat(navigator.appVersion);
-                result.majorVersion = parseInt(navigator.appVersion, 10);
-            }
-        } catch (e) {
-            // Return default obj.
-        }
+/**
+ * Whether or not this is Microsoft Edge.
+ *
+ * @static
+ * @const
+ * @type {Boolean}
+ */
+export const IS_EDGE = /Edg/i.test(USER_AGENT);
 
-        return result;
-    };
-}
+/**
+ * Whether or not this is Google Chrome.
+ *
+ * This will also be `true` for Chrome on iOS, which will have different support
+ * as it is actually Safari under the hood.
+ *
+ * @static
+ * @const
+ * @type {Boolean}
+ */
+export const IS_CHROME = !IS_EDGE && (/Chrome/i.test(USER_AGENT) || /CriOS/i.test(USER_AGENT));
+
+/**
+ * The detected Google Chrome version - or `null`.
+ *
+ * @static
+ * @const
+ * @type {number|null}
+ */
+export const CHROME_VERSION = (function() {
+    const match = USER_AGENT.match(/(Chrome|CriOS)\/(\d+)/);
+
+    if (match && match[2]) {
+        return parseFloat(match[2]);
+    }
+    return null;
+})();
+
+/**
+ * The detected Internet Explorer version - or `null`.
+ *
+ * @static
+ * @const
+ * @type {number|null}
+ */
+export const IE_VERSION = (function() {
+    const result = /MSIE\s(\d+)\.\d/.exec(USER_AGENT);
+    let version = result && parseFloat(result[1]);
+
+    if (!version && /Trident\/7.0/i.test(USER_AGENT) && /rv:11.0/.test(USER_AGENT)) {
+        // IE 11 has a different user agent string than other IE versions
+        version = 11.0;
+    }
+
+    return version;
+})();
+
+/**
+ * Whether or not this is desktop Safari.
+ *
+ * @static
+ * @const
+ * @type {Boolean}
+ */
+export const IS_SAFARI = /Safari/i.test(USER_AGENT) && !IS_CHROME && !IS_ANDROID && !IS_EDGE;
+
+/**
+ * Whether or not this is a Windows machine.
+ *
+ * @static
+ * @const
+ * @type {Boolean}
+ */
+export const IS_WINDOWS = /Windows/i.test(USER_AGENT);
+
+/**
+ * Whether or not this device is touch-enabled.
+ *
+ * @static
+ * @const
+ * @type {Boolean}
+ */
+export const TOUCH_ENABLED = Boolean(
+    Dom.isReal() &&
+        ('ontouchstart' in window ||
+            window.navigator.maxTouchPoints ||
+            (window.DocumentTouch && window.document instanceof window.DocumentTouch)),
+);
+
+/**
+ * Whether or not this device is an iPad.
+ *
+ * @static
+ * @const
+ * @type {Boolean}
+ */
+export const IS_IPAD = /iPad/i.test(USER_AGENT) || (IS_SAFARI && TOUCH_ENABLED && !/iPhone/i.test(USER_AGENT));
+
+/**
+ * Whether or not this device is an iPhone.
+ *
+ * @static
+ * @const
+ * @type {Boolean}
+ */
+// The Facebook app's UIWebView identifies as both an iPhone and iPad, so
+// to identify iPhones, we need to exclude iPads.
+// http://artsy.github.io/blog/2012/10/18/the-perils-of-ios-user-agent-sniffing/
+export const IS_IPHONE = /iPhone/i.test(USER_AGENT) && !IS_IPAD;
+
+/**
+ * Whether or not this is an iOS device.
+ *
+ * @static
+ * @const
+ * @type {Boolean}
+ */
+export const IS_IOS = IS_IPHONE || IS_IPAD || IS_IPOD;
+
+/**
+ * Whether or not this is any flavor of Safari - including iOS.
+ *
+ * @static
+ * @const
+ * @type {Boolean}
+ */
+export const IS_ANY_SAFARI = (IS_SAFARI || IS_IOS) && !IS_CHROME;

@@ -1,42 +1,27 @@
-export default function(self) {
-    self.initTitle = () => {
-        if (!self.displayOptions.layoutControls.title) {
+import { createElement } from './utils/dom';
+import is from './utils/is';
+
+class Title {
+    constructor(player) {
+        this.player = player;
+        this.title = this.player.config.layoutControls.title;
+        this.init();
+    }
+
+    init = () => {
+        if (is.empty(this.title)) {
             return;
         }
-        const titleHolder = self.createElement({
-            tag: 'div',
-            id: self.videoPlayerId + '_title',
-            className: 'fp_title',
-            innerHTML: self.displayOptions.layoutControls.title,
-            domRef: 'titleHolder',
-        });
+        this.el = createElement(
+            'div',
+            {
+                class: 'fp_title',
+            },
+            this.title,
+        );
 
-        self.domRef.player.parentNode.insertBefore(titleHolder, null);
-    };
-
-    self.hasTitle = () => {
-        const title = self.domRef.controls.titleHolder;
-        const titleOption = self.displayOptions.layoutControls.title;
-        return title && titleOption !== null;
-    };
-
-    self.hideTitle = () => {
-        const titleHolder = self.domRef.controls.titleHolder;
-
-        if (!self.hasTitle()) {
-            return;
-        }
-
-        titleHolder.classList.add('fade_out');
-    };
-
-    self.showTitle = () => {
-        const titleHolder = self.domRef.controls.titleHolder;
-
-        if (!self.hasTitle()) {
-            return;
-        }
-
-        titleHolder.classList.remove('fade_out');
-    };
+        this.player.wrapper.appendChild(this.el);
+    }
 }
+
+export default Title;

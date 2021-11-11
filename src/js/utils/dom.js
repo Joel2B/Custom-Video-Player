@@ -1,144 +1,195 @@
-export default function(self) {
-    self.createElement = (data, arg) => {
-        const elem = document.createElement(data.tag);
+import is from './is';
 
-        if (typeof arg === 'function') {
-            elem.addEventListener('click', arg, false);
+// Set attributes
+export function setAttributes(element, attributes) {
+    if (!is.element(element) || is.empty(attributes)) {
+        return;
+    }
+
+    // Assume null and undefined attributes should be left out,
+    // Setting them would otherwise convert them to "null" and "undefined"
+    Object.entries(attributes)
+        .filter(([, value]) => !is.nullOrUndefined(value))
+        .forEach(([key, value]) => element.setAttribute(key, value));
+}
+
+export function createElement(type = 'div', attributes, text) {
+    // Create a new <element>
+    const element = document.createElement(type);
+
+    // Set all passed attributes
+    if (is.object(attributes)) {
+        setAttributes(element, attributes);
+    }
+
+    // Add text node
+    if (is.string(text)) {
+        element.innerText = text;
+    }
+
+    // Return built element
+    return element;
+}
+
+export function createElementNS(type, attributes, text) {
+    // Create a new <element>
+    const namespace = 'http://www.w3.org/2000/svg';
+    const element = document.createElementNS(namespace, type);
+
+    // Set all passed attributes
+    if (is.object(attributes)) {
+        setAttributes(element, attributes);
+    }
+
+    // Return built element
+    return element;
+}
+
+/**
+ * Empties the contents of an element.
+ *
+ * @param  {Element} el
+ *         The element to empty children from
+ *
+ * @return {Element}
+ *         The element with no children
+ */
+export function emptyEl(el) {
+    while (el.firstChild) {
+        el.removeChild(el.firstChild);
+    }
+    return el;
+}
+
+// Insert an element after another
+export function insertAfter(element, target) {
+    if (!is.element(element) || !is.element(target)) {
+        return;
+    }
+
+    target.parentNode.insertBefore(element, target.nextSibling);
+}
+
+// Toggle hidden
+export function toggleHidden(element, hidden) {
+    if (!is.element(element)) {
+        return;
+    }
+
+    let hide = hidden;
+
+    if (!is.boolean(hide)) {
+        hide = !element.hidden;
+    }
+
+    element.hidden = hide;
+}
+
+// Mirror Element.classList.toggle, with IE compatibility for "force" argument
+export function toggleClass(element, className, force) {
+    if (is.nodeList(element)) {
+        return Array.from(element).map((e) => toggleClass(e, className, force));
+    }
+
+    if (is.element(element)) {
+        let method = 'toggle';
+        if (is.boolean(force)) {
+            method = force ? 'add' : 'remove';
         }
 
-        for (const key in data) {
-            const value = data[key];
-            switch (key) {
-                case 'tag':
-                    break;
-                case 'style':
-                    for (const subKey in value) {
-                        elem[key][subKey] = value[subKey];
-                    }
-                    break;
-                case 'parent':
-                    data.parent.appendChild(elem);
-                    break;
-                case 'childs':
-                    for (const child of value) {
-                        elem.appendChild(self.createElement(child, arg));
-                    }
-                    break;
-                case 'dataset':
-                    elem[key][Object.keys(value)[0]] = Object.values(value)[0];
-                    break;
-                case 'ref':
-                    arg[value] = elem;
-                    break;
-                default:
-                    elem[key] = value;
-                    break;
-            }
+        element.classList[method](className);
+        return element.classList.contains(className);
+    }
+
+    return false;
+}
+
+// Has class name
+export function hasClass(element, className) {
+    return is.element(element) && element.classList.contains(className);
+}
+
+/**
+ * Whether the current DOM interface appears to be real (i.e. not simulated).
+ *
+ * @return {boolean}
+ *         Will be `true` if the DOM appears to be real, `false` otherwise.
+ */
+export function isReal() {
+    // Both document and window will never be undefined thanks to `global`.
+    return document === window.document;
+}
+
+export function isInFrame() {
+    try {
+        return window.self !== window.top;
+    } catch (e) {
+        return true;
+    }
+}
+
+export function getTranslateX(el) {
+    let coordinates = null;
+
+    try {
+        const results = el.style.transform.match(/translate3d\((-?\d+px,\s?){2}-?\d+px\)/);
+
+        if (results && results.length) {
+            coordinates = results[0]
+                .replace('translate3d(', '')
+                .replace(')', '')
+                .replace(/\s/g, '')
+                .replace(/px/g, '')
+                .split(',');
         }
-        return elem;
-    };
+    } catch (e) {
+        coordinates = null;
+    }
 
-    self.createElementNS = (data) => {
-        const xmlns = 'http://www.w3.org/2000/svg';
-        const elem = document.createElementNS(xmlns, data.name);
+    return coordinates && coordinates.length === 3 ? parseInt(coordinates[0]) : 0;
+}
 
-        for (const key in data) {
-            const value = data[key];
-            switch (key) {
-                case 'attr':
-                    for (const attr in value) {
-                        elem.setAttribute(attr, value[attr]);
-                    }
-                    break;
-                case 'childs':
-                    for (const child of value) {
-                        elem.appendChild(self.createElementNS(child));
-                    }
-                    break;
-                case 'parent':
-                    data.parent.appendChild(elem);
-                    break;
-                default:
-                    break;
-            }
-        }
-        return elem;
-    };
+// TODO: in firefox, when zooming to the screen and entering fullscreen mode, gives an incorrect value
+export function getEventOffsetX(el, evt) {
+    if (!evt) {
+        return;
+    }
 
-    self.inIframe = () => {
-        try {
-            return window.self !== window.top;
-        } catch (e) {
-            return true;
-        }
-    };
+    let x = 0;
+    let translateX = 0;
 
-    self.getTranslateX = (el) => {
-        let coordinates = null;
+    while (el && is.number(el.offsetLeft)) {
+        translateX = getTranslateX(el);
 
-        try {
-            const results = el.style.transform.match(/translate3d\((-?\d+px,\s?){2}-?\d+px\)/);
-
-            if (results && results.length) {
-                coordinates = results[0]
-                    .replace('translate3d(', '')
-                    .replace(')', '')
-                    .replace(/\s/g, '')
-                    .replace(/px/g, '')
-                    .split(',');
-            }
-        } catch (e) {
-            coordinates = null;
-        }
-
-        return coordinates && coordinates.length === 3 ? parseInt(coordinates[0]) : 0;
-    };
-
-    // TODO: firefox, when zooming to the screen and entering fullscreen mode, offsetX gives an incorrect value
-    self.getEventOffsetX = (evt, el) => {
-        if (!evt) {
-            return;
-        }
-
-        let x = 0;
-        let translateX = 0;
-
-        while (el && !isNaN(el.offsetLeft)) {
-            translateX = self.getTranslateX(el);
-
-            if (el.tagName === 'BODY') {
-                x +=
-                    el.offsetLeft + el.clientLeft + translateX - (el.scrollLeft || document.documentElement.scrollLeft);
-            } else {
-                x += el.offsetLeft + el.clientLeft + translateX - el.scrollLeft;
-            }
-
-            el = el.offsetParent;
-        }
-
-        let eventX;
-        if (typeof evt.touches !== 'undefined' && typeof evt.touches[0] !== 'undefined') {
-            eventX = evt.touches[0].clientX;
+        if (el.tagName === 'BODY') {
+            x += el.offsetLeft + el.clientLeft + translateX - (el.scrollLeft || document.documentElement.scrollLeft);
         } else {
-            eventX = evt.clientX;
+            x += el.offsetLeft + el.clientLeft + translateX - el.scrollLeft;
         }
 
-        return eventX - x;
-    };
+        el = el.offsetParent;
+    }
 
-    self.getEventOffsetY = (evt, el) => {
-        let y = 0;
+    let eventX = evt.clientX;
+    if (!is.nullOrUndefined(evt.touches) && !is.nullOrUndefined(evt.touches[0])) {
+        eventX = evt.touches[0].clientX;
+    }
 
-        while (el && !isNaN(el.offsetTop)) {
-            if (el.tagName === 'BODY') {
-                y += el.offsetTop - (el.scrollTop || document.documentElement.scrollTop);
-            } else {
-                y += el.offsetTop - el.scrollTop;
-            }
+    return eventX - x;
+}
 
-            el = el.offsetParent;
+export function getEventOffsetY(el, evt) {
+    let y = 0;
+
+    while (el && is.number(el.offsetTop)) {
+        if (el.tagName === 'BODY') {
+            y += el.offsetTop - (el.scrollTop || document.documentElement.scrollTop);
+        } else {
+            y += el.offsetTop - el.scrollTop;
         }
 
-        return evt.clientY - y;
-    };
+        el = el.offsetParent;
+    }
+
+    return evt.clientY - y;
 }

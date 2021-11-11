@@ -1,205 +1,175 @@
-export default function(self) {
-    self.insertShortcuts = () => {
-        self.domRef.controls.shortcuts = self.createElement({
-            tag: 'div',
-            id: self.videoPlayerId + '_keyboard_shortcuts',
-            className: 'cvp_keyboardShortcuts',
-            childs: [
+import { createElement, insertAfter, toggleClass } from './utils/dom';
+import { on } from './utils/events';
+
+class Shortcuts {
+    constructor(player) {
+        this.player = player;
+
+        this.setShortcuts();
+        this.create();
+    }
+
+    create = () => {
+        this.content = createElement('div', {
+            class: 'cvp_keyboard_shortcuts',
+        });
+
+        const close = createElement('div', {
+            class: 'cvp_hide_shortcuts',
+        });
+        on.call(this.player, close, 'click', () => this.close());
+
+        close.appendChild(createElement('span', null, 'x'));
+        this.content.appendChild(close);
+
+        const container = createElement('div', {
+            class: 'cvp_shortcut_info',
+        });
+
+        for (const shortcut of this.shortcuts) {
+            const wrapper = createElement();
+            const len = shortcut.length;
+            for (let i = 0; i < len; i++) {
+                const element = shortcut[i];
+                if (i === len - 1) {
+                    wrapper.appendChild(createElement('span', null, element.text));
+                } else {
+                    wrapper.appendChild(
+                        createElement(
+                            'div',
+                            {
+                                class: element.class,
+                            },
+                            element.text,
+                        ),
+                    );
+                }
+            }
+            container.appendChild(wrapper);
+        }
+        this.content.appendChild(container);
+
+        insertAfter(this.content, this.player.media);
+    };
+
+    open = () => {
+        toggleClass(this.content, 'cvp_active', true);
+    };
+
+    close = () => {
+        toggleClass(this.content, 'cvp_active', false);
+    };
+
+    setShortcuts = () => {
+        this.shortcuts = [
+            [
                 {
-                    tag: 'div',
-                    className: 'cvp_hideShortcuts',
-                    childs: [
-                        {
-                            tag: 'span',
-                            textContent: '×',
-                        },
-                    ],
+                    class: 'cvp_long_btn',
+                    text: 'Space',
                 },
                 {
-                    tag: 'div',
-                    className: 'cvp_shortcutInfo',
-                    childs: [
-                        {
-                            tag: 'div',
-                            childs: [
-                                {
-                                    tag: 'div',
-                                    className: 'cvp_longBtn',
-                                    textContent: 'Space',
-                                },
-                                {
-                                    tag: 'span',
-                                    textContent: 'Reproducir / Pausa',
-                                },
-                            ],
-                        },
-                        {
-                            tag: 'div',
-                            childs: [
-                                {
-                                    tag: 'div',
-                                    className: 'cvp_shortBtn',
-                                    textContent: '←',
-                                },
-                                {
-                                    tag: 'div',
-                                    className: 'cvp_shortBtn',
-                                    textContent: '→',
-                                },
-                                {
-                                    tag: 'span',
-                                    textContent: 'Salto 5 segundos',
-                                },
-                            ],
-                        },
-                        {
-                            tag: 'div',
-                            childs: [
-                                {
-                                    tag: 'div',
-                                    className: 'cvp_shortBtn',
-                                    textContent: 'Inicio',
-                                },
-                                {
-                                    tag: 'span',
-                                    textContent: 'Ir al comienzo del video',
-                                },
-                            ],
-                        },
-                        {
-                            tag: 'div',
-                            childs: [
-                                {
-                                    tag: 'div',
-                                    className: 'cvp_shortBtn',
-                                    textContent: '0',
-                                },
-                                {
-                                    tag: 'div',
-                                    className: 'cvp_shortBtn',
-                                    textContent: '9',
-                                },
-                                {
-                                    tag: 'span',
-                                    textContent: 'Ir del 0% al 90% de la duración del video',
-                                },
-                            ],
-                        },
-                        {
-                            tag: 'div',
-                            childs: [
-                                {
-                                    tag: 'div',
-                                    className: 'cvp_shortBtn',
-                                    textContent: 'Fin',
-                                },
-                                {
-                                    tag: 'span',
-                                    textContent: 'Ir al final del video',
-                                },
-                            ],
-                        },
-                        {
-                            tag: 'div',
-                            childs: [
-                                {
-                                    tag: 'div',
-                                    className: 'cvp_shortBtn',
-                                    textContent: 'F',
-                                },
-                                {
-                                    tag: 'span',
-                                    textContent: 'Alternar pantalla completa',
-                                },
-                            ],
-                        },
-                        {
-                            tag: 'div',
-                            childs: [
-                                {
-                                    tag: 'div',
-                                    className: 'cvp_shortBtn',
-                                    textContent: ',',
-                                },
-                                {
-                                    tag: 'div',
-                                    className: 'cvp_shortBtn',
-                                    textContent: '.',
-                                },
-                                {
-                                    tag: 'span',
-                                    textContent: '-1 / +1 fotograma',
-                                },
-                            ],
-                        },
-                        {
-                            tag: 'div',
-                            childs: [
-                                {
-                                    tag: 'div',
-                                    className: 'cvp_shortBtn',
-                                    textContent: 'M',
-                                },
-                                {
-                                    tag: 'span',
-                                    textContent: 'Silencio / Desactivar Silencio',
-                                },
-                            ],
-                        },
-                        {
-                            tag: 'div',
-                            childs: [
-                                {
-                                    tag: 'div',
-                                    className: 'cvp_shortBtn',
-                                    textContent: '↑',
-                                },
-                                {
-                                    tag: 'div',
-                                    className: 'cvp_shortBtn',
-                                    textContent: '↓',
-                                },
-                                {
-                                    tag: 'span',
-                                    textContent: 'Volumen arriba / abajo',
-                                },
-                            ],
-                        },
-                        {
-                            tag: 'div',
-                            childs: [
-                                {
-                                    tag: 'div',
-                                    className: 'cvp_shortBtn',
-                                    textContent: 'T',
-                                },
-                                {
-                                    tag: 'span',
-                                    textContent: 'Alternar modo teatro',
-                                },
-                            ],
-                        },
-                    ],
+                    text: 'Reproducir / Pausa',
                 },
             ],
-        });
-
-        self.domRef.player.parentNode.insertBefore(self.domRef.controls.shortcuts, null);
-    };
-
-    self.openShortcuts = () => {
-        self.domRef.controls.shortcuts.classList.add('cvp_active');
-    };
-
-    self.closeShortcuts = () => {
-        self.domRef.controls.shortcuts.classList.remove('cvp_active');
-    };
-
-    self.setupShortcuts = () => {
-        self.insertShortcuts();
-        const close = self.domRef.controls.shortcuts.querySelector('.cvp_hideShortcuts');
-        close.addEventListener('click', () => {
-            self.closeShortcuts();
-        });
+            [
+                {
+                    class: 'cvp_short_btn',
+                    text: '←',
+                },
+                {
+                    class: 'cvp_short_btn',
+                    text: '→',
+                },
+                {
+                    text: 'Salto 5 segundos',
+                },
+            ],
+            [
+                {
+                    class: 'cvp_short_btn',
+                    text: 'Inicio',
+                },
+                {
+                    text: 'Ir al comienzo del video',
+                },
+            ],
+            [
+                {
+                    class: 'cvp_short_btn',
+                    text: '0',
+                },
+                {
+                    class: 'cvp_short_btn',
+                    text: '9',
+                },
+                {
+                    text: 'Ir del 0% al 90% de la duración del video',
+                },
+            ],
+            [
+                {
+                    class: 'cvp_short_btn',
+                    text: 'Fin',
+                },
+                {
+                    text: 'Ir al final del video',
+                },
+            ],
+            [
+                {
+                    class: 'cvp_short_btn',
+                    text: 'F',
+                },
+                {
+                    text: 'Alternar pantalla completa',
+                },
+            ],
+            [
+                {
+                    class: 'cvp_short_btn',
+                    text: ',',
+                },
+                {
+                    class: 'cvp_short_btn',
+                    text: '.',
+                },
+                {
+                    text: '-1 / +1 fotograma',
+                },
+            ],
+            [
+                {
+                    class: 'cvp_short_btn',
+                    text: 'M',
+                },
+                {
+                    text: 'Silencio / Desactivar Silencio',
+                },
+            ],
+            [
+                {
+                    class: 'cvp_short_btn',
+                    text: '↑',
+                },
+                {
+                    class: 'cvp_short_btn',
+                    text: '↓',
+                },
+                {
+                    text: 'Volumen arriba / abajo',
+                },
+            ],
+            [
+                {
+                    class: 'cvp_short_btn',
+                    text: 'T',
+                },
+                {
+                    text: 'Alternar modo teatro',
+                },
+            ],
+        ];
     };
 }
+
+export default Shortcuts;
