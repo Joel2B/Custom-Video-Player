@@ -53,22 +53,18 @@ class Volume {
     };
 
     waitRendering = () => {
-        const volume = this.player.controls.volume;
+        const { player } = this;
 
-        if (is.element(volume) && volume.clientWidth) {
+        if (!is.nullOrUndefined(player.controls) && player.controls.volume.clientWidth) {
             this.update();
         } else {
             setTimeout(this.waitRendering, 100);
         }
-    }
+    };
 
     updateVolume = (positionX) => {
         const { player } = this;
         const width = player.controls.volumeContainer.clientWidth;
-
-        // if (!width) {
-        //     return;
-        // }
 
         let newVolume = positionX / width;
 

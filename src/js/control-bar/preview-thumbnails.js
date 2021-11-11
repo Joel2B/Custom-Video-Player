@@ -185,7 +185,7 @@ class PreviewThumbnails {
     };
 
     render = () => {
-        if (is.empty(this.data)) {
+        if (is.empty(this.data) || is.nullOrUndefined(this.player.controls)) {
             return;
         }
 
