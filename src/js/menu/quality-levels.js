@@ -1,5 +1,6 @@
 import { createElement, toggleClass } from '../utils/dom';
 import { on } from '../utils/events';
+import { isDASH, isHLS } from '../utils/media';
 import { selector } from './menu-item';
 
 class Quality {
@@ -207,6 +208,11 @@ class Quality {
                 this.current = data.length - 1;
                 this.update();
             }
+
+            if (!isHLS(player.originalSrc) && !isDASH(player.originalSrc)) {
+                player.autoPlay.apply();
+            }
+
             return;
         }
 

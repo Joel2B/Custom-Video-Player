@@ -66,8 +66,6 @@ class Autoplay {
         player.muted = true;
         player.volume = 0;
 
-        player.controlBar.toggle(false);
-
         if (force) {
             this.applied = true;
             player.playPause.toggle();
