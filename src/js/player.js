@@ -287,8 +287,8 @@ class CVP {
         this.volumeControl = new VolumeControl(this);
 
         this.menu = new Menu(this);
-        this.loopMenu = new Loop(this);
         this.autoPlay = new Autoplay(this);
+        this.loopMenu = new Loop(this);
         this.speedMenu = new Speed(this);
         this.quality = new Quality(this);
         this.menu.init();
@@ -494,7 +494,7 @@ class CVP {
     setVideoSource = (url) => {
         if (IS_IOS && isMKV(url)) {
             this.debug.error('.mkv files not supported by iOS devices.');
-            return false;
+            return;
         }
 
         if (url === this.originalSrc) {
@@ -767,6 +767,9 @@ class CVP {
         } else {
             console.error('Unable to remove wrapper element for Fluid Player instance');
         }
+
+        // Stop checking fps
+        clearInterval(this.fps.interval);
 
         // TODO: ads, remove after tweaking adsupport, vast and vpaid
         clearInterval(this.timer);

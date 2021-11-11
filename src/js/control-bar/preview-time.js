@@ -2,6 +2,7 @@ import { createElement, getEventOffsetX } from '../utils/dom';
 import { on } from '../utils/events';
 import computedStyle from '../utils/computed-style';
 import { formatTime } from '../utils/time';
+import is from '../utils/is';
 
 class PreviewTime {
     constructor(player) {
@@ -46,14 +47,18 @@ class PreviewTime {
     };
 
     render = () => {
-        if (!this.player.config.layoutControls.showTimeOnHover) {
+        const { player } = this;
+
+        if (!player.config.layoutControls.showTimeOnHover || is.nullOrUndefined(player.controls)) {
             return;
         }
 
         this.preview = createElement('div', {
             class: 'fluid_timeline_preview_time',
         });
-        this.player.controls.container.appendChild(this.preview);
+
+        player.controls.container.appendChild(this.preview);
+
         this.listeners();
     };
 

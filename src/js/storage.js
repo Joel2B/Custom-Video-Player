@@ -6,6 +6,8 @@ class Storage {
         this.key = player.config.storage.key;
         this.expiration = player.config.storage.expiration;
 
+        this.key += '_';
+
         if (!player.config.storage.shared) {
             this.key = `${player.videoPlayerId}:${this.key}`;
         }

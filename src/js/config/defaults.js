@@ -133,7 +133,7 @@ const defaults = {
     },
     storage: {
         enabled: true,
-        key: 'cvp_',
+        key: 'cvp',
         expiration: 30,
         shared: true,
     },
