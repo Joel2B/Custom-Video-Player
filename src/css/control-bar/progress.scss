@@ -1,0 +1,84 @@
+.fluid_controls_progress_container {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    height: 14px;
+    top: 8px;
+    right: 13px;
+    left: 13px;
+    z-index: 1;
+
+    .fluid_controls_progress {
+        background-color: rgba(255, 255, 255, 0.2);
+        width: 100%;
+        height: 5px;
+
+        .fluid_controls_play_progress,
+        .fluid_controls_hover_progress {
+            transform: scaleX(0);
+            position: absolute;
+            width: 100%;
+            height: 5px;
+        }
+
+        .fluid_controls_play_progress {
+            z-index: 1;
+        }
+
+        .fluid_controls_hover_progress {
+            background-color: rgba(255, 255, 255, 0.5);
+            opacity: 0;
+        }
+    }
+
+    &:hover .fluid_controls_hover_progress {
+        opacity: 1;
+    }
+
+    .fluid_controls_load_progress {
+        position: absolute;
+        width: 100%;
+        height: 5px;
+        z-index: -1;
+
+        .buffer {
+            position: absolute;
+            height: 5px;
+            background-color: rgba(255, 255, 255, 0.4);
+            z-index: -1;
+        }
+    }
+
+    .fluid_controls_scrubber_progress_container {
+        position: absolute;
+        transform: translateX(0);
+
+        .fluid_controls_scrubber_progress {
+            position: absolute;
+            width: 13px;
+            height: 13px;
+            border-radius: 6.5px;
+            top: -6.5px;
+            right: -6.5px;
+            transform: scale(0) !important;
+        }
+    }
+
+    .fluid_controls_progress,
+    .fluid_controls_load_progress,
+    .fluid_controls_ad_progress,
+    .fluid_controls_scrubber_progress {
+        transform: scaleY(0.6);
+        transition: transform 0.1s cubic-bezier(0.4, 0, 1, 1);
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        &:hover .fluid_controls_progress,
+        &:hover .fluid_controls_load_progress,
+        &:hover .fluid_controls_ad_progress,
+        &:hover .fluid_controls_scrubber_progress_container .fluid_controls_scrubber_progress {
+            transform: none !important;
+            transition: transform 0.1s cubic-bezier(0, 0, 0.2, 1);
+        }
+    }
+}

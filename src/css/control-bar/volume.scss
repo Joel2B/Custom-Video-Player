@@ -1,0 +1,47 @@
+.fluid_control_volume_container {
+    height: 24px;
+    width: 56px;
+    left: 25px;
+    top: -1px;
+    z-index: 2;
+    opacity: 0.8;
+    transition: opacity 0.3s ease-in-out;
+    display: none;
+    position: absolute;
+
+    &:hover {
+        opacity: 1;
+    }
+
+    .fluid_control_volume {
+        position: relative;
+        height: 3px;
+        width: 100%;
+        margin-top: 10px;
+        background-color: rgba(171, 172, 172, 0.68);
+        z-index: 3;
+
+        .fluid_control_scrubber_volume_container {
+            float: left;
+            background-color: white;
+            height: 3px;
+
+            .fluid_control_scrubber_volume {
+                position: absolute;
+                width: 12px;
+                height: 12px;
+                border-radius: 6px;
+                top: -4.5px;
+                background-color: white;
+            }
+        }
+    }
+
+    @media only screen and (min-device-width: 375px) {
+        display: block;
+    }
+}
+
+.fluid_controls_container.no_volume_bar .fluid_control_volume_container {
+    display: none;
+}

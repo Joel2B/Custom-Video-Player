@@ -1,0 +1,69 @@
+.cvp_keyboard_shortcuts {
+    background: rgba(0, 0, 0, 0.75);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transition: opacity 0.2s linear;
+    width: 90%;
+    max-width: 550px;
+    transform: translate(-50%, -50%);
+    z-index: 6;
+    opacity: 0;
+    visibility: hidden;
+    color: #fff;
+
+    &.cvp_active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .cvp_hide_shortcuts {
+        cursor: pointer;
+        position: absolute;
+        top: 0;
+        right: 0;
+        font-size: 25px;
+        padding: 0 8px;
+        pointer-events: auto;
+    }
+
+    .cvp_shortcut_info {
+        display: inline-block;
+        padding: 10px 15px 12px;
+        width: 95%;
+        width: calc(100% - 30px);
+
+        div {
+            display: inline-block;
+            margin: 0;
+            padding: 5px 0px;
+            vertical-align: middle;
+            width: 50%;
+
+            .cvp_short_btn,
+            .cvp_long_btn {
+                background-color: #fff;
+                border-radius: 3px;
+                box-shadow: 0 2px 0 2px #b7b7b7;
+                color: #000;
+                font: 12px/30px sans-serif;
+                height: 30px;
+                margin-right: 10px;
+                padding: 0px;
+                text-align: center;
+                width: 30px;
+            }
+
+            .cvp_long_btn {
+                width: 70px;
+            }
+
+            span {
+                display: inline-block;
+                max-width: 65%;
+                max-height: 30px;
+                vertical-align: middle;
+            }
+        }
+    }
+}

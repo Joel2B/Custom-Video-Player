@@ -194,7 +194,7 @@ class PreviewThumbnails {
         });
 
         this.tooltip = createElement('div', {
-            class: 'fluid_timeline_preview_thumbnails_tooltip_container',
+            class: 'fluid_tooltip',
         });
 
         this.tooltipText = createElement();

@@ -1,0 +1,36 @@
+.fluid_video_wrapper {
+    .fade_out {
+        visibility: hidden;
+        opacity: 0;
+        transition: visibility 0.5s, opacity 0.5s;
+    }
+
+    .fade_in {
+        visibility: visible;
+        opacity: 1;
+        transition: visibility 0.5s, opacity 0.5s;
+    }
+
+    .transform-active {
+        animation: flash 0.5s;
+        display: inline-block !important;
+        opacity: 0;
+    }
+}
+
+@keyframes flash {
+    0% {
+        opacity: 0.6;
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.6);
+    }
+
+    70% {
+        box-shadow: 0 0 0 20px rgba(255, 255, 255, 0);
+    }
+
+    100% {
+        opacity: 0;
+        display: none;
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    }
+}

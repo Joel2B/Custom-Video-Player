@@ -1,0 +1,128 @@
+
+
+@import 'button';
+@import 'progress';
+@import 'preview-time';
+@import 'preview-thumbnails';
+@import 'subtitles';
+@import 'time-display';
+@import 'volume';
+@import 'theatre';
+@import 'menu';
+
+.fluid_controls_container {
+    color: #fff;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    /* FF3.6-15 */
+    background: -moz-linear-gradient(top, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.6) 100%);
+    /* Chrome10-25,Safari5.1-6 */
+    background: -webkit-linear-gradient(top, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.6) 100%);
+    /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.6) 100%);
+    /* IE6-9 */
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#00000000', endColorstr='#ad000000', GradientType=0);
+    height: 53px;
+    z-index: 1;
+
+    .fluid_slider {
+        cursor: pointer;
+    }
+
+    .fluid_controls_left {
+        display: flex;
+        width: 100%;
+        left: 20px;
+    }
+
+    .fluid_controls_right {
+        left: 60px;
+        right: 20px;
+    }
+
+    .fluid_controls_left,
+    .fluid_controls_right {
+        position: absolute;
+        height: 24px;
+        top: 23px;
+    }
+
+    &.skip_controls .fluid_controls_left {
+        width: 80px;
+    }
+
+    &.skip_controls .fluid_controls_right {
+        left: 110px;
+    }
+}
+
+.fluid_button_play:before {
+    background-position: -15px -19px;
+}
+
+.fluid_button_pause:before {
+    background-position: -15px -57px;
+}
+
+.fluid_button_volume:before {
+    background-position: -52px -19px;
+}
+
+.fluid_button_mute:before {
+    background-position: -52px -57px;
+}
+
+.fluid_button_fullscreen:before {
+    background-position: -88px -19px;
+}
+
+.fluid_button_fullscreen_exit:before {
+    background-position: -88px -57px;
+}
+
+.fluid_button_download:before {
+    background-position: -194px -18px;
+}
+
+.fluid_button_theatre:before {
+    background-position: -195px -56px;
+}
+
+.fluid_button_subtitles:before {
+    background-position: -269px -19px;
+}
+
+.fluid_button_fullscreen,
+.fluid_button_fullscreen_exit {
+    float: right;
+}
+
+.fluid_button_skip_back {
+    margin-left: 5px;
+
+    &::before {
+        background: url('../static/skip-backward.svg') no-repeat;
+        background-position: -2px -2px;
+    }
+}
+
+.fluid_button_skip_forward:before {
+    background: url('../static/skip-forward.svg') no-repeat;
+    background-position: -2px -2px;
+}
+
+.fluid_button_volume,
+.fluid_button_mute {
+    position: absolute;
+    left: -10px;
+}
+
+.fluid_button_theatre,
+.fluid_button_download,
+.fluid_button_subtitles {
+    float: right;
+    padding-right: 5px;
+    display: none;
+}

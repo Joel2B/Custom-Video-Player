@@ -6,7 +6,7 @@
 import playerInitializer from './index';
 
 // Import CSS automatically in browser builds.
-import './css/player.css';
+import './css/player.scss';
 
 if (window) {
     /**

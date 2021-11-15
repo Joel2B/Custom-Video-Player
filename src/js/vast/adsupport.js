@@ -1332,7 +1332,7 @@ export default function (self, options) {
 
         const link = document.createElement('span');
         link.innerHTML =
-            self.config.vastOptions.adCTAText + '<br/><span class="add_icon_clickthrough">' + landingPage + '</span>';
+            self.config.vastOptions.adCTAText + '<br/><span class="ad_icon_clickthrough">' + landingPage + '</span>';
 
         ctaButton.addEventListener(
             'click',

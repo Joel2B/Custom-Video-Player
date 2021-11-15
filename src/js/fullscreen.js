@@ -113,7 +113,7 @@ class Fullscreen {
 
         // Fallback using classname
         if (!Fullscreen.native || this.forceFallback) {
-            return hasClass(this.target, 'cvp--fullscreen-fallback');
+            return hasClass(this.target, 'fluid_fullscreen_fallback');
         }
 
         const element = !this.prefix
@@ -166,7 +166,7 @@ class Fullscreen {
         document.body.style.overflow = toggle ? 'hidden' : '';
 
         // Toggle class hook
-        toggleClass(this.target, 'cvp--fullscreen-fallback', toggle);
+        toggleClass(this.target, 'fluid_fullscreen_fallback', toggle);
 
         // Force full viewport on iPhone X+
         if (IS_IOS) {

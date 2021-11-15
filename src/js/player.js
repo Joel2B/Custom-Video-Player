@@ -567,7 +567,7 @@ class CVP {
         }
 
         const poster = createElement('div', {
-            class: 'fluid_pseudo_poster',
+            class: 'fluid_poster',
         });
 
         if (['auto', 'contain', 'cover'].indexOf(this.config.layoutControls.posterImageSize) === -1) {

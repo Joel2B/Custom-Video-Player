@@ -44,7 +44,7 @@ class Menu {
 
         // Right container -> Menu -> background -> page
         this.page = createElement('div', {
-            class: 'cvp_main_page cvp_alternative',
+            class: 'cvp_main_page',
             style: `width: ${this.width}px; height: ${this.height}px;`,
         });
         this.background.appendChild(this.page);
