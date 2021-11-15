@@ -1,6 +1,7 @@
 import { getEventOffsetX, toggleClass } from '../utils/dom';
 import { off, on } from '../utils/events';
 import is from '../utils/is';
+import { innerWidth } from '../utils/window';
 
 class Volume {
     constructor(player) {
@@ -29,7 +30,7 @@ class Volume {
         const cmMute = player.contextMenu.mute;
         const width = volume.clientWidth;
 
-        if (!width) {
+        if (!width && innerWidth >= 375) {
             this.waitRendering();
             return;
         }
