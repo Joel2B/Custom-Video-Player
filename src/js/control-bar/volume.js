@@ -30,7 +30,7 @@ class Volume {
         const cmMute = player.contextMenu.mute;
         const width = volume.clientWidth;
 
-        if (!width && innerWidth >= 375) {
+        if (!width && innerWidth() >= 375) {
             this.waitRendering();
             return;
         }
