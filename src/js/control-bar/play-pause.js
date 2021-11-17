@@ -1,6 +1,6 @@
 import { on } from '../utils/events';
 import { createElement, toggleClass } from '../utils/dom';
-import { TOUCH_ENABLED } from '../utils/browser';
+import { IS_IOS, TOUCH_ENABLED } from '../utils/browser';
 import is from '../utils/is';
 
 class PlayPause {
@@ -37,7 +37,7 @@ class PlayPause {
         this.initialPlay.appendChild(this.playButton);
         container.appendChild(this.initialPlay);
 
-        on.call(player, container, 'click', () => {
+        on.call(player, container, IS_IOS ? 'touchend' : 'click', () => {
             if (TOUCH_ENABLED && !player.userActivity.active && !player.paused) {
                 return;
             }

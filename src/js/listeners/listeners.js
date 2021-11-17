@@ -1,5 +1,5 @@
 import Update from '../control-bar/update';
-import { IS_ANDROID, IS_IPHONE, TOUCH_ENABLED } from '../utils/browser';
+import { IS_ANDROID, IS_IOS, IS_IPHONE, TOUCH_ENABLED } from '../utils/browser';
 import { on } from '../utils/events';
 
 class Listeners extends Update {
@@ -16,7 +16,7 @@ class Listeners extends Update {
         const { player } = this;
 
         // Play/pause toggle
-        on.call(player, player.media, 'click', (event) => {
+        on.call(player, player.media, IS_IOS ? 'touchend' : 'click', () => {
             // Not pause if the user is idle on mobile and the video is playing
             if (TOUCH_ENABLED && !player.userActivity.active && !player.paused) {
                 return;

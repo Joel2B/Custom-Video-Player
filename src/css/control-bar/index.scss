@@ -29,6 +29,7 @@
 
     .fluid_slider {
         cursor: pointer;
+        touch-action: none;
     }
 
     .fluid_controls_left {

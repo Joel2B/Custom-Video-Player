@@ -1,4 +1,4 @@
-import { createElement, toggleClass } from '../utils/dom';
+import { createElement, emptyEl, toggleClass } from '../utils/dom';
 import { on } from '../utils/events';
 import { isDASH, isHLS } from '../utils/media';
 import { selector } from './menu-item';
@@ -131,7 +131,9 @@ class Quality {
             levels.push(auto);
         }
 
-        this.page.replaceChildren(...levels);
+        emptyEl(this.page);
+
+        this.page.append(...levels);
     };
 
     select = (event) => {

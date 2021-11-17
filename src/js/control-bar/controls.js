@@ -1,4 +1,5 @@
-import { createElement, createElementNS } from '../utils/dom';
+import { IS_IOS } from '../utils/browser';
+import { createElement, createElementNS, toggleClass } from '../utils/dom';
 
 class Controls {
     constructor(player) {
@@ -140,9 +141,7 @@ class Controls {
         });
         this.rightContainer.appendChild(this.subtitles);
 
-        // if (!layout.displayVolumeBar) {
-        //     this.container.className += ' no_volume_bar';
-        // }
+        toggleClass(this.container, 'no_volume_bar', IS_IOS);
 
         // Right container -> Volume container
         this.volumeContainer = createElement('div', {

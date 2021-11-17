@@ -1,5 +1,6 @@
 import $script from 'scriptjs';
 import { TOUCH_ENABLED } from '../utils/browser';
+import { supportsHLS } from '../utils/media';
 
 class Hlsjs {
     constructor(player) {
@@ -18,23 +19,35 @@ class Hlsjs {
         });
     };
 
+    useNative = () => {
+        const { player } = this;
+
+        if (!player.multipleVideoSources) {
+            player.menu.remove('qualityLevels');
+        }
+
+        player.autoPlay.apply();
+    };
+
     init = () => {
         const { player } = this;
         const { config } = player;
 
         // Use native hls
-        if (player.media.canPlayType('application/vnd.apple.mpegurl') && !config.hls.overrideNative) {
-            if (!player.multipleVideoSources) {
-                player.menu.remove('qualityLevels');
-            }
-            player.autoPlay.apply();
+        if (supportsHLS && !config.hls.overrideNative) {
+            this.useNative();
             return;
         }
 
         // Check if hls.js can be used
         if (!Hls.isSupported()) {
             player.debug.warn('Media type not supported by this browser using HLS.js. (application/x-mpegURL)');
-            player.nextSource();
+
+            if (supportsHLS) {
+                this.useNative();
+            } else {
+                player.nextSource();
+            }
             return;
         }
 

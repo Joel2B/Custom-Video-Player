@@ -531,8 +531,8 @@ class CVP {
             this.currentTime = newCurrentTime;
 
             // Safari ios and mac fix to set currentTime
-            if (IS_IOS || IS_ANY_SAFARI) {
-                once.call(this, this.media, 'playing', () => {
+            if (IS_ANY_SAFARI) {
+                once.call(this, this.media, 'canplaythrough', () => {
                     this.currentTime = newCurrentTime;
                 });
             }
@@ -621,7 +621,9 @@ class CVP {
             return;
         }
 
-        this.media.currentTime = is.number(input) && input >= 0 ? input : 0;
+        const inputIsValid = is.number(input) && input > 0;
+
+        this.media.currentTime = inputIsValid ? Math.min(input, this.duration) : 0;
     }
 
     get currentTime() {
