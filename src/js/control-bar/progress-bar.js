@@ -14,28 +14,21 @@ class ProgressBar {
         this.listeners();
     }
 
-    update = () => {
+    update = (seeking = false) => {
         const { player } = this;
         const { progressContainer, playProgress, scrubberProgressContainer } = player.controls;
-
         const width = progressContainer.clientWidth;
+
+        if (seeking) {
+            this.positionX = Math.max(Math.min(this.positionX, width), 0);
+            player.currentTime = (player.duration * this.positionX) / width;
+        }
+
         const scaleX = player.currentTime / player.duration;
         const translateX = scaleX * width;
 
         playProgress.style.transform = `scaleX(${scaleX})`;
-        playProgress.style.transformOrigin = '0 0';
-
         scrubberProgressContainer.style.transform = `translateX(${translateX}px)`;
-    };
-
-    updateTime = (positionX) => {
-        const { player } = this;
-        const { progressContainer } = player.controls;
-
-        const width = progressContainer.clientWidth;
-        player.currentTime = (player.duration * positionX) / width;
-
-        this.update();
     };
 
     start = (event) => {
@@ -58,8 +51,8 @@ class ProgressBar {
             }, 300);
         }
 
-        on.call(player, document, 'mouseup touchend mouseleave', this.end);
         on.call(player, document, 'mousemove touchmove', this.move);
+        on.call(player, document, 'mouseup touchend mouseleave', this.end);
     };
 
     move = (event) => {
@@ -69,7 +62,8 @@ class ProgressBar {
         player.preview.current.move(event);
 
         this.positionX = getEventOffsetX(progressContainer, event);
-        this.updateTime(this.positionX);
+
+        this.update(true);
 
         // resize
         scrubberProgress.style.setProperty('transform', 'none', 'important');
@@ -104,7 +98,7 @@ class ProgressBar {
             this.positionX = positionX;
         }
 
-        this.updateTime(this.positionX);
+        this.update(true);
 
         if (!this.initiallyPaused) {
             clearTimeout(this.timer);
@@ -116,19 +110,17 @@ class ProgressBar {
             player.config.layoutControls.playPauseAnimation = this.playPauseAnimation;
         }, 200);
 
-        off.call(player, document, 'mouseup touchend mouseleave', this.end);
         off.call(player, document, 'mousemove touchmove', this.move);
+        off.call(player, document, 'mouseup touchend mouseleave', this.end);
     };
 
     hover = (event) => {
         const { progressContainer, hoverProgress } = this.player.controls;
-
         const width = progressContainer.clientWidth;
         const positionX = getEventOffsetX(progressContainer, event);
         const scaleX = positionX / width;
 
         hoverProgress.style.transform = `scaleX(${scaleX})`;
-        hoverProgress.style.transformOrigin = '0 0';
     };
 
     listeners = () => {
@@ -140,16 +132,9 @@ class ProgressBar {
     };
 
     resize = () => {
-        const { player } = this;
-        const { progressContainer, scrubberProgressContainer } = player.controls;
-
         setTimeout(() => {
-            const width = progressContainer.clientWidth;
-            const scaleX = player.currentTime / player.duration;
-            const translateX = scaleX * width;
-
-            scrubberProgressContainer.style.transform = `translateX(${translateX}px)`;
-        }, 125);
+            this.update();
+        }, 100);
     };
 }
 

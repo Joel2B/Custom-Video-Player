@@ -16,6 +16,7 @@
         .fluid_controls_play_progress,
         .fluid_controls_hover_progress {
             transform: scaleX(0);
+            transform-origin: 0px 0px;
             position: absolute;
             width: 100%;
             height: 5px;
