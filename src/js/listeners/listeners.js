@@ -100,8 +100,11 @@ class Listeners extends Update {
             });
         }
 
-        // Resize progress bar
-        on.call(player, window, 'resize', player.progressBar.resize);
+        // Resize elements
+        on.call(player, window, 'resize', player.resize);
+
+        // Resize elements
+        on.call(player, player.media, 'enterfullscreen exitfullscreen theatreModeOn theatreModeOff', player.resize);
 
         // Listener of user activity
         on.call(

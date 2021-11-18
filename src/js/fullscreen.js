@@ -137,9 +137,6 @@ class Fullscreen {
 
         const { player } = this;
 
-        player.recalculateAdDimensions();
-        player.resizeVpaidAuto();
-
         const fs = player.controls.fullscreen;
 
         toggleClass(fs, 'fluid_button_fullscreen', !this.active);

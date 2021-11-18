@@ -303,6 +303,12 @@ class CVP {
         this.contextMenu = new ContextMenu(this);
     };
 
+    resize = () => {
+        this.recalculateAdDimensions();
+        this.resizeVpaidAuto();
+        this.progressBar.resize();
+    }
+
     overwrite = (from, to) => {
         for (const key in from) {
             if (is.object(from[key])) {

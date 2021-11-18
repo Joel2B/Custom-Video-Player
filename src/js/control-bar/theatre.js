@@ -60,9 +60,6 @@ class Theatre {
 
         // Trigger theatre event
         triggerEvent.call(player, player.media, this.active ? 'theatreModeOn' : 'theatreModeOff');
-
-        player.resizeVpaidAuto();
-        player.progressBar.resize();
     };
 
     defaultLayout = () => {
