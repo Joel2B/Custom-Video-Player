@@ -11,6 +11,12 @@ const defaults = {
         autoPlay: false,
         mute: false,
         loop: false,
+        subtitles: {
+            active: false,
+            language: 'auto',
+            native: false,
+            useVttjs: false,
+        },
         keyboardControl: true,
         allowDownload: false,
         allowTheatre: true,

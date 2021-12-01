@@ -1,6 +1,7 @@
 import $script from 'scriptjs';
 import { TOUCH_ENABLED } from '../utils/browser';
 import { supportsHLS } from '../utils/media';
+import is from '../utils/is';
 
 class Hlsjs {
     constructor(player) {
@@ -79,8 +80,13 @@ class Hlsjs {
             abrBandWidthFactor: 0.6,
             abrBandWidthUpFactor: 0.5,
         };
+
         // The current configuration may cause an infinite cycle of fragment download, use a custom one
         settings = config.hls.config(settings);
+
+        if (!player.subtitles.native) {
+            settings.renderTextTracksNatively = false;
+        }
 
         this.hls = new Hls(settings);
 
@@ -102,6 +108,81 @@ class Hlsjs {
 
         this.hls.on(Hls.Events.MEDIA_ATTACHED, () => {
             this.hls.loadSource(player.originalSrc);
+        });
+
+        this.hls.on(Hls.Events.NON_NATIVE_TEXT_TRACKS_FOUND, (e, data) => {
+            if (!player.subtitles.enabled) {
+                return;
+            }
+
+            player.debug.log(e, data);
+
+            // ocultar subtitulos de hls
+            this.hls.subtitleDisplay = false;
+
+            for (const rawTrack of data.tracks) {
+                let id = rawTrack._id;
+                let forced = false;
+                let src = null;
+                let lang = null;
+
+                if (!is.nullOrUndefined(rawTrack.subtitleTrack)) {
+                    id = rawTrack.subtitleTrack.id;
+                    forced = rawTrack.subtitleTrack.forced;
+                    src = rawTrack.subtitleTrack.url;
+                    lang = rawTrack.subtitleTrack.lang;
+                }
+
+                const track = {
+                    id: id,
+                    type: 'hls',
+                    kind: rawTrack.kind,
+                    label: rawTrack.label,
+                    src: src,
+                    srclang: lang,
+                    default: rawTrack.default,
+                    forced: forced,
+                };
+
+                player.subtitles.addTrack(track);
+            }
+
+            player.subtitles.emulateTextTracks('external');
+        });
+
+        this.hls.on(Hls.Events.CUES_PARSED, (e, data) => {
+            if (!player.subtitles.enabled) {
+                return;
+            }
+
+            player.debug.log(e, data);
+
+            const tracks = player.subtitles.getTracks();
+
+            for (const track of tracks) {
+                const id = track.id.toString();
+                if (
+                    id === data.track ||
+                    id === data.track.replace(/subtitles/, '') ||
+                    (track.type === 'hls' && track.default && data.track === 'default')
+                ) {
+                    track.cues.push(...data.cues);
+
+                    player.subtitles.updateActiveCues();
+                    player.subtitles.render();
+                    return;
+                }
+            }
+        });
+
+        this.hls.on(Hls.Events.SUBTITLE_TRACK_SWITCH, (e, data) => {
+            if (!player.subtitles.enabled) {
+                return;
+            }
+
+            player.debug.log(e, data);
+
+            player.subtitles.checkTrack(data.id);
         });
 
         this.hls.on(Hls.Events.LEVEL_SWITCHED, (e, data) => {

@@ -53,21 +53,57 @@
 }
 
 .fluid_subtitles_container {
-    color: white;
-    position: absolute;
-    bottom: 46px;
-    left: 0;
-    right: 0;
-    height: auto;
-    z-index: 1;
+    color: #fff;
+    font-size: 15px;
     text-align: center;
+    display: block;
+    position: absolute;
+    width: 100%;
+    bottom: 0;
+    left: 0;
+    padding: 15px 0;
+    transition: transform 0.3s ease-in-out;
+    pointer-events: none;
 
-    div {
-        display: inline;
-        background: black;
-        color: white;
+    .fluid_subtitles {
+        display: inline-block;
+        background-color: rgba(8, 8, 8, 0.5);
         font-size: 1em;
-        padding: 0.25em;
+        white-space: pre-line;
+        padding: 0.2em;
         border-radius: 4px;
+
+        &:empty {
+            display: none;
+        }
     }
+
+    &.fluid_vttjs {
+        position: absolute;
+        bottom: 1em;
+        left: 0;
+        right: 0;
+        top: 0;
+        padding: 0;
+        width: initial;
+    }
+}
+
+.fluid_controls_container {
+    &.initial_controls_show,
+    &.fade_in {
+        ~ .fluid_subtitles_container {
+            &.fluid_vttjs {
+                bottom: 3em;
+            }
+
+            &:not(.fluid_vttjs) {
+                transform: translateY(-40px);
+            }
+        }
+    }
+}
+
+.fluid_video_wrapper::-webkit-media-text-track-container {
+    display: none;
 }

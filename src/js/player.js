@@ -12,6 +12,7 @@ import Menu from './menu/menu';
 import Loop from './menu/loop';
 import Autoplay from './menu/autoplay';
 import Speed from './menu/playback-rate';
+import Subtitles from './menu/subtitles';
 import Quality from './menu/quality-levels';
 
 import Storage from './storage';
@@ -25,7 +26,6 @@ import Logo from './logo';
 import Fps from './fps';
 import Shortcuts from './shortcuts';
 import Streaming from './streaming/streaming';
-import Subtitles from './subtitles';
 import Title from './title';
 
 import Console from './console';
@@ -263,6 +263,9 @@ class CVP {
         // Remove the default controls
         this.media.removeAttribute('controls');
 
+        this.menu = new Menu(this);
+        this.subtitles = new Subtitles(this);
+
         this.streaming = new Streaming(this);
 
         this.fps = new Fps(this);
@@ -286,14 +289,13 @@ class CVP {
 
         this.volumeControl = new VolumeControl(this);
 
-        this.menu = new Menu(this);
         this.autoPlay = new Autoplay(this);
         this.loopMenu = new Loop(this);
         this.speedMenu = new Speed(this);
+        this.subtitles.init();
         this.quality = new Quality(this);
         this.menu.init();
 
-        this.subtitles = new Subtitles(this);
         this.download = new Download(this);
         this.theatre = new Theatre(this);
         this.fullscreen = new Fullscreen(this);

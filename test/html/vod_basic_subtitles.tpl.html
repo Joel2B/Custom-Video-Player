@@ -18,11 +18,11 @@
     <body>
         <video id="fluid-player-e2e-case">
             <source
-                src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
-                type="video/mp4"
+                src="https://d2zihajmogu5jn.cloudfront.net/bipbop-advanced/bipbop_16x9_variant.m3u8"
+                type="application/x-mpegURL"
             />
-            <track label="English" kind="metadata" srclang="en" src="static/subtitles/english.vtt" default />
-            <track label="Deutsch" kind="metadata" srclang="de" src="static/subtitles/deutsch.vtt" />
+            <track label="English" kind="subtitles" srclang="en" src="static/subtitles/english.vtt" />
+            <track label="Deutsch" kind="subtitles" srclang="de" src="static/subtitles/deutsch.vtt" />
         </video>
 
         <%= htmlWebpackPlugin.tags.bodyTags %>
@@ -30,6 +30,10 @@
         <script>
             var instance = fluidPlayer('fluid-player-e2e-case', {
                 layoutControls: {
+                    subtitles: {
+                        active: true,
+                        language: 'fr',
+                    },
                     menu: {
                         subtitles: true,
                     },
