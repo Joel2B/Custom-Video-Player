@@ -18,7 +18,7 @@ class Autoplay {
         }
 
         this.createItems();
-    }
+    };
 
     createItems = () => {
         const { player } = this;
@@ -50,21 +50,19 @@ class Autoplay {
             field: 'switcher',
             item: item,
         });
-    }
+    };
 
     apply = (force = true) => {
         const { player } = this;
 
-        if (
-            !player.menu.isEnabled(this.id) ||
-            !player.storage.get(this.id) ||
-            this.applied
-        ) {
+        if (!player.menu.isEnabled(this.id) || !player.storage.get(this.id) || this.applied) {
             return false;
         }
 
         player.muted = true;
         player.volume = 0;
+
+        player.controlBar.toggle(false);
 
         if (force) {
             this.applied = true;
@@ -72,7 +70,7 @@ class Autoplay {
         }
 
         return true;
-    }
+    };
 }
 
 export default Autoplay;

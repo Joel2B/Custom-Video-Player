@@ -93,6 +93,10 @@ class Listeners extends Update {
             on.call(player, player.wrapper, 'mouseenter', () => {
                 player.controlBar.toggle(true);
             });
+
+            on.call(player, player.wrapper, 'mousemove', () => {
+                player.controlBar.toggle(true);
+            });
         } else {
             player.controlBar.toggle(false);
             on.call(player, player.wrapper, 'touchstart', () => {
