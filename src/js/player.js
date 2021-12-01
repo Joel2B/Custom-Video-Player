@@ -703,7 +703,7 @@ class CVP {
     }
 
     get playing() {
-        return Boolean(!this.paused && !this.ended);
+        return Boolean(!this.paused && !this.ended && this.media.readyState > 2);
     }
 
     get paused() {
