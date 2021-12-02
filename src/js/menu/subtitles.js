@@ -459,6 +459,8 @@ class Subtitles {
 
         this.saveConfig(index);
 
+        player.menu.close();
+
         // -1: don't display subtitles
         if (index === '-1') {
             this.active = false;
