@@ -91,10 +91,6 @@
     background-position: -195px -56px;
 }
 
-.fluid_button_subtitles:before {
-    background-position: -269px -19px;
-}
-
 .fluid_button_fullscreen,
 .fluid_button_fullscreen_exit {
     float: right;
@@ -121,8 +117,7 @@
 }
 
 .fluid_button_theatre,
-.fluid_button_download,
-.fluid_button_subtitles {
+.fluid_button_download {
     float: right;
     padding-right: 5px;
     display: none;

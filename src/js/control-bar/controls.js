@@ -135,12 +135,6 @@ class Controls {
         });
         this.rightContainer.appendChild(this.theatre);
 
-        // Right container -> Subtitles
-        this.subtitles = createElement('div', {
-            class: 'fluid_button fluid_button_subtitles',
-        });
-        this.rightContainer.appendChild(this.subtitles);
-
         toggleClass(this.container, 'no_volume_bar', IS_IOS);
 
         // Right container -> Volume container
