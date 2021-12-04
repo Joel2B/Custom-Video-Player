@@ -14,7 +14,7 @@ class Dash {
                     isDefaultSubject: true,
                 };
 
-                $script('https://cdn.dashjs.org/latest/dash.all.min.js', () => {
+                $script(this.player.config.dash.url, () => {
                     resolve(this.init());
                 });
             } else {

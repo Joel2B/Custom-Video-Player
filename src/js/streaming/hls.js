@@ -11,7 +11,7 @@ class Hlsjs {
     load = () => {
         return new Promise((resolve) => {
             if (!window.Hls) {
-                $script('https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js', () => {
+                $script(this.player.config.hls.url, () => {
                     resolve(this.init());
                 });
             } else {
