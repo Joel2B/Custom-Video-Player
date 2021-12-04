@@ -6,12 +6,18 @@ import is from '../utils/is';
 class Hlsjs {
     constructor(player) {
         this.player = player;
+
+        this.url = player.config.hls.url;
+
+        if (player.subtitles.enabled && !player.subtitles.config.timestampMap) {
+            this.url = player.config.hls.customUrl;
+        }
     }
 
     load = () => {
         return new Promise((resolve) => {
             if (!window.Hls) {
-                $script(this.player.config.hls.url, () => {
+                $script(this.url, () => {
                     resolve(this.init());
                 });
             } else {

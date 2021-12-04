@@ -16,6 +16,7 @@ const defaults = {
             language: 'auto',
             native: false,
             useVttjs: false,
+            timestampMap: true,
         },
         keyboardControl: true,
         allowDownload: false,
@@ -121,7 +122,8 @@ const defaults = {
     onBeforeXMLHttpRequestOpen: (request) => {},
     onBeforeXMLHttpRequest: (request) => {},
     hls: {
-        url: 'https://cdn.jsdelivr.net/npm/hls.js@latest',
+        url: 'https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js',
+        customUrl: 'https://appsdev.cyou/custom/hls.min.js',
         debug: false,
         overrideNative: false,
         config: (options) => {
