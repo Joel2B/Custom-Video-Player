@@ -197,7 +197,7 @@ class PreviewThumbnails {
             class: 'fluid_tooltip',
         });
 
-        this.tooltipText = createElement();
+        this.tooltipText = createElement('span');
 
         this.tooltip.appendChild(this.tooltipText);
         this.preview.appendChild(this.tooltip);

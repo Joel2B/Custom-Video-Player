@@ -13,5 +13,10 @@
         width: 100%;
         display: flex !important;
         justify-content: center;
+
+        span {
+            font-size: 13px;
+            font-weight: 500;
+        }
     }
 }
