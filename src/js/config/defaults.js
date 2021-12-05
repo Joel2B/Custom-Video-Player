@@ -11,6 +11,9 @@ const defaults = {
         autoPlay: false,
         mute: false,
         loop: false,
+        audio: {
+            language: 'auto',
+        },
         subtitles: {
             active: false,
             language: 'auto',
@@ -32,6 +35,7 @@ const defaults = {
             autoPlay: true,
             playbackRate: true,
             qualityLevels: true,
+            audio: false,
             subtitles: false,
         },
         theatreSettings: {
@@ -180,6 +184,8 @@ const defaults = {
         'exitfullscreen',
         'theatreModeOn',
         'theatreModeOff',
+        'audiochange',
+        'languagechange',
     ],
 };
 

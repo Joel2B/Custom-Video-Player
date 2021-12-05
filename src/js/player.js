@@ -12,6 +12,7 @@ import Menu from './menu/menu';
 import Loop from './menu/loop';
 import Autoplay from './menu/autoplay';
 import Speed from './menu/playback-rate';
+import Audio from './menu/audio';
 import Subtitles from './menu/subtitles';
 import Quality from './menu/quality-levels';
 
@@ -264,6 +265,7 @@ class CVP {
         this.media.removeAttribute('controls');
 
         this.menu = new Menu(this);
+        this.audio = new Audio(this);
         this.subtitles = new Subtitles(this);
 
         this.streaming = new Streaming(this);
@@ -292,6 +294,7 @@ class CVP {
         this.autoPlay = new Autoplay(this);
         this.loopMenu = new Loop(this);
         this.speedMenu = new Speed(this);
+        this.audio.init();
         this.subtitles.init();
         this.quality = new Quality(this);
         this.menu.init();

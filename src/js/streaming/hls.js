@@ -60,31 +60,8 @@ class Hlsjs {
 
         let settings = {
             debug: FP_DEBUG || config.hls.debug,
-            autoStartLoad: true,
-            capLevelToPlayerSize: false,
-            maxBufferLength: 30,
             maxMaxBufferLength: 30,
-            maxBufferSize: TOUCH_ENABLED ? 25000000 : 50000000,
-            maxBufferHole: 0.3,
-            maxSeekHole: 3,
-            liveSyncDurationCount: 3,
-            liveMaxLatencyDurationCount: 10,
-            enableWorker: true,
-            enableSoftwareAES: true,
-            manifestLoadingTimeOut: 10000,
-            manifestLoadingMaxRetry: 3,
-            manifestLoadingRetryDelay: 500,
-            levelLoadingTimeOut: 10000,
-            levelLoadingMaxRetry: 3,
-            levelLoadingRetryDelay: 500,
-            fragLoadingTimeOut: 30000,
-            fragLoadingMaxRetry: 3,
-            fragLoadingRetryDelay: 500,
-            fpsDroppedMonitoringPeriod: 5000,
-            fpsDroppedMonitoringThreshold: 0.2,
-            appendErrorMaxRetry: 3,
-            abrBandWidthFactor: 0.6,
-            abrBandWidthUpFactor: 0.5,
+            maxBufferSize: (TOUCH_ENABLED ? 25 : 50) * 1000 * 1000,
         };
 
         // The current configuration may cause an infinite cycle of fragment download, use a custom one
@@ -114,6 +91,30 @@ class Hlsjs {
 
         this.hls.on(Hls.Events.MEDIA_ATTACHED, () => {
             this.hls.loadSource(player.originalSrc);
+        });
+
+        this.hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, (e, data) => {
+            if (!player.audio.enabled) {
+                return;
+            }
+
+            player.debug.log(e, data);
+
+            for (const audio of data.audioTracks) {
+                player.audio.addTrack(audio);
+            }
+
+            player.audio.update();
+        });
+
+        this.hls.on(Hls.Events.AUDIO_TRACK_SWITCHED, (e, data) => {
+            if (!player.audio.enabled) {
+                return;
+            }
+
+            player.debug.log(e, data);
+
+            player.audio.checkTrack(data.id);
         });
 
         this.hls.on(Hls.Events.NON_NATIVE_TEXT_TRACKS_FOUND, (e, data) => {
