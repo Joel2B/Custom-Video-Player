@@ -436,6 +436,24 @@ class Subtitles {
     set = (index, force = false) => {
         const { player } = this;
 
+        let data = index.split('-');
+
+        const type = data[0];
+        index = Number(data[1]);
+
+        if (type === 'i') {
+            if (index >= this.internalTracks) {
+                index = 0;
+            }
+        } else if (type === 'e') {
+            if (index >= this.getTracks().length - this.internalTracks) {
+                index = 0;
+            }
+        }
+
+        data[1] = index;
+        index = data.join('-');
+
         // check if the option exists in the menu
         if (!this.page.querySelector(`[data-track="${index}"]`)) {
             return;
@@ -475,9 +493,8 @@ class Subtitles {
         // e.g i-2
         // i: internal track
         // 2: index
-        const data = index.split('-');
+        data = index.split('-');
 
-        const type = data[0];
         index = Number(data[1]);
 
         const tracks = this.getTracks();
@@ -516,6 +533,10 @@ class Subtitles {
     // only for hls
     // if the track changes for any reason, we set it up again
     checkTrack = (id) => {
+        if (this.currentTrack === -1) {
+            return;
+        }
+
         const data = this.currentTrack.split('-');
         const index = Number(data[1]);
 
