@@ -216,18 +216,18 @@ export default function (self, options) {
         //spec configs by roll
         switch (roll) {
             case 'midRoll':
-                self.media.mainVideoCurrentTime = self.media.currentTime - 1;
+                self.mainVideoCurrentTime = self.media.currentTime - 1;
                 break;
 
             case 'postRoll':
-                self.media.mainVideoCurrentTime = self.duration;
+                self.mainVideoCurrentTime = self.duration;
                 self.autoplayAfterAd = false;
                 self.media.currentTime = self.duration;
                 break;
 
             case 'preRoll':
                 if (self.media.currentTime > 0) {
-                    self.media.mainVideoCurrentTime = self.media.currentTime - 1;
+                    self.mainVideoCurrentTime = self.media.currentTime - 1;
                 }
                 break;
         }
@@ -411,7 +411,7 @@ export default function (self, options) {
             }, 400);
         }
 
-        const time = parseInt(self.getCurrentTime()) + parseInt(duration);
+        const time = parseInt(self.currentTime) + parseInt(duration);
         self.scheduleTask({ time: time, closeStaticAd: adListId });
     };
 
@@ -1029,7 +1029,7 @@ export default function (self, options) {
         self.isTimer = !self.isTimer;
 
         self.timer = setInterval(function () {
-            const keyTime = Math.floor(self.getCurrentTime());
+            const keyTime = Math.floor(self.currentTime);
             self.adKeytimePlay(keyTime);
         }, 800);
     };
@@ -1057,16 +1057,7 @@ export default function (self, options) {
 
         self.streaming.init();
 
-        const newCurrentTime =
-            typeof self.media.mainVideoCurrentTime !== 'undefined' ? self.media.mainVideoCurrentTime : 0;
-
-        if (self.media.hasOwnProperty('currentTime')) {
-            self.media.currentTime = newCurrentTime;
-        }
-
-        self.loopMenu.apply();
-
-        self.setCurrentTimeAndPlay(newCurrentTime, self.autoplayAfterAd);
+        self.setCurrentTimeAndPlay(self.mainVideoCurrentTime, self.autoplayAfterAd);
 
         self.isCurrentlyPlayingAd = false;
 

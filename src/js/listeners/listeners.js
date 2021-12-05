@@ -52,7 +52,22 @@ class Listeners extends Update {
         });
 
         // Handle the media finishing
-        on.call(player, player.media, 'ended', player.onMainVideoEnded);
+        on.call(player, player.media, 'ended', () => {
+            // TODO: ads, remove after tweaking adsupport, vast and vpaid
+            if (player.isCurrentlyPlayingAd && player.autoplayAfterAd) {
+                // It may be in-stream ending, and if it's not postroll then we don't execute anything
+                return;
+            }
+
+            // we can remove timer as no more ad will be shown
+            if (Math.floor(player.currentTime) >= Math.floor(player.duration)) {
+                // play pre-roll ad
+                // sometime pre-roll ad will be missed because we are clearing the timer
+                player.adKeytimePlay(Math.floor(player.duration));
+
+                clearInterval(player.timer);
+            }
+        });
 
         // Update play/pause in dom
         on.call(player, player.media, 'play pause ended', (event) => {

@@ -329,30 +329,6 @@ class CVP {
         this.controls.loader.style.opacity = show ? '1' : '0';
     };
 
-    // TODO: ads, remove after tweaking adsupport, vast and vpaid
-    onMainVideoEnded = () => {
-        if (this.isCurrentlyPlayingAd && this.autoplayAfterAd) {
-            // It may be in-stream ending, and if it's not postroll then we don't execute anything
-            return;
-        }
-
-        // we can remove timer as no more ad will be shown
-        if (Math.floor(this.getCurrentTime()) >= Math.floor(this.duration)) {
-            // play pre-roll ad
-            // sometime pre-roll ad will be missed because we are clearing the timer
-            this.adKeytimePlay(Math.floor(this.duration));
-
-            clearInterval(this.timer);
-        }
-
-        this.loopMenu.apply();
-    };
-
-    // TODO: ads, remove after tweaking adsupport, vast and vpaid
-    getCurrentTime = () => {
-        return this.isCurrentlyPlayingAd ? this.mainVideoCurrentTime : this.currentTime;
-    };
-
     /**
      * Gets the src value of the first source element of the video tag.
      *
@@ -638,7 +614,8 @@ class CVP {
     }
 
     get currentTime() {
-        return Number(this.media.currentTime);
+        // TODO: ads, remove after tweaking adsupport, vast and vpaid
+        return Number(this.isCurrentlyPlayingAd ? this.mainVideoCurrentTime : this.media.currentTime);
     }
 
     get duration() {
