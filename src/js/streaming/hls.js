@@ -29,6 +29,8 @@ class Hlsjs {
     useNative = () => {
         const { player } = this;
 
+        player.allowPlayStream = true;
+
         player.autoPlay.apply();
     };
 
