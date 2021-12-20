@@ -18,20 +18,16 @@ class Hlsjs {
         return new Promise((resolve) => {
             if (!window.Hls) {
                 $script(this.url, () => {
-                    resolve(this.init());
+                    resolve();
                 });
             } else {
-                resolve(this.init());
+                resolve();
             }
         });
     };
 
     useNative = () => {
         const { player } = this;
-
-        if (!player.multipleVideoSources) {
-            player.menu.remove('qualityLevels');
-        }
 
         player.autoPlay.apply();
     };
@@ -81,16 +77,24 @@ class Hlsjs {
 
         config.hls.onAfterInit(this.hls);
 
-        player.autoPlay.apply();
-
         return this.hls;
     };
 
     listeners = () => {
         const { player } = this;
 
-        this.hls.on(Hls.Events.MEDIA_ATTACHED, () => {
-            this.hls.loadSource(player.originalSrc);
+        this.hls.on(Hls.Events.MEDIA_ATTACHED, (e, data) => {
+            player.debug.log(e, data);
+
+            this.hls.loadSource(player.currentSource.src);
+
+            player.allowPlayStream = true;
+
+            if (player.playStream) {
+                player.playPause.toggle();
+            } else {
+                player.autoPlay.apply();
+            }
         });
 
         this.hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, (e, data) => {
@@ -193,7 +197,9 @@ class Hlsjs {
         });
 
         this.hls.on(Hls.Events.LEVEL_SWITCHED, (e, data) => {
-            if ((player.quality.current !== -1 && !player.quality.auto) || player.multipleVideoSources) {
+            player.debug.log(e, data);
+
+            if (!this.hls.autoLevelEnabled || player.multipleSourceTypes) {
                 return;
             }
 
@@ -203,23 +209,17 @@ class Hlsjs {
         });
 
         this.hls.on(Hls.Events.LEVEL_SWITCHING, (e, data) => {
-            player.debug.log('LEVEL_SWITCHING', data);
+            player.debug.log(e, data);
         });
 
         this.hls.on(Hls.Events.MANIFEST_PARSED, (e, data) => {
-            player.debug.log('MANIFEST_PARSED', data);
+            player.debug.log(e, data);
 
-            if (data.levels.length === 1 && !player.multipleVideoSources) {
-                player.menu.remove('qualityLevels');
-                return;
-            }
-
-            if (player.multipleVideoSources) {
+            if (player.multipleSourceTypes) {
                 return;
             }
 
             player.quality.add(data.levels);
-            player.quality.set(data.levels);
         });
 
         this.hls.on(Hls.Events.ERROR, (e, data) => {

@@ -1053,11 +1053,9 @@ export default function (self, options) {
     self.switchToMainVideo = () => {
         self.debug.log('starting main video');
 
-        self.media.src = self.originalSrc;
+        self.source = self.currentSource;
 
-        self.streaming.init();
-
-        self.setCurrentTimeAndPlay(self.mainVideoCurrentTime, self.autoplayAfterAd);
+        self.loadSource(self.mainVideoCurrentTime, !self.autoplayAfterAd);
 
         self.isCurrentlyPlayingAd = false;
 

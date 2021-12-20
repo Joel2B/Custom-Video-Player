@@ -39,7 +39,7 @@ class Listeners extends Update {
         });
 
         // Display duration
-        on.call(player, player.media, 'durationchange loadeddata loadedmetadata', () => {
+        on.call(player, player.media, 'durationchange loadeddata loadedmetadata', (event) => {
             this.duration();
 
             // Make progress smoother in videos with short duration
@@ -48,7 +48,9 @@ class Listeners extends Update {
             }
 
             // TODO: remove after tweaking adsupport, vast and vpaid
-            player.prepareVastAds();
+            if (event.type === 'loadeddata') {
+                player.prepareVastAds();
+            }
         });
 
         // Handle the media finishing
@@ -70,12 +72,14 @@ class Listeners extends Update {
         });
 
         // Update play/pause in dom
-        on.call(player, player.media, 'play pause ended', (event) => {
+        on.call(player, player.media, 'play pause ended emptied', (event) => {
             if (event.type === 'play') {
                 player.fps.check();
             }
 
-            player.playPause.toggleControls();
+            if (player.firstPlayLaunched) {
+                player.playPause.toggleControls();
+            }
         });
 
         // Show loader on waiting
@@ -86,14 +90,23 @@ class Listeners extends Update {
         // Update the volume control in the control bar
         on.call(player, player.media, 'volumechange', player.volumeControl.update);
 
-        // TODO: restore speed after ad
         on.call(player, player.media, 'ratechange', () => {
             if (player.isCurrentlyPlayingAd) {
                 player.speed = 1;
+                return;
             }
+
+            player.speedMenu.set(player.speed);
         });
 
-        on.call(player, player.media, 'error', player.onErrorDetection);
+        on.call(player, player.media, 'error', () => {
+            player.debug.warn(player.media.error);
+
+            if (player.media.networkState === player.media.NETWORK_NO_SOURCE && player.isCurrentlyPlayingAd) {
+                // Probably the video ad file was not loaded successfully
+                player.playMainVideoWhenVastFails(401);
+            }
+        });
     };
 
     wrapper = () => {

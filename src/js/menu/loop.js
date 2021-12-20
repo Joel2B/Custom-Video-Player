@@ -7,44 +7,34 @@ class Loop {
         this.player = player;
         this.id = 'loop';
 
+        this.config = this.player.config.layoutControls[this.id];
+
+        this.current = false;
+
         this.init();
     }
 
     init = () => {
         const { player } = this;
 
-        if (player.storage.get(this.id) === null) {
-            const value = player.config.layoutControls[this.id];
-            player.storage.set(this.id, value);
-        }
-
         if (!player.menu.isEnabled(this.id)) {
             return;
         }
 
-        this.createItems();
-        this.apply();
+        if (player.storage.get(this.id) === null) {
+            player.storage.set(this.id, this.config);
+        }
+
+        this.setupMenu();
     }
 
-    createItems = () => {
+    setupMenu = () => {
         const { player } = this;
+
         const item = switcher({
             id: this.id,
             title: 'Loop',
             enabled: player.storage.get(this.id),
-        });
-
-        on.call(player, item, 'click', () => {
-            let value = false;
-
-            if (hasClass(item, 'cvp_enabled')) {
-                toggleClass(item, 'cvp_enabled', false);
-            } else {
-                toggleClass(item, 'cvp_enabled', true);
-                value = true;
-            }
-            player.storage.set(this.id, value);
-            player.loop = value;
         });
 
         player.menu.add({
@@ -52,16 +42,30 @@ class Loop {
             field: 'switcher',
             item: item,
         });
+
+        on.call(player, item, 'click', () => {
+            let active = false;
+
+            if (!hasClass(item, 'cvp_enabled')) {
+                active = true;
+            }
+
+            toggleClass(item, 'cvp_enabled', active);
+
+            this.set(active);
+        });
+
+        this.set(player.storage.get(this.id));
     }
 
-    apply = () => {
-        if (!this.player.menu.isEnabled(this.id) || !this.player.storage.get(this.id)) {
-            return;
-        }
+    set = (input) => {
+        const { player } = this;
 
-        this.player.loop = true;
+        this.current = input;
 
-        return true;
+        player.loop = input;
+
+        player.storage.set(this.id, input);
     }
 }
 

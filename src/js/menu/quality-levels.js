@@ -1,12 +1,13 @@
 import { createElement, emptyEl, toggleClass } from '../utils/dom';
 import { on } from '../utils/events';
-import { isDASH, isHLS } from '../utils/media';
 import { selector } from './menu-item';
 
 class Quality {
     constructor(player) {
         this.player = player;
         this.id = 'qualityLevels';
+
+        this.persistent = this.player.config.layoutControls.persistentSettings.quality;
 
         this.defaultSize = {
             width: 115,
@@ -16,8 +17,13 @@ class Quality {
         this.width = this.defaultSize.width;
         this.height = this.defaultSize.height;
 
-        this.auto = true;
-        this.current = -1;
+        // if the menu is rendered
+        this.isMenuReady = false;
+
+        this.current = null;
+        this.auto = false;
+
+        this.sources = [];
 
         this.init();
     }
@@ -30,11 +36,9 @@ class Quality {
         if (this.player.storage.get(this.id) === null) {
             this.player.storage.set(this.id, -1);
         }
-
-        this.createItems();
     };
 
-    createItems = () => {
+    setupMenu = () => {
         this.item = selector({
             id: this.id,
             title: 'Quality',
@@ -45,32 +49,49 @@ class Quality {
             class: 'cvp_options_list cvp_quality hide',
         });
 
-        on.call(this.player, this.page, 'click', (event) => {
-            if (event.target.tagName !== 'LI') {
-                return;
-            }
-            this.select(event);
-        });
-
-        on.call(this.player, this.item, 'click', () => {
-            this.player.menu.openSubMenu(this.item, this.page, this.width, this.height);
-        });
-
         this.player.menu.add({
             id: this.id,
             field: 'selector',
             content: this.page,
             item: this.item,
+            position: 'last#0', // place it in the penultimate option
+        });
+
+        on.call(this.player, this.page, 'click', (event) => {
+            if (event.target.tagName !== 'LI') {
+                return;
+            }
+
+            this.select(Number(event.target.dataset.level));
+        });
+
+        on.call(this.player, this.item, 'click', () => {
+            this.player.menu.openSubMenu(this.item, this.page, this.width, this.height);
         });
     };
 
-    add = (data) => {
+    setMenu = () => {
+        if (this.isMenuReady) {
+            return;
+        }
+
+        this.setupMenu();
+
+        this.isMenuReady = true;
+    };
+
+    add = (sources) => {
         const { player } = this;
-        const levels = [];
+
+        if (sources.length === 1) {
+            return;
+        }
 
         this.height = this.defaultSize.height;
 
-        for (const [index, level] of data.entries()) {
+        const levels = [];
+
+        sources.forEach((level, index) => {
             let title;
 
             if (level.attrs && level.attrs.NAME) {
@@ -83,12 +104,17 @@ class Quality {
                 title = `Level ${index}`;
             }
 
-            const li = createElement('li', null, title);
-            li.setAttribute('data-level', index);
+            const li = createElement(
+                'li',
+                {
+                    'data-level': index,
+                },
+                title,
+            );
 
-            let qualityLevel = title.match(/\d/g);
-            qualityLevel = Number(qualityLevel !== null ? qualityLevel.join('') : 0);
-            if ((qualityLevel && qualityLevel >= 720) || level.isHD === true) {
+            const qualityLevel = Number(title.replace(/\D/g, ''));
+
+            if (qualityLevel >= 720 || level.hd === true) {
                 li.appendChild(
                     createElement(
                         'span',
@@ -100,8 +126,9 @@ class Quality {
                 );
             }
 
-            if (player.streaming.hls) {
+            if (player.streaming.hls && !player.multipleSourceTypes) {
                 const bitrate = (level.bitrate / 1000).toFixed();
+
                 li.appendChild(
                     createElement(
                         'span',
@@ -114,124 +141,136 @@ class Quality {
             }
 
             levels.push(li);
+
             this.height += player.menu.item.height;
-        }
+        });
 
         levels.reverse();
-        if (player.streaming.hls) {
+
+        if (player.streaming.hls && !player.multipleSourceTypes) {
             this.height += player.menu.item.height;
             const auto = createElement(
                 'li',
                 {
                     class: 'cvp_active',
+                    'data-level': -1,
                 },
                 'Auto',
             );
-            auto.setAttribute('data-level', -1);
+
             levels.push(auto);
         }
+
+        this.setMenu();
 
         emptyEl(this.page);
 
         this.page.append(...levels);
+
+        this.sources = sources;
+
+        this.set(player.storage.get(this.id));
     };
 
-    select = (event) => {
+    select = (index) => {
         const { player } = this;
-        const selected = Number(event.target.dataset.level);
 
-        if (selected === this.current && !this.auto) {
+        if (index === this.current || player.isCurrentlyPlayingAd) {
             return;
         }
 
         player.menu.inSubpage = false;
-        this.auto = false;
-        this.current = selected;
-        this.update();
 
-        if (player.streaming.hls && !player.multipleVideoSources) {
+        if (player.streaming.hls && !player.multipleSourceTypes) {
             // reset the "auto" label, if a level is selected
             const auto = event.target.parentNode.lastChild;
+
             if (auto.textContent !== 'Auto' && this.current !== -1) {
                 auto.textContent = 'Auto';
             }
-            player.streaming.hls.currentLevel = selected;
-        } else {
-            player.setVideoSource(player.videoSources[selected].src);
         }
 
-        player.storage.set('qualityLevels', selected);
+        this.set(index);
+
         player.menu.close();
     };
 
     update = () => {
         const { player } = this;
-        const previous = this.page.querySelector('.cvp_active');
-
-        if (previous) {
-            toggleClass(previous, 'cvp_active', false);
-        }
 
         if (!player.menu.inSubpage) {
             player.menu.restartLater();
         }
 
-        const current = this.page.querySelector(`[data-level='${this.current}']`);
+        const previous = this.page.querySelector('.cvp_active');
+        toggleClass(previous, 'cvp_active', false);
+
+        let current = this.page.querySelector(`[data-level='${this.current}']`);
+
+        // name displayed in the quality level options, Ex. "1080p"
         let qualityLabel = current.firstChild.textContent;
 
-        if (player.streaming.hls && !player.multipleVideoSources && this.auto) {
+        // add the name to the "Auto" option, Ex. "Auto (1080p)"
+        if (player.streaming.hls && this.auto && !player.multipleSourceTypes) {
             qualityLabel = `Auto (${qualityLabel})`;
-            const autoLevel = this.page.querySelector('[data-level="-1"]');
-            autoLevel.textContent = qualityLabel;
-            toggleClass(autoLevel, 'cvp_active', true);
-        } else {
-            toggleClass(current, 'cvp_active', true);
+
+            current = this.page.querySelector('[data-level="-1"]');
+            current.textContent = qualityLabel;
         }
 
+        toggleClass(current, 'cvp_active', true);
+
+        // show the name of the option in the main menu
         this.item.lastChild.textContent = qualityLabel;
 
+        // assign HD logo based on the option name
         const quality = Number(current.firstChild.textContent.replace(/\D/g, ''));
-
-        if (quality >= 720) {
-            toggleClass(player.menu.btn, 'hd-quality-badge', true);
-        } else {
-            toggleClass(player.menu.btn, 'hd-quality-badge', false);
-        }
+        toggleClass(player.menu.btn, 'hd-quality-badge', quality >= 720);
     };
 
-    set = (data) => {
+    set = (index) => {
         const { player } = this;
-        let level = player.storage.get('qualityLevels');
 
-        if (level === -1 || !player.config.layoutControls.persistentSettings.quality) {
-            if (player.streaming.hls && !player.multipleVideoSources) {
-                toggleClass(this.page.lastChild, 'cvp_active', true);
-            } else {
-                this.current = data.length - 1;
-                this.update();
-            }
+        index = Number(index);
 
-            if (!isHLS(player.originalSrc) && !isDASH(player.originalSrc)) {
-                player.autoPlay.apply();
-            }
-
-            return;
+        if (index >= this.sources.length) {
+            index = this.sources.length - 1;
         }
 
-        level = Number(level);
-        if (level >= data.length) {
-            level = data.length - 1;
-        }
+        if (player.streaming.hls && !player.multipleSourceTypes) {
+            if (!this.persistent) {
+                index = -1;
+            }
 
-        if (player.streaming.hls && !player.multipleVideoSources) {
-            player.streaming.hls.startLevel = level;
-            player.streaming.hls.nextLevel = level;
+            if (index !== -1) {
+                this.auto = false;
+            }
+
+            player.streaming.hls.currentLevel = index;
+            player.streaming.hls.startLevel = index;
+            player.streaming.hls.nextLevel = index;
         } else {
-            player.setVideoSource(data[level].src);
+            if (!this.persistent || index === -1) {
+                index = this.sources.length - 1;
+            }
+
+            const { currentTime, paused, preload, readyState } = player.media;
+
+            const source = this.sources[index];
+
+            if (source.src !== player.currentSource.src) {
+                player.source = source;
+
+                if (preload !== 'none' || readyState) {
+                    player.loadSource(currentTime, paused);
+                }
+            }
         }
 
-        this.auto = false;
-        this.current = level;
+        this.current = index;
+
+        player.storage.set(this.id, index);
+
         this.update();
     };
 }

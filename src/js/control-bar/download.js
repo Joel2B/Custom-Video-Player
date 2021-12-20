@@ -43,8 +43,8 @@ class Download {
         });
 
         on.call(player, this.el, 'click', (event) => {
-            this.link.download = player.originalSrc;
-            this.link.href = player.originalSrc;
+            this.link.download = player.currentSource.src;
+            this.link.href = player.currentSource.src;
             this.link.click();
         });
     }

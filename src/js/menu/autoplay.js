@@ -6,21 +6,29 @@ class Autoplay {
     constructor(player) {
         this.player = player;
         this.id = 'autoPlay';
+
+        this.config = this.player.config.layoutControls[this.id];
+
         this.applied = false;
 
         this.init();
     }
 
     init = () => {
-        if (this.player.storage.get(this.id) === null) {
-            const value = this.player.config.layoutControls[this.id];
-            this.player.storage.set(this.id, value);
+        const { player } = this;
+
+        if (!player.menu.isEnabled(this.id)) {
+            return;
         }
 
-        this.createItems();
+        if (this.player.storage.get(this.id) === null) {
+            this.player.storage.set(this.id, this.config);
+        }
+
+        this.setupMenu();
     };
 
-    createItems = () => {
+    setupMenu = () => {
         const { player } = this;
 
         const item = switcher({
@@ -29,26 +37,28 @@ class Autoplay {
             enabled: player.storage.get(this.id),
         });
 
+        player.menu.add({
+            id: this.id,
+            field: 'switcher',
+            item: item,
+        });
+
         on.call(player, item, 'click', () => {
-            let value = false;
-            if (hasClass(item, 'cvp_enabled')) {
-                toggleClass(item, 'cvp_enabled', false);
+            let active = false;
+
+            if (!hasClass(item, 'cvp_enabled')) {
+                active = true;
+            } else {
                 if (player.storage.get('volume') === 1 && player.storage.get('mute')) {
                     player.toggleMute();
                 } else {
                     player.volumeControl.apply();
                 }
-            } else {
-                toggleClass(item, 'cvp_enabled', true);
-                value = true;
             }
-            player.storage.set(this.id, value);
-        });
 
-        player.menu.add({
-            id: this.id,
-            field: 'switcher',
-            item: item,
+            toggleClass(item, 'cvp_enabled', active);
+
+            player.storage.set(this.id, active);
         });
     };
 
@@ -67,7 +77,7 @@ class Autoplay {
         if (force) {
             this.applied = true;
 
-            if (player.preRolls) {
+            if (player.findRoll('preRoll')) {
                 setTimeout(() => {
                     player.playPause.toggle();
                 }, 500);

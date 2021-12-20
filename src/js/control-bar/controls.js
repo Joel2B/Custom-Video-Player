@@ -51,7 +51,8 @@ class Controls {
         this.leftContainer.appendChild(this.playPause);
 
         if (controlForwardBackward) {
-            this.container.className += ' skip_controls';
+            toggleClass(this.container, 'skip_controls', true);
+
             // Left container -> Skip backwards
             this.skipBack = createElement('div', {
                 class: 'fluid_button fluid_button_skip_back',

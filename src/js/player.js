@@ -38,10 +38,11 @@ import Skip from './control-bar/skip';
 import Keyboard from './listeners/keyboard';
 import UserActivity from './user-activity';
 
-import { isDASH, isHLS, isMKV, isSource } from './utils/media';
+import { isDASH, isHLS, isSource } from './utils/media';
 import { createElement, insertAfter, toggleClass } from './utils/dom';
 import { off, on, once, unbindListeners } from './utils/events';
-import { IS_IOS, IS_ANY_SAFARI, TOUCH_ENABLED } from './utils/browser';
+import { IS_ANY_SAFARI, TOUCH_ENABLED } from './utils/browser';
+import { getMimetype } from './utils/mimetypes';
 import is from './utils/is';
 
 // TODO: remove after tweaking adsupport, vast and vpaid
@@ -87,10 +88,6 @@ class CVP {
 
         // TODO: don't use this anymore, remove after tweaking adsupport, vast and vpaid
         this.videoPlayerId = !is.empty(this.media.id) ? this.media.id : `fp_instance_${playerInstances++}`;
-        this.originalSrc = this.getCurrentSrc();
-        this.originalWidth = this.media.offsetWidth;
-        this.originalHeight = this.media.offsetHeight;
-        this.config.layoutControls.mediaType = this.getCurrentSrcType();
 
         // Global variables
         this.defineVariables();
@@ -137,23 +134,12 @@ class CVP {
         this.initMute();
 
         // Set sources
-        this.sourcesInVideoTag();
+        this.setVideoSources();
 
         // Setup vast
         this.setVastList();
 
         this.config.layoutControls.playerInitCallback();
-
-        // DO NOT initialize streamers if there are pre-rolls. It will break the streamers!
-        // Streamers will re-initialize once ad has been shown.
-        const preRolls = this.findRoll('preRoll');
-        if (!preRolls || preRolls.length === 0) {
-            this.streaming.init();
-        } else {
-            if (isHLS(this.originalSrc) || isDASH(this.originalSrc)) {
-                this.autoPlay.apply();
-            }
-        }
 
         const play = this.media.play;
         this.media.play = () => {
@@ -181,12 +167,35 @@ class CVP {
     }
 
     defineVariables = () => {
-        this.recentWaiting = false;
+        // to load ads
         this.firstPlayLaunched = false;
-        this.isSwitchingSource = false;
+
+        // to display the loading animation
         this.isLoading = false;
+
         this.eventListeners = [];
-        this.multipleVideoSources = false;
+
+        // for theater mode
+        this.originalWidth = null;
+        this.originalHeight = null;
+
+        this.sources = [];
+        this.currentSource = {
+            src: '',
+            type: '',
+            title: '',
+            hd: false,
+        };
+
+        // to avoid displaying the play/pause animation when changing sources
+        this.isSwitchingSource = false;
+
+        // to avoid using the functions for hls, we will use the native functions
+        this.multipleSourceTypes = false;
+
+        // to avoid using play before loading the stream
+        this.allowPlayStream = false;
+        this.playStream = false;
 
         // TODO: ads, remove after tweaking adsupport, vast and vpaid
         this.suppressClickthrough = false;
@@ -223,7 +232,7 @@ class CVP {
             class: 'fluid_video_wrapper',
         });
 
-        this.wrapper.className += ' fluid_player_layout_' + this.config.layoutControls.layout;
+        toggleClass(this.wrapper, 'fluid_player_layout_' + this.config.layoutControls.layout, true);
 
         // Assign the height/width dimensions to the wrapper
         let width = `${this.media.clientWidth}px`;
@@ -253,13 +262,14 @@ class CVP {
     };
 
     setupMedia = () => {
+        this.originalWidth = this.media.offsetWidth;
+        this.originalHeight = this.media.offsetHeight;
+
         this.media.style.width = '100%';
         this.media.style.height = '100%';
 
         this.media.setAttribute('playsinline', '');
         this.media.setAttribute('webkit-playsinline', '');
-
-        this.setVideoPreload();
 
         // Remove the default controls
         this.media.removeAttribute('controls');
@@ -311,8 +321,9 @@ class CVP {
     resize = () => {
         this.recalculateAdDimensions();
         this.resizeVpaidAuto();
+
         this.progressBar.resize();
-    }
+    };
 
     overwrite = (from, to) => {
         for (const key in from) {
@@ -327,40 +338,6 @@ class CVP {
     toggleLoader = (show) => {
         this.isLoading = show;
         this.controls.loader.style.opacity = show ? '1' : '0';
-    };
-
-    /**
-     * Gets the src value of the first source element of the video tag.
-     *
-     * @returns string|null
-     */
-    getCurrentSrc = () => {
-        const sources = this.media.getElementsByTagName('source');
-
-        if (sources.length) {
-            return sources[0].getAttribute('src');
-        }
-
-        return null;
-    };
-
-    /**
-     * Src types required for streaming elements
-     */
-    getCurrentSrcType = () => {
-        const sources = this.media.getElementsByTagName('source');
-
-        if (!sources.length) {
-            return null;
-        }
-
-        for (const source of sources) {
-            if (source.getAttribute('src') === this.originalSrc) {
-                return source.getAttribute('type').toLowerCase();
-            }
-        }
-
-        return null;
     };
 
     findRoll = (roll) => {
@@ -397,21 +374,10 @@ class CVP {
         this.config.layoutControls.playPauseAnimation = false;
     };
 
-    onErrorDetection = () => {
-        if (this.media.networkState === this.media.NETWORK_NO_SOURCE && this.isCurrentlyPlayingAd) {
-            // Probably the video ad file was not loaded successfully
-            this.playMainVideoWhenVastFails(401);
-        }
-    };
-
     setPersistentSettings = () => {
         if (this.config.layoutControls.persistentSettings.volume) {
             this.volumeControl.apply();
             this.volumeControl.update();
-        }
-
-        if (this.config.layoutControls.persistentSettings.speed) {
-            this.speedMenu.apply();
         }
 
         if (this.config.layoutControls.persistentSettings.theatre) {
@@ -419,133 +385,140 @@ class CVP {
         }
     };
 
-    sourcesInVideoTag = () => {
-        const sourcesList = this.media.querySelectorAll('source');
-        if (sourcesList.length === 0) {
+    src = (sources) => {
+        if (is.object(sources)) {
+            sources = [sources];
+        }
+
+        this.setSources(sources);
+    };
+
+    setVideoSources = () => {
+        const sources = Array.from(this.media.querySelectorAll('source'));
+
+        this.setSources(sources);
+    };
+
+    setSources = (sources) => {
+        if (!is.array(sources)) {
             return;
         }
 
-        if (sourcesList.length === 1) {
-            if (!isHLS(sourcesList[0].src)) {
-                this.menu.remove('qualityLevels');
-            }
-            return;
-        }
+        this.sources = [];
 
-        this.multipleVideoSources = true;
-
-        let firstStreamingSource = false;
-
-        const sources = [];
-
-        for (const [index, source] of sourcesList.entries()) {
-            if (!isSource(source.src) || !source.type || (IS_IOS && isMKV(source.src))) {
+        for (const source of sources) {
+            if (!source.src || !isSource(source.src)) {
                 continue;
             }
 
-            if (index === 0) {
-                if (isHLS(source.src) || isDASH(source.src)) {
-                    firstStreamingSource = true;
-                }
+            let type = source.type;
+
+            if (!type) {
+                type = getMimetype(source.src);
             }
 
-            sources.push({
-                title: source.title,
+            if (!type) {
+                continue;
+            }
+
+            let hd = source.hd;
+
+            if (is.element(source)) {
+                if (is.nullOrUndefined(hd)) {
+                    hd = source.getAttribute('data-fluid-hd') !== null;
+                }
+
+                source.remove();
+            }
+
+            this.sources.push({
                 src: source.src,
-                isHD: source.getAttribute('data-fluid-hd') !== null,
+                type: source.type,
+                title: source.title,
+                hd: hd,
             });
         }
 
-        if (sources.length === 0) {
+        if (this.sources.length === 0) {
             return;
         }
 
-        sources.reverse();
+        this.multipleSourceTypes = false;
 
-        this.videoSources = sources;
+        this.currentSource = this.sources[0];
 
-        this.quality.add(sources);
+        this.source = this.currentSource;
 
-        if (firstStreamingSource) {
-            const interval = setInterval(() => {
-                if (window.Hls || (window.dashjs && is.function(window.dashjs.MediaPlayer))) {
-                    this.quality.set(sources);
-                    clearInterval(interval);
+        this.sources.reverse();
+
+        if (!isHLS(this.currentSource.src) && !isDASH(this.currentSource.src)) {
+            for (let i = 1; i < this.sources.length; i++) {
+                const source = this.sources[i].src;
+
+                if (isHLS(source) || isDASH(source)) {
+                    this.multipleSourceTypes = true;
+                    break;
                 }
-            }, 100);
-        } else {
-            this.quality.set(sources);
-        }
-    };
-
-    setVideoSource = (url) => {
-        if (IS_IOS && isMKV(url)) {
-            this.debug.error('.mkv files not supported by iOS devices.');
-            return;
-        }
-
-        if (url === this.originalSrc) {
-            if (!isHLS(this.originalSrc) && !isDASH(this.originalSrc)) {
-                this.autoPlay.apply();
             }
-            return;
+
+            this.quality.add(this.sources);
+
+            this.autoPlay.apply();
         }
-
-        if (this.isCurrentlyPlayingAd) {
-            this.originalSrc = url;
-            return;
-        }
-
-        this.isSwitchingSource = true;
-
-        let play = false;
-        if (!this.paused) {
-            this.pause();
-            play = true;
-        }
-
-        this.setCurrentTimeAndPlay(this.currentTime, play);
-
-        this.media.src = url;
-        this.originalSrc = url;
-        this.config.layoutControls.mediaType = this.getCurrentSrcType();
-
-        this.streaming.init();
     };
 
-    setCurrentTimeAndPlay = (newCurrentTime, shouldPlay) => {
+    loadSource = (currentTime, paused) => {
         once.call(this, this.media, 'loadedmetadata', () => {
-            this.currentTime = newCurrentTime;
+            this.speed = this.speedMenu.current;
+            this.loop = this.loopMenu.current;
+            this.currentTime = currentTime;
 
             // Safari ios and mac fix to set currentTime
             if (IS_ANY_SAFARI) {
                 once.call(this, this.media, 'canplaythrough', () => {
-                    this.currentTime = newCurrentTime;
+                    this.currentTime = currentTime;
                 });
             }
 
-            if (shouldPlay) {
+            // Resume playing
+            if (!paused) {
+                if (this.firstPlayLaunched) {
+                    this.isSwitchingSource = true;
+                }
+
                 this.play();
-            } else {
-                this.pause();
             }
-
-            if (!isHLS(this.originalSrc) && !isDASH(this.originalSrc)) {
-                this.autoPlay.apply();
-            }
-
-            this.isSwitchingSource = false;
-
-            this.media.style.width = '100%';
-            this.media.style.height = '100%';
         });
 
         this.media.load();
     };
 
-    setVideoPreload = () => {
-        this.media.setAttribute('preload', this.config.layoutControls.preload);
-    };
+    set source(source) {
+        const src = source.src;
+
+        this.debug.log('Set source: ', src);
+
+        this.currentSource = source;
+
+        if (this.firstPlayLaunched) {
+            this.isSwitchingSource = true;
+        }
+
+        this.streaming.detach();
+
+        if (isHLS(src) || isDASH(src)) {
+            this.streaming.load().then(() => {
+                this.media.src = src;
+                this.streaming.init();
+            });
+        } else {
+            this.media.src = src;
+        }
+    }
+
+    get source() {
+        return this.media.currentSrc;
+    }
 
     // Set the poster for the video, taken from custom params
     posterImage = () => {
@@ -572,15 +545,11 @@ class CVP {
     // This is called when a media type is unsupported
     // We'll find the current source and try set the next source if it exists
     nextSource = () => {
-        const sources = this.media.getElementsByTagName('source');
+        this.menu.remove('qualityLevels');
 
-        if (!sources.length) {
-            return null;
-        }
-
-        for (let i = 0; i < sources.length - 1; i++) {
-            if (sources[i].getAttribute('src') === this.originalSrc && sources[i + 1].getAttribute('src')) {
-                this.setVideoSource(sources[i + 1].getAttribute('src'));
+        for (let i = this.sources.length - 1; i > 0; i--) {
+            if (this.sources[i].src === this.currentSource.src && this.sources[i - 1].src) {
+                this.source = this.sources[i - 1];
                 return;
             }
         }
@@ -614,8 +583,7 @@ class CVP {
     }
 
     get currentTime() {
-        // TODO: ads, remove after tweaking adsupport, vast and vpaid
-        return Number(this.isCurrentlyPlayingAd ? this.mainVideoCurrentTime : this.media.currentTime);
+        return Number(this.media.currentTime);
     }
 
     get duration() {
@@ -667,7 +635,7 @@ class CVP {
             if (this.media) {
                 this.media.playbackRate = input;
             }
-        }, 500);
+        }, 0);
     }
 
     get speed() {
@@ -729,7 +697,7 @@ class CVP {
         const wrapper = this.wrapper;
 
         if (!is.element(wrapper)) {
-            console.warn('Unable to remove wrapper element for Fluid Player instance - element not found');
+            this.debug.warn('Wrapper element not found');
             return;
         }
 
@@ -741,21 +709,17 @@ class CVP {
 
             this.streaming.detach();
 
-            for (const source of this.media.querySelectorAll('source')) {
-                source.remove();
-            }
-
             this.media.setAttribute('src', this.config.blankVideo);
             this.media.load();
             this.media.remove();
         } else {
-            console.error('Unable to remove media element for Fluid Player instance');
+            this.debug.error('Media element not found');
         }
 
         if (is.element(wrapper)) {
             wrapper.remove();
         } else {
-            console.error('Unable to remove wrapper element for Fluid Player instance');
+            this.debug.error('Wrapper element not found');
         }
 
         // Stop checking fps

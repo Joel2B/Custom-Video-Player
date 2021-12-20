@@ -125,7 +125,7 @@ class Subtitles {
 
         for (const [index, track] of tracks.entries()) {
             if (track.default) {
-                this.saveConfig(this.getSubtitleId(track.type, track.id || index));
+                this.saveConfig(this.getSubtitleId(track.type, index));
 
                 this.useDefault = false;
 
@@ -152,7 +152,7 @@ class Subtitles {
                 if (this.native) {
                     id = this.meta.get(track).id;
                 } else {
-                    id = this.getSubtitleId(track.type, track.id || index);
+                    id = this.getSubtitleId(track.type, index);
                 }
 
                 this.saveConfig(id);
@@ -324,7 +324,7 @@ class Subtitles {
         });
 
         on.call(this.player, this.item, 'click', () => {
-            this.player.menu.openSubMenu(this.item, this.page, this.width, this.height);
+            player.menu.openSubMenu(this.item, this.page, this.width, this.height);
         });
     };
 

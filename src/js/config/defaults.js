@@ -7,10 +7,13 @@ const defaults = {
         playButtonShowing: true,
         playPauseAnimation: false,
         fillToContainer: false,
-        preload: 'auto',
         autoPlay: false,
         mute: false,
         loop: false,
+        playbackRate: {
+            default: 1,
+            options: [0.5, 0.75, 1, 1.5, 2],
+        },
         audio: {
             language: 'auto',
         },
@@ -77,7 +80,7 @@ const defaults = {
         layout: 'default',
         playerInitCallback: function() {},
         persistentSettings: {
-            speed: true,
+            playbackRate: true,
             quality: true,
             volume: true,
             theatre: true,

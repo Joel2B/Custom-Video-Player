@@ -15,10 +15,10 @@ class Dash {
                 };
 
                 $script(this.player.config.dash.url, () => {
-                    resolve(this.init());
+                    resolve();
                 });
             } else {
-                resolve(this.init());
+                resolve();
             }
         });
     };
@@ -27,14 +27,16 @@ class Dash {
         const { player } = this;
         const { config } = player;
 
-        if (!is.function(window.MediaSource || window.WebKitMediaSource)) {
+        if (!dashjs.supportsMediaSource()) {
             player.debug.warn('Media type not supported by this browser using DASH.js. (application/dash+xml)');
             player.nextSource();
             return;
         }
 
+        // TODO: ads don't work in autoplay until you do a play/pause
         // If false we want to override the autoPlay, as it comes from postRoll
         const autoPlay = !player.autoplayAfterAd ? player.autoplayAfterAd : player.autoPlay.apply(false);
+
         let settings = {
             debug: {
                 logLevel: FP_DEBUG || config.dash.debug ? dashjs.Debug.LOG_LEVEL_DEBUG : dashjs.Debug.LOG_LEVEL_FATAL,
@@ -49,7 +51,7 @@ class Dash {
 
         config.dash.onBeforeInit(this.dash);
 
-        this.dash.initialize(player.media, player.originalSrc, autoPlay);
+        this.dash.initialize(player.media, player.currentSource.src, autoPlay);
 
         this.listeners();
 

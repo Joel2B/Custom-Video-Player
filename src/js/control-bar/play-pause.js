@@ -1,6 +1,7 @@
 import { on } from '../utils/events';
 import { createElement, toggleClass } from '../utils/dom';
 import { IS_IOS, TOUCH_ENABLED } from '../utils/browser';
+import { isHLS } from '../utils/media';
 import is from '../utils/is';
 
 class PlayPause {
@@ -72,6 +73,7 @@ class PlayPause {
             player.isSwitchingSource
         ) {
             this.hideInitPlayButton();
+            player.isSwitchingSource = false;
             return;
         }
 
@@ -101,6 +103,7 @@ class PlayPause {
 
     toggleControls = () => {
         this.toggleInitPlayButton();
+
         const { player } = this;
         const { controls, title, logo, contextMenu } = player;
 
@@ -128,12 +131,21 @@ class PlayPause {
         const isFirstStart = !player.firstPlayLaunched;
         const preRolls = player.findRoll('preRoll');
 
+        if (!player.allowPlayStream) {
+            if (isHLS(player.currentSource.src)) {
+                player.playStream = true;
+                return;
+            }
+        }
+
         if (isFirstStart) {
             player.firstPlayLaunched = true;
+
             if (preRolls.length === 0) {
                 player.config.vastOptions.vastAdvanced.noVastVideoCallback();
             } else {
                 player.isCurrentlyPlayingAd = true;
+
                 // trigger the loading of the VAST Tag
                 player.prepareVast('preRoll');
                 player.preRollAdPodsLength = preRolls.length;
@@ -156,11 +168,12 @@ class PlayPause {
                     player.resumeVpaidAd();
                 } else {
                     // resume the regular linear vast or content video player
-                    if (player.streaming.dash) {
+                    if (player.streaming.dash && is.function(player.streaming.dash.play)) {
                         player.streaming.dash.play();
                     } else {
                         player.play();
                     }
+
                     player.HtmlOnPause.toggle(false);
                 }
             } else {
@@ -173,6 +186,7 @@ class PlayPause {
                     player.HtmlOnPause.toggle(true);
                 }
             }
+
             player.toggleOnPauseAd();
         }
 

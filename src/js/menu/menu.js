@@ -60,6 +60,7 @@ class Menu {
             class: 'cvp_main_page',
             style: `width: ${this.width}px; height: ${this.height}px;`,
         });
+
         this.background.appendChild(this.page);
 
         // Right container -> Menu -> background -> page -> header
@@ -86,6 +87,7 @@ class Menu {
         this.subPage = createElement('div', {
             class: 'cvp_sub_page',
         });
+
         this.background.appendChild(this.subPage);
 
         // Right container -> Menu -> background -> subpages -> header
@@ -97,6 +99,7 @@ class Menu {
         this.content = createElement('div', {
             class: 'cvp_content',
         });
+
         this.subPage.appendChild(this.header);
         this.subPage.appendChild(this.content);
 
@@ -108,6 +111,7 @@ class Menu {
         this.btn = createElement('div', {
             class: 'fluid_button fluid_button_main_menu',
         });
+
         this.player.controls.rightContainer.appendChild(this.btn);
         this.player.wrapper.appendChild(this.menu);
     };
@@ -186,13 +190,16 @@ class Menu {
 
         this.background.style.width = `${width}px`;
         this.background.style.height = `${height}px`;
+
         this.header.textContent = option.firstChild.textContent;
+
         this.inSubpage = true;
     };
 
     restart = () => {
         this.background.style.width = `${this.width}px`;
         this.background.style.height = `${this.height}px`;
+
         this.page.style.width = `${this.width}px`;
         this.page.style.height = `${this.height}px`;
 
@@ -226,6 +233,7 @@ class Menu {
         toggleClass(this.btn, 'cvp_rotate', false);
 
         this.inSubpage = false;
+
         this.restartLater();
     };
 
@@ -245,6 +253,7 @@ class Menu {
 
         on.call(this.player, this.header, 'click', () => {
             this.inSubpage = false;
+
             this.restart();
         });
     };

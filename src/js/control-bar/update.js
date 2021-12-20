@@ -24,7 +24,7 @@ class Update {
             isLiveHls = hls.levels[hls.currentLevel].details.live;
         }
 
-        if (isNaN(player.duration) || !isFinite(player.duration) || isLiveHls) {
+        if (player.media.duration === Infinity || isLiveHls) {
             toggleHidden(player.controls.separator, true);
             toggleHidden(player.controls.duration, true);
             return;
