@@ -41,7 +41,7 @@ import UserActivity from './user-activity';
 import { isDASH, isHLS, isSource } from './utils/media';
 import { createElement, insertAfter, toggleClass } from './utils/dom';
 import { off, on, once, unbindListeners } from './utils/events';
-import { IS_ANY_SAFARI, TOUCH_ENABLED } from './utils/browser';
+import { IS_ANY_SAFARI, IS_IOS, TOUCH_ENABLED } from './utils/browser';
 import { getMimetype } from './utils/mimetypes';
 import is from './utils/is';
 
@@ -609,7 +609,7 @@ class CVP {
     };
 
     toggleMute = () => {
-        if (this.volume !== 0 && !this.muted) {
+        if ((this.volume !== 0 || IS_IOS) && !this.muted) {
             this.volume = 0;
             this.muted = true;
         } else {
