@@ -299,7 +299,14 @@ class CVP {
             this.skipControls = new Skip(this);
         }
 
+        this.download = new Download(this);
+        this.theatre = new Theatre(this);
+        this.fullscreen = new Fullscreen(this);
+        this.HtmlOnPause = new HtmlOnPause(this);
+        this.contextMenu = new ContextMenu(this);
+
         this.volumeControl = new VolumeControl(this);
+        this.volumeControl.init();
 
         this.autoPlay = new Autoplay(this);
         this.loopMenu = new Loop(this);
@@ -308,14 +315,6 @@ class CVP {
         this.subtitles.init();
         this.quality = new Quality(this);
         this.menu.init();
-
-        this.download = new Download(this);
-        this.theatre = new Theatre(this);
-        this.fullscreen = new Fullscreen(this);
-
-        this.HtmlOnPause = new HtmlOnPause(this);
-
-        this.contextMenu = new ContextMenu(this);
     };
 
     resize = () => {
@@ -375,11 +374,6 @@ class CVP {
     };
 
     setPersistentSettings = () => {
-        if (this.config.layoutControls.persistentSettings.volume) {
-            this.volumeControl.apply();
-            this.volumeControl.update();
-        }
-
         if (this.config.layoutControls.persistentSettings.theatre) {
             this.theatre.apply();
         }

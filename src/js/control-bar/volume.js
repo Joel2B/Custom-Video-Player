@@ -7,21 +7,35 @@ import { innerWidth } from '../utils/window';
 class Volume {
     constructor(player) {
         this.player = player;
+        this.id = 'volume';
+        this.muteId = 'mute';
+
+        this.persistent = player.config.layoutControls.persistentSettings[this.id];
+
+        this.defaultValue = 1;
         this.latestVolume = 1;
     }
+
+    init = () => {
+        const { player } = this;
+
+        if (player.storage.get(this.id) === null || !this.persistent) {
+            player.storage.set(this.id, this.defaultValue);
+        }
+
+        this.apply();
+    };
 
     apply = () => {
         const { player } = this;
 
-        if (player.storage.get('volume') === null) {
-            player.storage.set('volume', 1);
-        }
+        this.setVolume(player.storage.get(this.id));
 
-        player.volumeControl.setVolume(player.storage.get('volume'));
-
-        if (player.storage.get('mute')) {
+        if (player.storage.get(this.muteId)) {
             player.toggleMute();
         }
+
+        this.update();
     };
 
     update = () => {
@@ -38,9 +52,9 @@ class Volume {
 
         if (player.volume !== 0) {
             this.latestVolume = player.volume;
-            player.storage.set('mute', false);
+            player.storage.set(this.muteId, false);
         } else {
-            player.storage.set('mute', true);
+            player.storage.set(this.muteId, true);
         }
 
         const notMuted = player.volume && !player.muted;
@@ -95,7 +109,7 @@ class Volume {
         const latestVolume = volume === 0 ? 1 : volume;
 
         this.latestVolume = latestVolume;
-        this.player.storage.set('volume', latestVolume);
+        this.player.storage.set(this.id, latestVolume);
     };
 
     move = (event) => {
@@ -111,13 +125,13 @@ class Volume {
             this.updateVolume(positionX);
         }
 
-        off.call(player, document, 'mouseup touchend mouseleave', this.end);
         off.call(player, document, 'mousemove touchmove', this.move);
+        off.call(player, document, 'mouseup touchend mouseleave', this.end);
     };
 
     start = () => {
-        on.call(this.player, document, 'mouseup touchend mouseleave', this.end);
         on.call(this.player, document, 'mousemove touchmove', this.move);
+        on.call(this.player, document, 'mouseup touchend mouseleave', this.end);
     };
 }
 
