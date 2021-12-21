@@ -5,6 +5,12 @@ import is from '../utils/is';
 class Theatre {
     constructor(player) {
         this.player = player;
+        this.id = 'theatre';
+
+        this.config = player.config.layoutControls[this.id];
+        this.persistent = player.config.layoutControls.persistentSettings[this.id];
+
+        this.defaultValue = false;
         this.active = false;
 
         this.init();
@@ -13,9 +19,17 @@ class Theatre {
     init = () => {
         const { player } = this;
 
-        if (!player.config.layoutControls.allowTheatre || isInFrame()) {
+        if (!this.config.enabled || isInFrame()) {
             player.controls.theatre.style.display = 'none';
             return;
+        }
+
+        if (player.storage.get(this.id) === null || !this.persistent) {
+            player.storage.set(this.id, this.defaultValue);
+        }
+
+        if (this.player.storage.get(this.id)) {
+            this.toggle();
         }
 
         player.controls.theatre.style.display = 'inline-block';
@@ -39,9 +53,9 @@ class Theatre {
         }
 
         // Advanced Theatre mode if specified
-        if (player.config.layoutControls.theatreAdvanced) {
-            const custom = document.getElementById(player.config.layoutControls.theatreAdvanced.theatreElement);
-            const customClass = player.config.layoutControls.theatreAdvanced.classToApply;
+        if (this.config.advanced) {
+            const custom = document.getElementById(this.config.advanced.theatreElement);
+            const customClass = this.config.advanced.classToApply;
             if (is.element(custom)) {
                 toggleClass(custom, customClass, !this.active);
             } else {
@@ -88,15 +102,15 @@ class Theatre {
 
         toggleClass(wrapper, 'fluid_theatre_mode', true);
 
-        const workingWidth = player.config.layoutControls.theatreSettings.width;
+        const workingWidth = this.config.width;
         let defaultHorizontalMargin = '10px';
 
         wrapper.style.width = workingWidth;
-        wrapper.style.height = player.config.layoutControls.theatreSettings.height;
+        wrapper.style.height = this.config.height;
         wrapper.style.maxHeight = screen.height + 'px';
-        wrapper.style.marginTop = player.config.layoutControls.theatreSettings.marginTop + 'px';
+        wrapper.style.marginTop = this.config.marginTop + 'px';
 
-        switch (player.config.layoutControls.theatreSettings.horizontalAlign) {
+        switch (this.config.horizontalAlign) {
             case 'center':
                 // We must calculate the margin differently based on whether they passed % or px
                 if (workingWidth.endsWith('%')) {
@@ -124,12 +138,6 @@ class Theatre {
             default:
                 wrapper.style.left = defaultHorizontalMargin;
                 break;
-        }
-    };
-
-    apply = () => {
-        if (this.player.storage.get('theatre')) {
-            this.toggle();
         }
     };
 }

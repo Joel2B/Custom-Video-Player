@@ -127,9 +127,6 @@ class CVP {
             this.keyboard.listeners();
         }
 
-        // Apply persistent settings
-        this.setPersistentSettings();
-
         // Apply mute
         this.initMute();
 
@@ -300,8 +297,8 @@ class CVP {
         }
 
         this.download = new Download(this);
-        this.theatre = new Theatre(this);
         this.fullscreen = new Fullscreen(this);
+        this.theatre = new Theatre(this);
         this.HtmlOnPause = new HtmlOnPause(this);
         this.contextMenu = new ContextMenu(this);
 
@@ -371,12 +368,6 @@ class CVP {
         this.config.layoutControls.controlBar.autoHide = true;
         this.config.layoutControls.playButtonShowing = true;
         this.config.layoutControls.playPauseAnimation = false;
-    };
-
-    setPersistentSettings = () => {
-        if (this.config.layoutControls.persistentSettings.theatre) {
-            this.theatre.apply();
-        }
     };
 
     src = (sources) => {

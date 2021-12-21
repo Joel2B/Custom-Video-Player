@@ -26,7 +26,6 @@ const defaults = {
         },
         keyboardControl: true,
         allowDownload: false,
-        allowTheatre: true,
         fullscreen: {
             enabled: true,
             fallback: true,
@@ -41,14 +40,15 @@ const defaults = {
             audio: false,
             subtitles: false,
         },
-        theatreSettings: {
+        theatre: {
+            enabled: true,
             width: '100%',
             height: '60%',
             marginTop: 0,
             horizontalAlign: 'center',
             keepPosition: false,
+            advanced: false,
         },
-        theatreAdvanced: false,
         title: null,
         logo: {
             imageUrl: null,
