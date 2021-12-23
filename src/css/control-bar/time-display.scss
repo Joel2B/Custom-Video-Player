@@ -1,18 +1,16 @@
 .fluid_fluid_control_time_display {
-    display: inline-block;
-    position: absolute;
-    left: 32px;
+    display: block;
+    position: relative;
+    left: 20px;
     height: 24px;
+    line-height: 24px;
     font-size: 13px;
-    text-align: left;
-    text-decoration: none;
-    line-height: 21px;
 
     @media only screen and (min-device-width: 375px) {
-        left: 105px;
+        left: 30px;
     }
 }
 
 .fluid_controls_container.no_volume_bar .fluid_fluid_control_time_display {
-    left: 32px;
+    left: 20px;
 }

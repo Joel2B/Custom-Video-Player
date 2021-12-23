@@ -11,6 +11,7 @@ class Controls {
         const layout = this.player.config.layoutControls;
         const primaryColor = layout.primaryColor || '#f00';
         const controlForwardBackward = layout.controlForwardBackward.show;
+
         // loading animation
         this.loader = createElement('div', {
             class: 'fluid_video_loading',
@@ -34,38 +35,10 @@ class Controls {
         );
         this.loader.appendChild(loaderSvg);
 
-        // controls
+        // Container of the controls
         this.container = createElement('div', {
             class: 'fluid_controls_container',
         });
-
-        // Left container
-        this.leftContainer = createElement('div', {
-            class: 'fluid_controls_left',
-        });
-
-        // Left container -> Play/Pause
-        this.playPause = createElement('div', {
-            class: 'fluid_button fluid_button_play fluid_control_playpause',
-        });
-        this.leftContainer.appendChild(this.playPause);
-
-        if (controlForwardBackward) {
-            toggleClass(this.container, 'skip_controls', true);
-
-            // Left container -> Skip backwards
-            this.skipBack = createElement('div', {
-                class: 'fluid_button fluid_button_skip_back',
-            });
-            this.leftContainer.appendChild(this.skipBack);
-
-            // Left container -> Skip forward
-            this.skipForward = createElement('div', {
-                class: 'fluid_button fluid_button_skip_forward',
-            });
-            this.leftContainer.appendChild(this.skipForward);
-        }
-        this.container.appendChild(this.leftContainer);
 
         // Progress container
         this.progressContainer = createElement('div', {
@@ -73,32 +46,31 @@ class Controls {
         });
         this.container.appendChild(this.progressContainer);
 
-        // Progress container -> Progress
+        // Progress
         this.progress = createElement('div', {
             class: 'fluid_controls_progress',
         });
 
-        // Progress container -> Progress -> Play progress
+        // Play progress
         this.playProgress = createElement('div', {
             class: 'fluid_controls_play_progress',
             style: `background-color: ${primaryColor}`,
         });
-
         this.progress.appendChild(this.playProgress);
 
-        // Progress container -> Progress -> Hover progress
+        // Hover progress
         this.hoverProgress = createElement('div', {
             class: 'fluid_controls_hover_progress',
         });
         this.progress.appendChild(this.hoverProgress);
         this.progressContainer.appendChild(this.progress);
 
-        // Progress container -> Scrubber container
+        // Scrubber container
         this.scrubberProgressContainer = createElement('div', {
             class: 'fluid_controls_scrubber_progress_container',
         });
 
-        // Progress container -> Scrubber container -> Scrubber
+        // Scrubber
         this.scrubberProgress = createElement('div', {
             class: 'fluid_controls_scrubber_progress',
             style: `background-color: ${primaryColor}`,
@@ -106,69 +78,83 @@ class Controls {
         this.scrubberProgressContainer.appendChild(this.scrubberProgress);
         this.progressContainer.appendChild(this.scrubberProgressContainer);
 
-        // Progress container -> Load progress
+        // Load progress
         this.loadProgress = createElement('div', {
             class: 'fluid_controls_load_progress',
         });
         this.progressContainer.appendChild(this.loadProgress);
 
-        // Progress container -> Ad progress
+        // Ad progress
         this.adProgress = createElement('div', {
             class: 'fluid_controls_ad_progress',
         });
         this.progressContainer.appendChild(this.adProgress);
 
-        // Right container
-        this.rightContainer = createElement('div', {
-            class: 'fluid_controls_right',
+        // Controls
+        const controls = createElement('div', {
+            class: 'fluid_controls',
         });
-        this.container.appendChild(this.rightContainer);
+        this.container.appendChild(controls);
 
-        // Right container -> Fullscreen
-        this.fullscreen = createElement('div', {
-            class: 'fluid_button fluid_control_fullscreen fluid_button_fullscreen',
+        // Left container
+        this.leftContainer = createElement('div', {
+            class: 'fluid_controls_left',
         });
-        this.rightContainer.appendChild(this.fullscreen);
+        controls.appendChild(this.leftContainer);
 
-        // Right container -> Theatre
-        this.theatre = createElement('div', {
-            class: 'fluid_button fluid_control_theatre fluid_button_theatre',
+        // Play/Pause
+        this.playPause = createElement('div', {
+            class: 'fluid_button fluid_button_play fluid_control_playpause',
         });
-        this.rightContainer.appendChild(this.theatre);
+        this.leftContainer.appendChild(this.playPause);
+
+        if (controlForwardBackward) {
+            // Skip backwards
+            this.skipBack = createElement('div', {
+                class: 'fluid_button fluid_button_skip_back',
+            });
+            this.leftContainer.appendChild(this.skipBack);
+
+            // Skip forward
+            this.skipForward = createElement('div', {
+                class: 'fluid_button fluid_button_skip_forward',
+            });
+            this.leftContainer.appendChild(this.skipForward);
+        }
+
+        // Mute
+        this.mute = createElement('div', {
+            class: 'fluid_button fluid_button_volume fluid_control_mute',
+        });
+        this.leftContainer.appendChild(this.mute);
 
         toggleClass(this.container, 'no_volume_bar', IS_IOS);
 
-        // Right container -> Volume container
+        // Volume container
         this.volumeContainer = createElement('div', {
             class: 'fluid_control_volume_container fluid_slider',
         });
 
-        // Right container -> Volume container -> Volume
+        // Volume
         this.volume = createElement('div', {
             class: 'fluid_control_volume',
         });
         this.volumeContainer.appendChild(this.volume);
 
-        // Right container -> Volume container -> Volume -> Scrubber container
+        // Scrubber container
         this.scrubberVolumeContainer = createElement('div', {
             class: 'fluid_control_scrubber_volume_container',
         });
         this.volume.appendChild(this.scrubberVolumeContainer);
 
-        // Right container -> Volume container -> Volume -> Scrubber container -> Scrubber
+        // Scrubber
         this.scrubberVolume = createElement('div', {
             class: 'fluid_control_scrubber_volume',
         });
         this.scrubberVolumeContainer.appendChild(this.scrubberVolume);
-        this.rightContainer.appendChild(this.volumeContainer);
+        this.leftContainer.appendChild(this.volumeContainer);
 
-        // Right container -> mute
-        this.mute = createElement('div', {
-            class: 'fluid_button fluid_button_volume fluid_control_mute',
-        });
-        this.rightContainer.appendChild(this.mute);
-
-        // Right container -> time display
+        // Time display
         const timeDisplay = createElement('div', {
             class: 'fluid_control_duration fluid_fluid_control_time_display',
         });
@@ -181,7 +167,31 @@ class Controls {
         timeDisplay.appendChild(this.separator);
         timeDisplay.appendChild(this.duration);
 
-        this.rightContainer.appendChild(timeDisplay);
+        this.leftContainer.appendChild(timeDisplay);
+
+        // Right container
+        this.rightContainer = createElement('div', {
+            class: 'fluid_controls_right',
+        });
+        controls.appendChild(this.rightContainer);
+
+        // Download
+        this.download = createElement('div', {
+            class: 'fluid_button fluid_button_download',
+        });
+        this.rightContainer.appendChild(this.download);
+
+        // Theatre
+        this.theatre = createElement('div', {
+            class: 'fluid_button fluid_control_theatre fluid_button_theatre',
+        });
+        this.rightContainer.appendChild(this.theatre);
+
+        // Fullscreen
+        this.fullscreen = createElement('div', {
+            class: 'fluid_button fluid_control_fullscreen fluid_button_fullscreen',
+        });
+        this.rightContainer.appendChild(this.fullscreen);
     };
 }
 

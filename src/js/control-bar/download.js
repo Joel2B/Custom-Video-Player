@@ -1,31 +1,26 @@
-import { createElement, toggleClass } from '../utils/dom';
+import { createElement } from '../utils/dom';
 import { on } from '../utils/events';
 
 class Download {
     constructor(player) {
         this.player = player;
-        this.create();
+
+        this.init();
     }
 
-    create = () => {
+    init = () => {
         const { player } = this;
 
         if (!player.config.layoutControls.allowDownload) {
             return;
         }
 
-        this.el = createElement('div', {
-            class: 'fluid_button fluid_button_download',
-        });
-
-        toggleClass(this.el, 'show', true);
+        player.controls.download.style.display = 'inline-block';
 
         this.link = createElement('a');
-        this.el.appendChild(this.link);
+        player.controls.download.appendChild(this.link);
 
         this.listeners();
-
-        player.controls.rightContainer.appendChild(this.el);
     }
 
     listeners = () => {
@@ -42,7 +37,7 @@ class Download {
             }, 100);
         });
 
-        on.call(player, this.el, 'click', (event) => {
+        on.call(player, player.controls.download, 'click', (event) => {
             this.link.download = player.currentSource.src;
             this.link.href = player.currentSource.src;
             this.link.click();

@@ -112,7 +112,7 @@ class Menu {
             class: 'fluid_button fluid_button_main_menu',
         });
 
-        this.player.controls.rightContainer.appendChild(this.btn);
+        this.player.controls.rightContainer.insertBefore(this.btn, this.player.controls.rightContainer.firstChild);
         this.player.wrapper.appendChild(this.menu);
     };
 

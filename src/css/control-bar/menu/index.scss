@@ -204,12 +204,8 @@
 }
 
 .fluid_button_main_menu {
-    float: right;
-    padding-right: 5px;
-
     &:before {
-        background-position: -232px -56px !important;
-        height: 20px !important;
+        background-position: -232px -54px !important;
         transition: transform 0.1s cubic-bezier(0.4, 0, 1, 1), opacity 0.3s ease-in-out !important;
     }
 
@@ -221,7 +217,6 @@
         background-color: #f00;
         width: 13px;
         height: 9px;
-        top: -1px;
         right: -6px;
         border-radius: 1px;
     }

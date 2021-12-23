@@ -1,13 +1,13 @@
 .fluid_control_volume_container {
     height: 24px;
     width: 56px;
-    left: 25px;
-    top: -1px;
+    left: 15px;
     z-index: 2;
     opacity: 0.8;
     transition: opacity 0.3s ease-in-out;
     display: none;
-    position: absolute;
+    position: relative;
+    align-items: center;
 
     &:hover {
         opacity: 1;
@@ -17,28 +17,27 @@
         position: relative;
         height: 3px;
         width: 100%;
-        margin-top: 10px;
         background-color: rgba(171, 172, 172, 0.68);
         z-index: 3;
 
         .fluid_control_scrubber_volume_container {
-            float: left;
-            background-color: white;
+            background-color: #fff;
             height: 3px;
+            display: flex;
+            align-items: center;
 
             .fluid_control_scrubber_volume {
                 position: absolute;
                 width: 12px;
                 height: 12px;
                 border-radius: 6px;
-                top: -4.5px;
-                background-color: white;
+                background-color: #fff;
             }
         }
     }
 
     @media only screen and (min-device-width: 375px) {
-        display: block;
+        display: flex;
     }
 }
 
