@@ -35,6 +35,7 @@ class Autoplay {
             id: this.id,
             title: 'Autoplay',
             enabled: player.storage.get(this.id),
+            instance: player,
         });
 
         player.menu.add({
@@ -59,6 +60,10 @@ class Autoplay {
             toggleClass(item, 'cvp_enabled', active);
 
             player.storage.set(this.id, active);
+
+            if (player.mobile) {
+                player.menu.close();
+            }
         });
     };
 

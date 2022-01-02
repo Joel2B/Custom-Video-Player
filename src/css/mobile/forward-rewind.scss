@@ -1,0 +1,148 @@
+.fluid_forward_rewind_info_con {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    top: 0;
+    z-index: 3;
+    opacity: 0;
+    transition: opacity 0.2s linear;
+    pointer-events: none;
+}
+
+.fluid_seeking .fluid_forward_rewind_info_con {
+    opacity: 1;
+}
+
+.fluid_forward_rewind_info {
+    height: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.4);
+    align-content: center;
+
+    > div {
+        height: 100%;
+        display: flex;
+        align-items: center;
+    }
+}
+
+.fluid_forward_rewind_info_text {
+    color: #fff;
+}
+
+.fluid_rewind_info {
+    transform: rotate(180deg);
+}
+
+.fluid_rewind_info,
+.fluid_forward_info {
+    .fluid_icon {
+        transform: scale(0.8);
+        margin-right: -12px;
+    }
+
+    :nth-child(1) {
+        opacity: 0.9;
+    }
+
+    :nth-child(2) {
+        opacity: 0.66;
+    }
+
+    :nth-child(3) {
+        opacity: 0.33;
+    }
+}
+
+.fluid_fast_forward_con,
+.fluid_fast_rewind_con {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    top: 0;
+    z-index: 3;
+    opacity: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    transition: opacity 0.2s linear;
+    pointer-events: none;
+}
+
+.fluid_fast_forward_text,
+.fluid_fast_rewind_text {
+    left: 65%;
+    font-size: 10px;
+    top: 50%;
+    margin-top: 10px;
+    position: absolute;
+    z-index: 5;
+    color: #fff;
+}
+
+.fluid_fast_rewind_text,
+.fluid_fast_rewind {
+    left: auto !important;
+    right: 65%;
+}
+
+.fluid_fast_forward,
+.fluid_fast_rewind {
+    left: 65%;
+    position: absolute;
+    z-index: 5;
+    width: 72px;
+    height: 24px;
+    top: 50%;
+    margin-top: -20px;
+    color: #ccc;
+    opacity: 1;
+    transition: opacity 0.5s cubic-bezier(1, 0, 1, 0);
+    pointer-events: none;
+
+    > div {
+        margin-right: -4px;
+    }
+
+    &.fluid_run_animation {
+        > div {
+            animation-name: seek_animation;
+            animation-duration: 0.4s;
+            animation-iteration-count: infinite;
+        }
+    }
+}
+
+.fluid_fast_rewind {
+    transform: rotate(180deg);
+}
+
+.fluid_icon_forward,
+.fluid_icon_rewind {
+    font-size: 20px;
+    opacity: 0;
+    display: inline-block;
+
+    &:nth-child(2) {
+        animation-delay: 0.1s;
+    }
+
+    &:nth-child(3) {
+        animation-delay: 0.2s;
+    }
+}
+
+.fluid_visible {
+    opacity: 1;
+}
+
+@keyframes seek_animation {
+    0%,
+    100% {
+        opacity: 0;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}

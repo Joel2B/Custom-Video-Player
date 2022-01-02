@@ -1,8 +1,7 @@
-import { IS_IOS } from '../utils/browser';
 import { getEventOffsetX, toggleClass } from '../utils/dom';
 import { off, on } from '../utils/events';
-import is from '../utils/is';
 import { innerWidth } from '../utils/window';
+import is from '../utils/is';
 
 class Volume {
     constructor(player) {
@@ -45,7 +44,7 @@ class Volume {
         const cmMute = player.contextMenu.mute;
         const width = volume.clientWidth;
 
-        if (!IS_IOS && !width && innerWidth() >= 375) {
+        if (!player.mobile && !width && innerWidth() >= 375) {
             this.waitRendering();
             return;
         }

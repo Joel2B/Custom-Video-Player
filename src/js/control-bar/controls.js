@@ -1,16 +1,25 @@
 import { IS_IOS } from '../utils/browser';
-import { createElement, createElementNS, toggleClass } from '../utils/dom';
+import { createElement, createElementNS, insertAfter, toggleClass } from '../utils/dom';
 
 class Controls {
     constructor(player) {
         this.player = player;
-        this.create();
+
+        this.init();
     }
 
-    create = () => {
+    setup = () => {
+        insertAfter(this.loader, this.player.media);
+
+        if (!this.player.mobile) {
+            insertAfter(this.container, this.player.media);
+        }
+    }
+
+    init = () => {
         const layout = this.player.config.layoutControls;
         const primaryColor = layout.primaryColor || '#f00';
-        const controlForwardBackward = layout.controlForwardBackward.show;
+        const controlForwardRewind = layout.controlForwardRewind.show;
 
         // loading animation
         this.loader = createElement('div', {
@@ -108,7 +117,7 @@ class Controls {
         });
         this.leftContainer.appendChild(this.playPause);
 
-        if (controlForwardBackward) {
+        if (controlForwardRewind) {
             // Skip backwards
             this.skipBack = createElement('div', {
                 class: 'fluid_button fluid_button_skip_back',

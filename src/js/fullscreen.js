@@ -4,7 +4,7 @@
 // https://webkit.org/blog/7929/designing-websites-for-iphone-x/
 // ==========================================================================
 
-import { IS_IOS, TOUCH_ENABLED } from './utils/browser';
+import { IS_IOS } from './utils/browser';
 import { hasClass, toggleClass, toggleHidden } from './utils/dom';
 import { on, triggerEvent } from './utils/events';
 import is from './utils/is';
@@ -37,7 +37,7 @@ class Fullscreen {
         );
 
         // Fullscreen toggle on double click
-        if (this.player.config.layoutControls.doubleclickFullscreen && !TOUCH_ENABLED) {
+        if (this.player.config.layoutControls.doubleclickFullscreen && !this.player.touch) {
             on.call(this.player, this.player.wrapper, 'dblclick', (event) => {
                 // Ignore double click in controls
                 if (

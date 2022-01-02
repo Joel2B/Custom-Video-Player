@@ -1,4 +1,3 @@
-import { TOUCH_ENABLED } from './utils/browser';
 import { triggerEvent } from './utils/events';
 
 class UserActivity {
@@ -13,7 +12,7 @@ class UserActivity {
     }
 
     activity = (event) => {
-        if (TOUCH_ENABLED && event.type.includes('mouse')) {
+        if (this.player.touch && event.type.includes('mouse')) {
             return;
         }
 

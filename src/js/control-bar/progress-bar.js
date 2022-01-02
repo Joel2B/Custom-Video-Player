@@ -1,6 +1,5 @@
-import { getEventOffsetX } from '../utils/dom';
+import { getEventOffsetX, toggleClass } from '../utils/dom';
 import { off, on } from '../utils/events';
-import { TOUCH_ENABLED } from '../utils/browser';
 import is from '../utils/is';
 
 class ProgressBar {
@@ -9,7 +8,7 @@ class ProgressBar {
         this.positionX = 0;
         this.timer = null;
         this.initiallyPaused = false;
-        this.playPauseAnimation = false;
+        this.playPauseAnimation = null;
 
         this.listeners();
     }
@@ -39,8 +38,10 @@ class ProgressBar {
         }
 
         // hide animations
-        this.playPauseAnimation = player.config.layoutControls.playPauseAnimation;
-        player.config.layoutControls.playPauseAnimation = false;
+        if (this.playPauseAnimation === null) {
+            this.playPauseAnimation = player.config.layoutControls.playPauseAnimation;
+            player.config.layoutControls.playPauseAnimation = false;
+        }
 
         this.positionX = getEventOffsetX(player.controls.progressContainer, event);
 
@@ -59,6 +60,8 @@ class ProgressBar {
         const { player } = this;
         const { progressContainer, scrubberProgress } = player.controls;
 
+        toggleClass(player.wrapper, 'fluid_seeking', true);
+
         player.preview.current.move(event);
 
         this.positionX = getEventOffsetX(progressContainer, event);
@@ -68,7 +71,7 @@ class ProgressBar {
         // resize
         scrubberProgress.style.setProperty('transform', 'none', 'important');
 
-        if (TOUCH_ENABLED) {
+        if (player.touch) {
             return;
         }
 
@@ -83,6 +86,8 @@ class ProgressBar {
     end = (event) => {
         const { player } = this;
         const { progressContainer, scrubberProgress } = player.controls;
+
+        toggleClass(player.wrapper, 'fluid_seeking', false);
 
         player.preview.current.hide(event);
 
@@ -102,12 +107,20 @@ class ProgressBar {
 
         if (!this.initiallyPaused) {
             clearTimeout(this.timer);
+
             player.play();
+
+            player.controlBar.toggleMobile(false);
         }
 
         // restore animations
         setTimeout(() => {
+            if (this.playPauseAnimation === null) {
+                return;
+            }
+
             player.config.layoutControls.playPauseAnimation = this.playPauseAnimation;
+            this.playPauseAnimation = null;
         }, 200);
 
         off.call(player, document, 'mousemove touchmove', this.move);

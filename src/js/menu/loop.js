@@ -35,6 +35,7 @@ class Loop {
             id: this.id,
             title: 'Loop',
             enabled: player.storage.get(this.id),
+            instance: player,
         });
 
         player.menu.add({
@@ -53,6 +54,10 @@ class Loop {
             toggleClass(item, 'cvp_enabled', active);
 
             this.set(active);
+
+            if (player.mobile) {
+                player.menu.close();
+            }
         });
 
         this.set(player.storage.get(this.id));

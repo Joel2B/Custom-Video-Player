@@ -1,0 +1,42 @@
+.fluid_mobile {
+    .fluid_options {
+        transition: transform 0.5s ease;
+        transform: translate(0, -52px);
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        z-index: 1;
+
+        .fluid_icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            margin-left: -12px;
+            margin-top: -12px;
+            opacity: 1;
+            transition: opacity 0.2s linear;
+            pointer-events: none;
+        }
+    }
+
+    .fluid_options_btn {
+        position: relative;
+        float: right;
+        height: 44px;
+        width: 44px;
+        line-height: 1;
+        background-color: transparent;
+        border: 0;
+        z-index: 5;
+        color: #ccc;
+        transition: opacity 0.5s linear;
+
+        .fluid_icon {
+            filter: $mobile-icon-color;
+        }
+
+        .fluid_mobile_close_main_menu {
+            opacity: 0;
+        }
+    }
+}

@@ -1,4 +1,6 @@
-.cvp_options_menu {
+@import 'icons';
+
+.fluid_desktop .cvp_options_menu {
     font: 400 14px/20px 'Helvetica Neue', Helvetica, Arial, sans-serif;
     position: absolute;
     top: 0;
@@ -49,6 +51,10 @@
         z-index: 6;
         overflow: hidden;
 
+        .cvp_header {
+            display: none;
+        }
+
         .cvp_switches {
             > div {
                 height: 27px;
@@ -59,7 +65,7 @@
 
             .cvp_switch:hover,
             .cvp_selector:hover,
-            .cvp_icon_info:hover {
+            .fluid_icon_info:hover {
                 color: #fff;
             }
         }
@@ -73,7 +79,7 @@
             border-bottom: 0;
         }
 
-        .cvp_icon {
+        .fluid_icon {
             display: none;
         }
     }
@@ -111,6 +117,10 @@
                 font-size: 9px;
                 bottom: 8px;
                 z-index: -1;
+            }
+
+            &:hover {
+                color: #fff;
             }
 
             &.cvp_active {
@@ -190,7 +200,7 @@
     }
 
     .hd {
-        color: red;
+        color: #f00;
         font-weight: bold;
     }
 
@@ -198,7 +208,7 @@
         margin-left: 3px;
     }
 
-    .cvp_icon_info::before {
+    .fluid_icon_info::before {
         content: '🛈';
     }
 }

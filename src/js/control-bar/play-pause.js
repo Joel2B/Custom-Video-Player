@@ -1,6 +1,5 @@
 import { on } from '../utils/events';
-import { createElement, toggleClass } from '../utils/dom';
-import { IS_IOS, TOUCH_ENABLED } from '../utils/browser';
+import { createElement, hasClass, toggleClass } from '../utils/dom';
 import { isHLS } from '../utils/media';
 import is from '../utils/is';
 
@@ -9,13 +8,13 @@ class PlayPause {
         this.player = player;
         this.playButtonTimer = null;
 
-        this.initPlayButton();
+        this.init();
     }
 
     /**
      * Play button in the middle when the video loads
      */
-    initPlayButton = () => {
+    init = () => {
         const { player } = this;
         const { title, logo } = player;
         const primaryColor = player.config.layoutControls.primaryColor;
@@ -27,7 +26,7 @@ class PlayPause {
         });
 
         this.initialPlay = createElement('div', {
-            class: 'fluid_initial_play',
+            class: `fluid_initial_play ${!primaryColor && !player.mobile ? 'fluid_initial_play_color' : ''}`,
             style: `background-color: ${backgroundColor}`,
         });
 
@@ -38,13 +37,24 @@ class PlayPause {
         this.initialPlay.appendChild(this.playButton);
         container.appendChild(this.initialPlay);
 
-        on.call(player, container, IS_IOS ? 'touchend' : 'click', () => {
-            if (TOUCH_ENABLED && !player.userActivity.active && !player.paused) {
+        if (this.player.mobile) {
+            this.initialPlay.style.background = 'none';
+
+            toggleClass(player.wrapper, 'fluid_show_controls', true);
+            toggleClass(player.wrapper, 'fluid_paused', true);
+        }
+
+        on.call(player, container, player.mobile ? 'touchend' : 'click', () => {
+            if (player.mobile && hasClass(player.wrapper, 'fluid_hide_controls')) {
+                player.controlBar.toggleMobile();
+                return;
+            } else if (player.touch && !player.userActivity.active && !player.paused) {
                 return;
             }
 
             this.toggle();
         });
+
         // If the user has chosen to not show the play button we'll make it invisible
         // We don't hide altogether because animations might still be used
         if (!player.config.layoutControls.playButtonShowing) {
@@ -59,6 +69,10 @@ class PlayPause {
     };
 
     hideInitPlayButton = () => {
+        if (this.player.mobile) {
+            return;
+        }
+
         this.initialPlay.style.opacity = '0';
         this.initialPlay.style.cursor = 'default';
     };
@@ -68,7 +82,7 @@ class PlayPause {
         const { initialPlay, playButton } = this;
 
         if (
-            player.isCurrentlyPlayingAd ||
+            (player.isCurrentlyPlayingAd && !player.mobile) ||
             !player.config.layoutControls.playPauseAnimation ||
             player.isSwitchingSource
         ) {
@@ -77,13 +91,22 @@ class PlayPause {
             return;
         }
 
-        let paused = false;
-        if (!player.paused) {
-            paused = true;
+        let paused = player.paused;
+
+        if (player.mobile) {
+            if (hasClass(player.wrapper, 'fluid_show_controls') && !paused) {
+                player.controlBar.toggleMobile();
+            }
+
+            paused = !paused;
+
+            if (player.isCurrentlyPlayingAd && player.ended) {
+                paused = !paused;
+            }
         }
 
-        toggleClass(playButton, 'fluid_initial_play_button', paused);
-        toggleClass(playButton, 'fluid_initial_pause_button', !paused);
+        toggleClass(playButton, 'fluid_initial_play_button', !paused);
+        toggleClass(playButton, 'fluid_initial_pause_button', paused);
 
         if (player.ended) {
             return;
@@ -110,10 +133,7 @@ class PlayPause {
         const playPauseButton = controls.playPause;
         const controlsDisplay = controls.container;
 
-        let paused = false;
-        if (!player.paused) {
-            paused = true;
-        }
+        const paused = !player.paused;
 
         toggleClass(playPauseButton, 'fluid_button_play', !paused);
         toggleClass(playPauseButton, 'fluid_button_pause', paused);
@@ -140,6 +160,8 @@ class PlayPause {
 
         if (isFirstStart) {
             player.firstPlayLaunched = true;
+
+            toggleClass(this.initialPlay, 'fluid_initial_play_color', false);
 
             if (preRolls.length === 0) {
                 player.config.vastOptions.vastAdvanced.noVastVideoCallback();

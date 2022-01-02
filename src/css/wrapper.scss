@@ -1,6 +1,7 @@
 .fluid_video_wrapper {
     direction: ltr;
     position: relative;
+    overflow: hidden;
     font-family: $font-family;
     font-size: 12px;
     max-width: 100%;

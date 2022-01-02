@@ -296,7 +296,7 @@ class Subtitles {
 
         this.item = selector({
             id: this.id,
-            title: 'Subtitles / CC',
+            title: 'Subtitles',
             value: 'Off',
         });
 

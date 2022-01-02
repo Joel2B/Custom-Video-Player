@@ -5,10 +5,11 @@ import is from './utils/is';
 class ContextMenu {
     constructor(player) {
         this.player = player;
-        this.create();
+
+        this.init();
     }
 
-    create = () => {
+    init = () => {
         const { player } = this;
         const { config } = player;
         const wrapper = player.wrapper;
@@ -46,6 +47,10 @@ class ContextMenu {
             'contextmenu',
             (event) => {
                 event.preventDefault();
+
+                if (player.mobile) {
+                    return;
+                }
 
                 this.menu.style.left = getEventOffsetX(player.media, event) + 'px';
                 this.menu.style.top = getEventOffsetY(player.media, event) + 'px';

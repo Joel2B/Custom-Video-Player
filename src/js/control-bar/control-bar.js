@@ -1,5 +1,6 @@
 import { removeTransition } from '../utils/css';
-import { toggleClass } from '../utils/dom';
+import { hasClass, toggleClass } from '../utils/dom';
+import is from '../utils/is';
 
 class ControlBar {
     constructor(player) {
@@ -39,6 +40,7 @@ class ControlBar {
             cursor = 'none';
             player.menu.close();
         }
+
         player.wrapper.style.cursor = cursor;
         player.playPause.initialPlay.style.cursor =
             player.firstPlayLaunched || !player.config.layoutControls.playButtonShowing ? cursor : 'pointer';
@@ -50,12 +52,30 @@ class ControlBar {
         }
     };
 
+    toggleMobile = (input) => {
+        const { player } = this;
+
+        if (!player.mobile) {
+            return;
+        }
+
+        let showControls = !hasClass(player.wrapper, 'fluid_show_controls');
+
+        if (!is.nullOrUndefined(input)) {
+            showControls = input;
+        }
+
+        toggleClass(player.wrapper, 'fluid_show_controls', showControls);
+        toggleClass(player.wrapper, 'fluid_hide_controls', !showControls);
+    };
+
     linkControlBarUserActivity = () => {
         const { player } = this;
 
         player.on('userInactive', () => {
             if (!player.paused) {
                 this.toggle(false);
+                this.toggleMobile(false);
             }
         });
 

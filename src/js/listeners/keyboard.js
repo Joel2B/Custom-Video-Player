@@ -12,11 +12,7 @@ class Keyboard {
             return;
         }
 
-        player.currentTime = this.getNewCurrentTimeValueByKeyCode(
-            keyCode,
-            player.currentTime,
-            player.duration,
-        );
+        player.currentTime = this.getNewCurrentTimeValueByKeyCode(keyCode, player.currentTime, player.duration);
     };
 
     getNewCurrentTimeValueByKeyCode = (keyCode, currentTime, duration) => {
@@ -206,7 +202,12 @@ class Keyboard {
         const { player } = this;
 
         let clickedMenuButton = false;
-        const menu = player.menu.btn;
+        let menu = player.menu.btn;
+
+        if (player.mobile) {
+            menu = player.menu.optionsBtn;
+        }
+
         if (menu === e.target) {
             clickedMenuButton = true;
         }
@@ -229,9 +230,12 @@ class Keyboard {
     listeners = () => {
         const { player } = this;
 
-        on.call(player, player.wrapper, 'click', this.handleMouseenterForKeyboard, false);
+        const event = player.mobile ? 'touchend' : 'click';
+
+        on.call(player, player.wrapper, event, this.handleMouseenterForKeyboard, false);
+
         // When we click outside player, we stop registering keyboard events
-        on.call(player, window, 'click', this.handleWindowClick, false);
+        on.call(player, window, event, this.handleWindowClick, false);
     };
 }
 

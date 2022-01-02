@@ -193,3 +193,51 @@ export function getEventOffsetY(el, evt) {
 
     return evt.clientY - y;
 }
+
+/**
+ * Identical to the native `getBoundingClientRect` function, but ensures that
+ * the method is supported at all (it is in all browsers we claim to support)
+ * and that the element is in the DOM before continuing.
+ *
+ * This wrapper function also shims properties which are not provided by some
+ * older browsers (namely, IE8).
+ *
+ * Additionally, some browsers do not support adding properties to a
+ * `ClientRect`/`DOMRect` object; so, we shallow-copy it with the standard
+ * properties (except `x` and `y` which are not widely supported). This helps
+ * avoid implementations where keys are non-enumerable.
+ *
+ * @param  {Element} el
+ *         Element whose `ClientRect` we want to calculate.
+ *
+ * @return {Object|undefined}
+ *         Always returns a plain object - or `undefined` if it cannot.
+ */
+export function findPosition(el, parent) {
+    if (!el || (el && !el.offsetParent)) {
+        return {
+            left: 0,
+            top: 0,
+            width: 0,
+            height: 0,
+        };
+    }
+    const width = el.offsetWidth;
+    const height = el.offsetHeight;
+    let left = 0;
+    let top = 0;
+
+    while (el.offsetParent && el !== parent) {
+        left += el.offsetLeft;
+        top += el.offsetTop;
+
+        el = el.offsetParent;
+    }
+
+    return {
+        left,
+        top,
+        width,
+        height,
+    };
+}

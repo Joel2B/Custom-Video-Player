@@ -67,7 +67,7 @@ class Fps {
 
         clearInterval(this.interval);
 
-        if (this.stop || (IS_FIREFOX && IS_ANDROID) || (IS_IOS && IS_SAFARI)) {
+        if (this.stop || (IS_ANDROID && IS_FIREFOX) || (IS_IOS && IS_SAFARI)) {
             return;
         }
 

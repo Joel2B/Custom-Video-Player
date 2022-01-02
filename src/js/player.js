@@ -1,6 +1,7 @@
 // Player modules
 import ControlBar from './control-bar/control-bar';
 import Controls from './control-bar/controls';
+import Mobile from './mobile';
 import Download from './control-bar/download';
 import Fullscreen from './fullscreen';
 import Theatre from './control-bar/theatre';
@@ -41,7 +42,7 @@ import UserActivity from './user-activity';
 import { isDASH, isHLS, isSource } from './utils/media';
 import { createElement, insertAfter, toggleClass } from './utils/dom';
 import { off, on, once, unbindListeners } from './utils/events';
-import { IS_ANY_SAFARI, IS_IOS, TOUCH_ENABLED } from './utils/browser';
+import { IS_ANY_SAFARI, IS_IOS, IS_ANDROID, TOUCH_ENABLED } from './utils/browser';
 import { getMimetype } from './utils/mimetypes';
 import is from './utils/is';
 
@@ -52,6 +53,12 @@ class CVP {
     constructor(target, options) {
         this.version = FP_BUILD_VERSION;
         this.homepage = FP_HOMEPAGE;
+
+        // Touch device
+        this.touch = TOUCH_ENABLED;
+
+        // Mobile device
+        this.mobile = (IS_ANDROID && this.touch) || IS_IOS;
 
         // Set the media element
         this.media = target;
@@ -94,6 +101,7 @@ class CVP {
 
         // All control elements
         this.controls = new Controls(this);
+        this.mobileControls = new Mobile(this);
 
         // Install modules
         for (const playerModule of FP_MODULES) {
@@ -111,7 +119,7 @@ class CVP {
         this.storage = new Storage(this);
 
         this.setupWrapper();
-        this.setupTouchDevice();
+        this.setupDevice();
         this.setupMedia();
         this.setupControlBar();
 
@@ -146,6 +154,12 @@ class CVP {
                 return null;
             }
 
+            this.promiseTimeout = setTimeout(() => {
+                if (!this.playing) {
+                    this.debug.error('Timeout error. Failed to play video?');
+                }
+            }, 5000);
+
             promise
                 .then(() => {
                     clearTimeout(this.promiseTimeout);
@@ -154,10 +168,6 @@ class CVP {
                     this.debug.error(error);
                     clearTimeout(this.promiseTimeout);
                 });
-
-            this.promiseTimeout = setTimeout(() => {
-                this.debug.error('Timeout error. Failed to play video?');
-            }, 5000);
 
             return promise;
         };
@@ -246,8 +256,8 @@ class CVP {
         insertAfter(this.wrapper, this.media);
         this.wrapper.appendChild(this.media);
 
-        insertAfter(this.controls.container, this.media);
-        insertAfter(this.controls.loader, this.media);
+        this.controls.setup();
+        this.mobileControls.setup();
 
         this.posterImage();
 
@@ -292,7 +302,7 @@ class CVP {
 
         this.preview = new Preview(this);
 
-        if (this.config.layoutControls.controlForwardBackward.show) {
+        if (this.config.layoutControls.controlForwardRewind.show) {
             this.skipControls = new Skip(this);
         }
 
@@ -332,6 +342,10 @@ class CVP {
     };
 
     toggleLoader = (show) => {
+        if (this.mobile) {
+            toggleClass(this.wrapper, 'fluid_waiting', show);
+        }
+
         this.isLoading = show;
         this.controls.loader.style.opacity = show ? '1' : '0';
     };
@@ -357,17 +371,17 @@ class CVP {
         return ids;
     };
 
-    setupTouchDevice = () => {
-        if (!TOUCH_ENABLED) {
+    setupDevice = () => {
+        toggleClass(this.wrapper, 'fluid_touch', this.touch);
+        toggleClass(this.wrapper, this.mobile ? 'fluid_mobile' : 'fluid_desktop', true);
+
+        if (!this.touch) {
             return;
         }
 
-        toggleClass(this.wrapper, 'mobile', true);
-        toggleClass(this.wrapper, 'fluid_touch', true);
-
         this.config.layoutControls.controlBar.autoHide = true;
         this.config.layoutControls.playButtonShowing = true;
-        this.config.layoutControls.playPauseAnimation = false;
+        this.config.layoutControls.playPauseAnimation = this.mobile;
     };
 
     src = (sources) => {
@@ -717,6 +731,7 @@ class CVP {
         setTimeout(() => {
             this.media = null;
             this.controls = null;
+            this.mobileControls = null;
             this.wrapper = null;
         }, 200);
     };

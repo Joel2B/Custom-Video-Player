@@ -5,6 +5,7 @@ import is from '../utils/is';
 class Update {
     constructor(player) {
         this.player = player;
+
         this.updateInterval = null;
         this.updateRefreshInterval = 60;
     }

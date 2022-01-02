@@ -1,4 +1,4 @@
-import { createElement, getEventOffsetX } from '../utils/dom';
+import { createElement, findPosition, getEventOffsetX } from '../utils/dom';
 import { on } from '../utils/events';
 import { WebVTT } from 'videojs-vtt.js';
 import { formatTime } from '../utils/time';
@@ -128,11 +128,11 @@ class PreviewThumbnails {
         // and they are subtracted from the position of the timeline preview
         // so that it stays within the width of the timeline
         const borderLeft = parseInt(computedStyle(preview, 'border-left-width').replace('px', '')) * 2;
-        const scrollLimit = width - size.w - borderLeft;
+        const scrollLimit = Math.max(width - size.w - borderLeft, 0);
         // add the top position to the tooltip so it is not along with the preview
         const topTooltip = 7;
         // get the left position of the timeline
-        const left = parseInt(computedStyle(progress, 'left').replace('px', ''));
+        const left = findPosition(progress, player.wrapper).left;
 
         offsetX = offsetX - size.w / 2;
         let positionX = left;
@@ -143,6 +143,8 @@ class PreviewThumbnails {
             } else {
                 positionX = scrollLimit + left;
             }
+        } else {
+            positionX = left;
         }
 
         preview.style.background = `url(${size.image})`;

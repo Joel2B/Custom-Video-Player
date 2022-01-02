@@ -1,5 +1,4 @@
 import $script from 'scriptjs';
-import { TOUCH_ENABLED } from '../utils/browser';
 import { supportsHLS } from '../utils/media';
 import is from '../utils/is';
 
@@ -59,7 +58,7 @@ class Hlsjs {
         let settings = {
             debug: FP_DEBUG || config.hls.debug,
             maxMaxBufferLength: 30,
-            maxBufferSize: (TOUCH_ENABLED ? 25 : 50) * 1000 * 1000,
+            maxBufferSize: (player.touch ? 25 : 50) * 1000 * 1000,
         };
 
         // The current configuration may cause an infinite cycle of fragment download, use a custom one

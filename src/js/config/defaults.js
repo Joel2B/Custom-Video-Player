@@ -85,8 +85,10 @@ const defaults = {
             volume: true,
             theatre: true,
         },
-        controlForwardBackward: {
+        controlForwardRewind: {
             show: false,
+            forward: 10,
+            rewind: 10,
         },
         contextMenu: {
             controls: true,

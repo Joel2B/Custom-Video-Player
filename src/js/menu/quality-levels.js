@@ -225,7 +225,7 @@ class Quality {
 
         // assign HD logo based on the option name
         const quality = Number(current.firstChild.textContent.replace(/\D/g, ''));
-        toggleClass(player.menu.btn, 'hd-quality-badge', quality >= 720);
+        toggleClass(player.menu.btn, 'hd-quality-badge', quality >= 720 && !player.mobile);
     };
 
     set = (index) => {

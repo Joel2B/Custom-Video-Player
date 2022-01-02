@@ -53,6 +53,7 @@ class Menu {
             class: 'cvp_background cvp_animated',
             style: `width: ${this.width}px; height: ${this.height}px;`,
         });
+
         this.menu.appendChild(this.background);
 
         // Right container -> Menu -> background -> page
@@ -65,15 +66,19 @@ class Menu {
 
         // Right container -> Menu -> background -> page -> header
         this.page.appendChild(
-            createElement('div', {
-                class: 'cvp_header',
-            }),
+            createElement(
+                'div',
+                {
+                    class: 'cvp_header',
+                },
+                'Settings',
+            ),
         );
 
         // Right container -> Menu -> background -> page -> icon
         this.page.appendChild(
             createElement('div', {
-                class: 'cvp_icon',
+                class: 'fluid_icon fluid_icon_settings',
             }),
         );
 
@@ -81,6 +86,7 @@ class Menu {
         this.container = createElement('ul', {
             class: 'cvp_switches',
         });
+
         this.page.appendChild(this.container);
 
         // Right container -> Menu -> background -> subpages
@@ -107,12 +113,47 @@ class Menu {
             this.render(module);
         }
 
-        // Right container -> Main menu button
-        this.btn = createElement('div', {
-            class: 'fluid_button fluid_button_main_menu',
-        });
+        if (this.player.mobile) {
+            on.call(this.player, this.page, 'touchend', (event) => {
+                if (this.container.contains(event.target)) {
+                    return;
+                }
 
-        this.player.controls.rightContainer.insertBefore(this.btn, this.player.controls.rightContainer.firstChild);
+                this.close();
+            });
+
+            this.options = createElement('div', {
+                class: 'fluid_options',
+            });
+
+            this.optionsBtn = createElement('div', {
+                class: 'fluid_options_btn',
+            });
+
+            this.openBtn = createElement('div', {
+                class: 'fluid_icon fluid_icon_open_settings fluid_mobile_main_menu',
+            });
+
+            this.closeBtn = createElement('div', {
+                class: 'fluid_icon fluid_icon_close_settings fluid_mobile_close_main_menu',
+            });
+
+            this.optionsBtn.appendChild(this.openBtn);
+            this.optionsBtn.appendChild(this.closeBtn);
+            this.options.appendChild(this.optionsBtn);
+
+            this.btn = this.optionsBtn;
+
+            this.player.wrapper.appendChild(this.options);
+        } else {
+            // Right container -> Main menu button
+            this.btn = createElement('div', {
+                class: 'fluid_button fluid_button_main_menu',
+            });
+
+            this.player.controls.rightContainer.insertBefore(this.btn, this.player.controls.rightContainer.firstChild);
+        }
+
         this.player.wrapper.appendChild(this.menu);
     };
 
@@ -186,12 +227,12 @@ class Menu {
 
     openSubMenu = (option, subPage, width, height) => {
         toggleClass(subPage, 'hide', false);
-        toggleClass(this.menu, 'cvp_level2');
+        toggleClass(this.menu, 'cvp_level2', true);
 
         this.background.style.width = `${width}px`;
         this.background.style.height = `${height}px`;
 
-        this.header.textContent = option.firstChild.textContent;
+        this.header.textContent = option.firstChild.nextSibling.textContent;
 
         this.inSubpage = true;
     };
@@ -230,7 +271,13 @@ class Menu {
         }
 
         toggleClass(this.menu, 'cvp_visible', false);
-        toggleClass(this.btn, 'cvp_rotate', false);
+
+        if (this.player.mobile) {
+            this.player.controlBar.toggleMobile(this.player.paused);
+            toggleClass(this.player.wrapper, 'fluid_show_options', false);
+        } else {
+            toggleClass(this.btn, 'cvp_rotate', false);
+        }
 
         this.inSubpage = false;
 
@@ -238,20 +285,28 @@ class Menu {
     };
 
     listeners = () => {
-        on.call(this.player, this.btn, 'click', () => {
+        const event = this.player.mobile ? 'touchend' : 'click';
+
+        on.call(this.player, this.btn, event, () => {
             if (this.player.isCurrentlyPlayingAd) {
                 return;
             }
 
             if (this.isClosed()) {
                 toggleClass(this.menu, 'cvp_visible', true);
-                toggleClass(this.btn, 'cvp_rotate', true);
+
+                if (this.player.mobile) {
+                    this.player.controlBar.toggleMobile();
+                    toggleClass(this.player.wrapper, 'fluid_show_options', true);
+                } else {
+                    toggleClass(this.btn, 'cvp_rotate', true);
+                }
             } else {
                 this.close();
             }
         });
 
-        on.call(this.player, this.header, 'click', () => {
+        on.call(this.player, this.header, event, () => {
             this.inSubpage = false;
 
             this.restart();

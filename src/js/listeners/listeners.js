@@ -1,6 +1,6 @@
 import Update from '../control-bar/update';
-import { IS_ANDROID, IS_IOS, IS_IPHONE, TOUCH_ENABLED } from '../utils/browser';
 import { on } from '../utils/events';
+import { toggleClass } from '../utils/dom';
 
 class Listeners extends Update {
     constructor(player) {
@@ -16,9 +16,13 @@ class Listeners extends Update {
         const { player } = this;
 
         // Play/pause toggle
-        on.call(player, player.media, IS_IOS ? 'touchend' : 'click', () => {
-            // Not pause if the user is idle on mobile and the video is playing
-            if (TOUCH_ENABLED && !player.userActivity.active && !player.paused) {
+        on.call(player, player.media, player.touch ? 'touchend' : 'click', () => {
+            if (player.mobile) {
+                return;
+            }
+
+            // Not pause if the user is idle on touch device and the video is playing
+            if (player.touch && !player.userActivity.active && !player.paused) {
                 return;
             }
 
@@ -26,8 +30,11 @@ class Listeners extends Update {
         });
 
         // Display time, duration and video progress
-        on.call(player, player.media, 'timeupdate seeking seeked', () => {
-            player.toggleLoader(false);
+        on.call(player, player.media, 'timeupdate seeking seeked', (event) => {
+            if (event.type === 'timeupdate') {
+                player.toggleLoader(false);
+            }
+
             this.time();
             this.duration();
             this.progress();
@@ -75,6 +82,22 @@ class Listeners extends Update {
         on.call(player, player.media, 'play pause ended emptied', (event) => {
             if (event.type === 'play') {
                 player.fps.check();
+
+                toggleClass(player.wrapper, 'fluid_playing', true);
+                toggleClass(player.wrapper, 'fluid_paused', false);
+
+                if (!player.firstPlayLaunched) {
+                    player.playPause.toggleControls();
+                }
+            }
+
+            if (event.type === 'pause') {
+                toggleClass(player.wrapper, 'fluid_playing', false);
+                toggleClass(player.wrapper, 'fluid_paused', true);
+
+                if (player.mobile && player.isCurrentlyPlayingAd) {
+                    player.controlBar.toggleMobile(true);
+                }
             }
 
             if (player.firstPlayLaunched) {
@@ -113,7 +136,7 @@ class Listeners extends Update {
         const { player } = this;
 
         // Toggle control bar on mouse events and touch end events
-        if (!IS_ANDROID && !IS_IPHONE) {
+        if (!player.mobile) {
             on.call(player, player.wrapper, 'mouseleave', () => {
                 player.controlBar.toggle(false);
             });
@@ -125,7 +148,7 @@ class Listeners extends Update {
             on.call(player, player.wrapper, 'mousemove', () => {
                 player.controlBar.toggle(true);
             });
-        } else {
+        } else if (player.touch) {
             player.controlBar.toggle(false);
             on.call(player, player.wrapper, 'touchstart', () => {
                 player.controlBar.toggle(true);
@@ -134,8 +157,6 @@ class Listeners extends Update {
 
         // Resize elements
         on.call(player, window, 'resize', player.resize);
-
-        // Resize elements
         on.call(player, player.media, 'enterfullscreen exitfullscreen theatreModeOn theatreModeOff', player.resize);
 
         // Listener of user activity
@@ -145,6 +166,8 @@ class Listeners extends Update {
             'mousemove mousedown mouseup touchstart touchmove touchend',
             player.userActivity.activity,
         );
+
+        player.mobileControls.listeners();
     };
 
     controls = () => {
