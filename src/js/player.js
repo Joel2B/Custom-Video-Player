@@ -485,6 +485,10 @@ class CVP {
                     this.isSwitchingSource = true;
                 }
 
+                if (this.mobile) {
+                    this.controlBar.toggleMobile(false);
+                }
+
                 this.play();
             }
         });
