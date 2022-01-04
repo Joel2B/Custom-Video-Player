@@ -166,6 +166,11 @@ class CVP {
                 })
                 .catch((error) => {
                     this.debug.error(error);
+
+                    if (error.name === 'NotAllowedError') {
+                        this.autoPlay.playMuted();
+                    }
+
                     clearTimeout(this.promiseTimeout);
                 });
 

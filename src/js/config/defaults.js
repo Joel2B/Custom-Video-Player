@@ -7,7 +7,10 @@ const defaults = {
         playButtonShowing: true,
         playPauseAnimation: false,
         fillToContainer: false,
-        autoPlay: false,
+        autoPlay: {
+            active: false,
+            waitInteraction: false,
+        },
         mute: false,
         loop: false,
         playbackRate: {

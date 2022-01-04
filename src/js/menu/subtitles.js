@@ -31,7 +31,7 @@ class Subtitles {
         this.useVttjs = this.config.useVttjs;
 
         // check for support to use textTracks
-        this.support = 'textTracks' in document.createElement('video');
+        this.support = 'textTracks' in this.player.media;
 
         // to save all track data
         this.meta = new WeakMap();

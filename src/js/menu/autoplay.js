@@ -11,6 +11,8 @@ class Autoplay {
 
         this.applied = false;
 
+        this.tmpVideo = null;
+
         this.init();
     }
 
@@ -22,7 +24,7 @@ class Autoplay {
         }
 
         if (this.player.storage.get(this.id) === null) {
-            this.player.storage.set(this.id, this.config);
+            this.player.storage.set(this.id, this.config.active);
         }
 
         this.setupMenu();
@@ -74,9 +76,6 @@ class Autoplay {
             return false;
         }
 
-        player.muted = true;
-        player.volume = 0;
-
         player.controlBar.toggle(false);
 
         if (force) {
@@ -92,6 +91,51 @@ class Autoplay {
         }
 
         return true;
+    };
+
+    playMuted = () => {
+        const { player } = this;
+
+        player.muted = true;
+        player.volume = 0;
+
+        this.applied = false;
+
+        if (!player.streaming.dash) {
+            this.apply();
+        }
+
+        this.waitInteraction();
+    };
+
+    waitInteraction = () => {
+        if (!this.config.waitInteraction) {
+            return;
+        }
+
+        if (this.tmpVideo === null) {
+            this.tmpVideo = document.createElement('video');
+            this.tmpVideo.style.display = 'none';
+            this.tmpVideo.src = this.player.config.blankVideo;
+            document.body.appendChild(this.tmpVideo);
+        }
+
+        const promise = this.tmpVideo.play();
+
+        if (promise === undefined) {
+            return;
+        }
+
+        promise
+            .then((_) => {
+                this.player.toggleMute();
+                this.tmpVideo.remove();
+            })
+            .catch((error) => {
+                if (error.name === 'NotAllowedError') {
+                    setTimeout(this.waitInteraction, 500);
+                }
+            });
     };
 }
 
