@@ -1,12 +1,16 @@
 
 import Hlsjs from './hls';
 import Dash from './dash';
+import Live from './live';
 
 class Streaming {
     constructor(player) {
         this.player = player;
+
         this.hls = null;
         this.dash = null;
+
+        this.live = new Live(player);
     }
 
     load = () => {

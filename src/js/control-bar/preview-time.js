@@ -7,6 +7,7 @@ import is from '../utils/is';
 class PreviewTime {
     constructor(player) {
         this.player = player;
+
         this.render();
     }
 
@@ -18,14 +19,13 @@ class PreviewTime {
         if (offsetX < 0 || offsetX > width) {
             return;
         }
+
         const preview = this.preview;
         const seconds = (this.player.duration * offsetX) / width;
-
-        preview.style.width = seconds >= 3600 ? '52px' : '';
-
         const left = parseInt(computedStyle(progress, 'left').replace('px', ''));
         const scrollLimit = width - preview.clientWidth;
-        offsetX = offsetX - preview.clientWidth / 2;
+
+        offsetX -= preview.clientWidth / 2;
 
         let positionX = left;
 
@@ -37,12 +37,21 @@ class PreviewTime {
             }
         }
 
-        preview.innerText = formatTime(seconds);
+        let previewWidth = 32 + (seconds >= 3600 ? 20 : 0);
+        let timeDisplay = formatTime(seconds);
+
+        if (this.player.streaming.live.active) {
+            previewWidth += 10;
+            timeDisplay = `- ${formatTime(this.player.duration - seconds)}`;
+        }
+
+        preview.style.width = `${previewWidth}px`;
         preview.style.left = `${positionX}px`;
         preview.style.visibility = 'visible';
+        preview.innerText = timeDisplay;
     };
 
-    hide = (event) => {
+    hide = () => {
         this.preview.style.visibility = 'hidden';
     };
 

@@ -11,21 +11,19 @@ class Update {
     }
 
     time = () => {
-        const currentTime = formatTime(this.player.currentTime);
+        let currentTime = formatTime(this.player.currentTime);
+
+        if (this.player.streaming.live.active) {
+            currentTime = this.player.streaming.live.timeDisplay();
+        }
+
         this.player.controls.currentTime.textContent = currentTime;
     }
 
     duration = () => {
         const { player } = this;
 
-        const hls = player.streaming.hls;
-        let isLiveHls = false;
-
-        if (hls && !is.empty(hls.levels) && hls.levels[hls.currentLevel]) {
-            isLiveHls = hls.levels[hls.currentLevel].details.live;
-        }
-
-        if (player.media.duration === Infinity || isLiveHls) {
+        if (player.streaming.live.active) {
             toggleHidden(player.controls.separator, true);
             toggleHidden(player.controls.duration, true);
             return;

@@ -178,6 +178,12 @@ class Controls {
 
         this.leftContainer.appendChild(timeDisplay);
 
+        // Live badge
+        this.live = createElement('div', {
+            class: 'fluid_live_badge',
+        }, 'live');
+        this.leftContainer.appendChild(this.live);
+
         // Right container
         this.rightContainer = createElement('div', {
             class: 'fluid_controls_right',

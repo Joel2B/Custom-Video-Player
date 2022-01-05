@@ -68,6 +68,10 @@ class Mobile {
         );
         this.container.appendChild(this.player.controls.duration);
 
+        toggleClass(this.player.controls.live, 'mobile', true);
+
+        this.container.appendChild(this.player.controls.live);
+
         this.container.appendChild(this.player.controls.fullscreen);
 
         // Forward / Rewind container
@@ -300,6 +304,9 @@ class Mobile {
             player.controlBar.toggleMobile(true);
         });
     };
+
+    setupLive = () => {
+    }
 }
 
 export default Mobile;

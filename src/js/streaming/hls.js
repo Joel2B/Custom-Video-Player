@@ -1,5 +1,6 @@
 import $script from 'scriptjs';
 import { supportsHLS } from '../utils/media';
+import { formatTime } from '../utils/time';
 import is from '../utils/is';
 
 class Hlsjs {
@@ -223,6 +224,14 @@ class Hlsjs {
             player.quality.add(data.levels);
         });
 
+        this.hls.once(Hls.Events.LEVEL_LOADED, (e, data) => {
+            player.debug.log(e, data);
+
+            if (data.details.live) {
+                this.setupLive();
+            }
+        });
+
         this.hls.on(Hls.Events.ERROR, (e, data) => {
             if (player.isCurrentlyPlayingAd) {
                 return;
@@ -248,6 +257,29 @@ class Hlsjs {
                     break;
             }
         });
+    };
+
+    setupLive = () => {
+        const { player } = this;
+        const live = player.streaming.live;
+
+        this.hls.on(Hls.Events.LEVEL_LOADED, () => {
+            player.listeners.time();
+            player.listeners.duration();
+            player.listeners.progress();
+        });
+
+        live.init().onClick(() => {
+            player.currentTime = this.hls.liveSyncPosition;
+        });
+
+        live.timeDisplay = () => {
+            const liveDelay = player.duration - player.currentTime;
+
+            live.toggleStatus(liveDelay < this.hls.targetLatency);
+
+            return `- ${formatTime(liveDelay)}`;
+        };
     };
 }
 

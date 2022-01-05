@@ -516,7 +516,6 @@ class CVP {
 
         if (isHLS(src) || isDASH(src)) {
             this.streaming.load().then(() => {
-                this.media.src = src;
                 this.streaming.init();
             });
         } else {
@@ -585,17 +584,31 @@ class CVP {
             return;
         }
 
+        if (this.streaming.live.active && this.streaming.live.setCurrentTime) {
+            this.streaming.live.setCurrentTime(input);
+            return;
+        }
+
         const inputIsValid = is.number(input) && input > 0;
 
         this.media.currentTime = inputIsValid ? Math.min(input, this.duration) : 0;
     }
 
     get currentTime() {
+        if (this.streaming.live.active && this.streaming.live.getCurrentTime) {
+            return this.streaming.live.getCurrentTime();
+        }
+
         return Number(this.media.currentTime);
     }
 
     get duration() {
+        if (this.streaming.live.active && this.streaming.live.duration) {
+            return this.streaming.live.duration();
+        }
+
         const duration = (this.media || {}).duration;
+
         return !is.number(duration) || duration === Infinity ? 0 : duration;
     }
 
