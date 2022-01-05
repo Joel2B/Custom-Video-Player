@@ -53,7 +53,9 @@ class Live {
     destroy = () => {
         const { player } = this;
 
-        player.controls.live.style.display = 'none';
+        player.controls.live.style.removeProperty('display');
+
+        toggleClass(player.controls.duration, 'hide', false);
 
         this.active = false;
     };

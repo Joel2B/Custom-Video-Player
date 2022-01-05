@@ -59,6 +59,8 @@ class Streaming {
 
             this.hls = null;
         }
+
+        this.live.destroy();
     };
 }
 

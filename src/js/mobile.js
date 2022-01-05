@@ -304,9 +304,6 @@ class Mobile {
             player.controlBar.toggleMobile(true);
         });
     };
-
-    setupLive = () => {
-    }
 }
 
 export default Mobile;
