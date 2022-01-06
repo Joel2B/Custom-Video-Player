@@ -1,6 +1,7 @@
 import $script from 'scriptjs';
 import { supportsHLS } from '../utils/media';
 import { formatTime } from '../utils/time';
+import { on } from '../utils/events';
 import is from '../utils/is';
 
 class Hlsjs {
@@ -29,9 +30,15 @@ class Hlsjs {
     useNative = () => {
         const { player } = this;
 
-        player.allowPlayStream = true;
+        player.media.src = player.currentSource.src;
 
-        player.autoPlay.apply();
+        on.call(player, player.media, 'canplay', () => {
+            player.allowPlayStream = true;
+
+            player.autoPlay.apply();
+        });
+
+        player.media.load();
     };
 
     init = () => {
