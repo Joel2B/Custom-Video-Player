@@ -129,6 +129,11 @@ class Listeners extends Update {
                 // Probably the video ad file was not loaded successfully
                 player.playMainVideoWhenVastFails(401);
             }
+
+            // Fallback sources are mixed with the sources of different quality
+            if (player.media.error.code === 4) {
+                player.nextSource();
+            }
         });
     };
 

@@ -557,6 +557,18 @@ class CVP {
         for (let i = this.sources.length - 1; i > 0; i--) {
             if (this.sources[i].src === this.currentSource.src && this.sources[i - 1].src) {
                 this.source = this.sources[i - 1];
+
+                if (!isHLS(this.source) && !isDASH(this.source)) {
+                    on.call(this, this.media, 'canplay', () => {
+                        if (this.autoPlay.applied) {
+                            this.autoPlay.applied = false;
+                            this.autoPlay.apply();
+                        }
+                    });
+
+                    this.media.load();
+                }
+
                 return;
             }
         }
