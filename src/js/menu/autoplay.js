@@ -1,3 +1,4 @@
+import { IS_IOS } from '../utils/browser';
 import { hasClass, toggleClass } from '../utils/dom';
 import { on } from '../utils/events';
 import { switcher } from './menu-item';
@@ -109,7 +110,7 @@ class Autoplay {
     };
 
     waitInteraction = () => {
-        if (!this.config.waitInteraction) {
+        if (!this.config.waitInteraction || IS_IOS) {
             return;
         }
 
