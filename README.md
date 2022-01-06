@@ -27,6 +27,8 @@ Mobile
 ## Demo
 [Custom Video Player](https://appsdev.cyou/xv-ph-rt/)
 
+[E2E cases](https://appsdev.cyou/player/tests/)
+
 ## Quick setup
 ```HTML
 <video id="video-player">
