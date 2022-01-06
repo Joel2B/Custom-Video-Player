@@ -21,7 +21,7 @@ class Download {
         player.controls.download.appendChild(this.link);
 
         this.listeners();
-    }
+    };
 
     listeners = () => {
         const { player } = this;
@@ -40,9 +40,11 @@ class Download {
         on.call(player, player.controls.download, 'click', (event) => {
             this.link.download = player.currentSource.src;
             this.link.href = player.currentSource.src;
+            this.link.target = '_blank';
+
             this.link.click();
         });
-    }
+    };
 }
 
 export default Download;
