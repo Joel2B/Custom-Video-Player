@@ -23,7 +23,7 @@ class ProgressBar {
             player.currentTime = (player.duration * this.positionX) / width;
         }
 
-        const scaleX = player.currentTime / ((player.duration === 0) ? 1 : player.duration);
+        const scaleX = Math.min(player.currentTime / player.duration, 1);
         const translateX = scaleX * width;
 
         playProgress.style.transform = `scaleX(${scaleX})`;
