@@ -175,7 +175,7 @@ class Quality {
     select = (index) => {
         const { player } = this;
 
-        if (index === this.current || player.isCurrentlyPlayingAd) {
+        if ((index === this.current && !this.auto) || (index === -1 && this.auto) || player.isCurrentlyPlayingAd) {
             return;
         }
 
