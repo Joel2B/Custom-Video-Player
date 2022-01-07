@@ -456,14 +456,7 @@ class CVP {
         this.sources.reverse();
 
         if (!isHLS(this.currentSource.src) && !isDASH(this.currentSource.src)) {
-            for (let i = 1; i < this.sources.length; i++) {
-                const source = this.sources[i].src;
-
-                if (isHLS(source) || isDASH(source)) {
-                    this.multipleSourceTypes = true;
-                    break;
-                }
-            }
+            this.multipleSourceTypes = this.sources.some((source) => isHLS(source.src) || isDASH(source.src));
 
             this.quality.add(this.sources);
 
