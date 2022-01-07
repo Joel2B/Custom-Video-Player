@@ -477,6 +477,8 @@ class CVP {
             this.loop = this.loopMenu.current;
             this.currentTime = currentTime;
 
+            this.speedMenu.lock = false;
+
             // Safari ios and mac fix to set currentTime
             if (IS_ANY_SAFARI) {
                 once.call(this, this.media, 'canplaythrough', () => {

@@ -16,6 +16,7 @@ class Speed {
         this.height = 67;
 
         this.current = 1;
+        this.lock = false;
 
         this.init();
     }
@@ -87,7 +88,7 @@ class Speed {
         this.set(player.storage.get(this.id));
     }
 
-    set = (index) => {
+    set = (index, force = false) => {
         const { player } = this;
 
         if (!player.menu.isEnabled(this.id) || player.isCurrentlyPlayingAd) {
@@ -107,7 +108,7 @@ class Speed {
 
         this.item.lastChild.textContent = current.firstChild.textContent;
 
-        if (this.current === index) {
+        if (this.current === index && !force) {
             return;
         }
 

@@ -57,6 +57,8 @@ class Listeners extends Update {
             // TODO: remove after tweaking adsupport, vast and vpaid
             if (event.type === 'loadeddata') {
                 player.prepareVastAds();
+
+                player.speedMenu.set(player.storage.get(player.speedMenu.id), true);
             }
         });
 
@@ -119,7 +121,9 @@ class Listeners extends Update {
                 return;
             }
 
-            player.speedMenu.set(player.speed);
+            if (!player.speedMenu.lock) {
+                player.speedMenu.set(player.speed);
+            }
         });
 
         on.call(player, player.media, 'error', () => {

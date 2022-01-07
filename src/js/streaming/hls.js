@@ -76,6 +76,8 @@ class Hlsjs {
             settings.renderTextTracksNatively = false;
         }
 
+        player.speedMenu.lock = true;
+
         this.hls = new Hls(settings);
 
         config.hls.onBeforeInit(this.hls);
@@ -96,6 +98,8 @@ class Hlsjs {
             player.debug.log(e, data);
 
             this.hls.loadSource(player.currentSource.src);
+
+            player.speedMenu.lock = false;
 
             player.allowPlayStream = true;
 

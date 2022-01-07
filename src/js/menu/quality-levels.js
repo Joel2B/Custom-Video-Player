@@ -261,6 +261,8 @@ class Quality {
             if (source.src !== player.currentSource.src) {
                 player.source = source;
 
+                player.speedMenu.lock = true;
+
                 if (preload !== 'none' || readyState) {
                     player.loadSource(currentTime, paused);
                 }
