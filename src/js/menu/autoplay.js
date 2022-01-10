@@ -1,4 +1,4 @@
-import { IS_IOS } from '../utils/browser';
+import { IS_FIREFOX, IS_IOS, IS_SAFARI } from '../utils/browser';
 import { hasClass, toggleClass } from '../utils/dom';
 import { on } from '../utils/events';
 import { switcher } from './menu-item';
@@ -106,18 +106,25 @@ class Autoplay {
             this.apply();
         }
 
+        // TODO: use events instead of this
         this.waitInteraction();
     };
 
     waitInteraction = () => {
-        if (!this.config.waitInteraction || IS_IOS) {
+        if (!this.config.waitInteraction || IS_IOS || IS_SAFARI) {
             return;
+        }
+
+        if (IS_FIREFOX && this.tmpVideo !== null) {
+            this.tmpVideo.remove();
+            this.tmpVideo = null;
         }
 
         if (this.tmpVideo === null) {
             this.tmpVideo = document.createElement('video');
             this.tmpVideo.style.display = 'none';
             this.tmpVideo.src = this.player.config.blankVideo;
+
             document.body.appendChild(this.tmpVideo);
         }
 
