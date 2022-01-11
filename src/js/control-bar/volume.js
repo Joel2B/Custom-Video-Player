@@ -6,6 +6,7 @@ import is from '../utils/is';
 class Volume {
     constructor(player) {
         this.player = player;
+
         this.id = 'volume';
         this.muteId = 'mute';
 
@@ -57,8 +58,6 @@ class Volume {
         } else {
             player.storage.set(this.muteId, true);
         }
-
-        console.warn(2, player.volume, player.muted);
 
         const notMuted = player.volume && !player.muted;
 
@@ -112,11 +111,13 @@ class Volume {
         const latestVolume = volume === 0 ? 1 : volume;
 
         this.latestVolume = latestVolume;
+
         this.player.storage.set(this.id, latestVolume);
     };
 
     move = (event) => {
         const positionX = getEventOffsetX(this.player.controls.volumeContainer, event);
+
         this.updateVolume(positionX);
     };
 
