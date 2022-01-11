@@ -34,7 +34,9 @@ class Volume {
             player.toggleMute();
         }
 
-        this.update();
+        setTimeout(() => {
+            this.update();
+        }, 0);
     };
 
     update = () => {
@@ -55,6 +57,8 @@ class Volume {
         } else {
             player.storage.set(this.muteId, true);
         }
+
+        console.warn(2, player.volume, player.muted);
 
         const notMuted = player.volume && !player.muted;
 
