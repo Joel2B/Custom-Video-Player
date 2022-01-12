@@ -247,8 +247,6 @@ class Quality {
             }
 
             player.streaming.hls.currentLevel = index;
-            player.streaming.hls.startLevel = index;
-            player.streaming.hls.nextLevel = index;
         } else {
             if (!this.persistent || index === -1) {
                 index = this.sources.length - 1;
