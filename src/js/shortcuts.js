@@ -19,7 +19,7 @@ class Shortcuts {
         });
         on.call(this.player, close, 'click', () => this.close());
 
-        close.appendChild(createElement('span', null, 'x'));
+        close.appendChild(createElement('span', null, '×'));
         this.content.appendChild(close);
 
         const container = createElement('div', {
