@@ -1,6 +1,7 @@
 import Hlsjs from './hls';
 import Dash from './dash';
 import Live from './live';
+import { MimetypesKind } from '../utils/mimetypes';
 
 class Streaming {
     constructor(player) {
@@ -16,7 +17,7 @@ class Streaming {
         const { player } = this;
 
         switch (player.currentSource.type) {
-            case 'application/dash+xml':
+            case MimetypesKind.mpd:
                 this.dash = new Dash(player);
 
                 this.dash.load().then(() => {
@@ -24,7 +25,7 @@ class Streaming {
                 });
 
                 break;
-            case 'application/x-mpegURL':
+            case MimetypesKind.m3u8:
                 this.hls = new Hlsjs(player);
 
                 this.hls.load().then(() => {

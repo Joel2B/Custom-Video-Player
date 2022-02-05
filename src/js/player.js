@@ -415,7 +415,7 @@ class CVP {
                 continue;
             }
 
-            let type = source.type;
+            let type = source.type.toLowerCase();
 
             if (!type) {
                 type = getMimetype(source.src);
@@ -437,7 +437,7 @@ class CVP {
 
             this.sources.push({
                 src: source.src,
-                type: source.type,
+                type: type,
                 title: source.title,
                 hd: hd,
             });
