@@ -1,4 +1,3 @@
-
 import Hlsjs from './hls';
 import Dash from './dash';
 import Live from './live';
@@ -13,36 +12,25 @@ class Streaming {
         this.live = new Live(player);
     }
 
-    load = () => {
-        const { player } = this;
-
-        return new Promise((resolve) => {
-            switch (player.currentSource.type) {
-                case 'application/dash+xml': // MPEG-DASH
-                    this.dash = new Dash(player).load().then(() => {
-                        this.dash = null;
-                        resolve();
-                    });
-                    break;
-                case 'application/x-mpegURL': // HLS
-                    this.hls = new Hlsjs(player).load().then(() => {
-                        this.hls = null;
-                        resolve();
-                    });
-                    break;
-            }
-        });
-    }
-
     init = () => {
         const { player } = this;
 
         switch (player.currentSource.type) {
-            case 'application/dash+xml': // MPEG-DASH
-                this.dash = new Dash(player).init();
+            case 'application/dash+xml':
+                this.dash = new Dash(player);
+
+                this.dash.load().then(() => {
+                    this.dash = this.dash.init();
+                });
+
                 break;
-            case 'application/x-mpegURL': // HLS
-                this.hls = new Hlsjs(player).init();
+            case 'application/x-mpegURL':
+                this.hls = new Hlsjs(player);
+
+                this.hls.load().then(() => {
+                    this.hls = this.hls.init();
+                });
+
                 break;
         }
     };

@@ -510,9 +510,7 @@ class CVP {
         this.streaming.detach();
 
         if (isHLS(src) || isDASH(src)) {
-            this.streaming.load().then(() => {
-                this.streaming.init();
-            });
+            this.streaming.init();
         } else {
             this.media.src = src;
         }
