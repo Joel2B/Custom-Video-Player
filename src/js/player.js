@@ -415,11 +415,7 @@ class CVP {
                 continue;
             }
 
-            let type = source.type.toLowerCase();
-
-            if (!type) {
-                type = getMimetype(source.src);
-            }
+            const type = (source.type || '').toLowerCase() || getMimetype(source.src);
 
             if (!type) {
                 continue;
@@ -769,6 +765,10 @@ class CVP {
  * @param instance
  */
 const PlayerInterface = function(instance) {
+    this.src = (src) => {
+        instance.src(src);
+    };
+
     this.play = () => {
         return instance.play();
     };
