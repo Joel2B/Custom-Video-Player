@@ -29,17 +29,66 @@ Mobile
 
 [E2E cases](https://appsdev.cyou/player/tests/)
 
-## Quick setup
+## Setup
 ```HTML
-<video id="video-player">
-    <source src="https://bitdash-a.akamaihd.net/content/MI201109210084_1/m3u8s/f08e80da-bf1d-4e3d-8899-f0f6155f6efa.m3u8" type="application/x-mpegURL"/>
-</video>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0" />
+    <title>Player</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+      }
 
-<script src="https://appsdev.cyou/player/v1/current/player.min.js"></script>
+      body {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <video id="player">
+      <source src="https://d3rlna7iyyu8wu.cloudfront.net/skip_armstrong/skip_armstrong_multi_language_subs.m3u8" type="application/x-mpegURL" />
+    </video>
+    <script src="https://appsdev.cyou/player/v1/current/player.min.js"></script>
+    <script>
+      const options = {
+        layoutControls: {
+          fillToContainer: true,
+          autoPlay: {
+            waitInteraction: true,
+          },
+          playButtonShowing: true,
+          playPauseAnimation: true,
+          controlBar: {
+            autoHide: true,
+            autoHideTimeout: 3,
+            animated: true,
+          },
+          menu: {
+            audio: true,
+            subtitles: true,
+          },
+          fullscreen: {
+            iosNative: true,
+          },
+        },
+        hls: {
+          overrideNative: true,
+        },
+        debug: true,
+      };
 
-<script>
-    var instance = fluidPlayer('video-player');
-</script>
+      const player = fluidPlayer('player', options);
+    </script>
+  </body>
+</html>
 ```
 
 ## Build Project
