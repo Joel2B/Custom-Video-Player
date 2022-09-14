@@ -193,6 +193,10 @@ class PlayPause {
                     if (player.streaming.dash && is.function(player.streaming.dash.play)) {
                         player.streaming.dash.play();
                     } else {
+                        if (player.streaming.hls && !player.streaming.hls.autoStartLoad) {
+                            player.streaming.hls.startLoad();
+                        }
+
                         player.play();
                     }
 
