@@ -26,6 +26,7 @@ class Streaming {
 
                 break;
             case MimetypesKind.m3u8:
+            case MimetypesKind.m3u8_2:
                 this.hls = new Hlsjs(player);
 
                 this.hls.load().then(() => {

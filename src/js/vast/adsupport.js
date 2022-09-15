@@ -70,9 +70,10 @@ export default function (self, options) {
             };
 
             self.switchPlayerToVastMode = () => {
-                //Get the actual duration from the video file if it is not present in the VAST XML
+                // Get the actual duration from the video file if it is not present in the VAST XML
                 if (!self.vastOptions.duration) {
-                    self.vastOptions.duration = self.media.duration;
+                    self.vastOptions.duration =
+                        selectedMediaFile.delivery === 'streaming' ? Infinity : self.media.duration;
                 }
 
                 const addClickthroughLayer =
@@ -129,12 +130,24 @@ export default function (self, options) {
             // Remove the streaming objects to prevent errors on the VAST content
             self.streaming.detach();
 
-            //Try to load multiple
+            // Try to load multiple
             const selectedMediaFile = self.getSupportedMediaFileObject(self.vastOptions.mediaFileList);
 
             const isVpaid = self.vastOptions.vpaid;
+            if (!isVpaid && selectedMediaFile.isUnsuportedHls) {
+                self.mainCurrentSource = self.currentSource;
+                self.source = { src: selectedMediaFile.src, type: selectedMediaFile.type };
+                self.isCurrentlyPlayingAd = true;
 
-            if (!isVpaid) {
+                self.media.addEventListener('loadedmetadata', self.switchPlayerToVastMode);
+                self.media.addEventListener('ended', () => {
+                    if (self.isCurrentlyPlayingAd) {
+                        self.onVastAdEnded();
+                    }
+                });
+
+                self.play();
+            } else if (!isVpaid) {
                 if (selectedMediaFile.src === false) {
                     // Couldn’t find MediaFile that is supported by this video player, based on the attributes of the MediaFile element.
                     self.adList[adListId].error = true;
@@ -249,6 +262,17 @@ export default function (self, options) {
                     //one of the best(s) option, no need to seek more
                     if (supportLevel === 'probably') {
                         break;
+                    }
+
+                    if (
+                        supportLevel === 'no' &&
+                        mediaFiles[i].delivery === 'streaming' &&
+                        (mediaFiles[i].type === 'application/vnd.apple.mpegurl' ||
+                            mediaFiles[i].type === 'application/x-mpegURL')
+                    ) {
+                        selectedMediaFile = mediaFiles[i];
+                        selectedMediaFile.isUnsuportedHls = true;
+                        adSupportedType = true;
                     }
                 } else {
                     selectedMediaFile = mediaFiles[i];
@@ -1053,6 +1077,11 @@ export default function (self, options) {
     self.switchToMainVideo = () => {
         self.debug.log('starting main video');
 
+        if (self.mainCurrentSource) {
+            self.currentSource = self.mainCurrentSource;
+            self.mainCurrentSource = null;
+        }
+
         self.source = self.currentSource;
 
         self.loadSource(self.mainVideoCurrentTime, !self.autoplayAfterAd);
@@ -1133,6 +1162,10 @@ export default function (self, options) {
      * Ad Countdown
      */
     self.addAdCountdown = () => {
+        if ((self.isCurrentlyPlayingAd && self.streaming.hls) || self.currentVideoDuration === Infinity) {
+            return; // Shouldn't show countdown if ad is a video live stream
+        }
+
         const videoWrapper = self.wrapper;
         const divAdCountdown = document.createElement('div');
 
@@ -1158,6 +1191,11 @@ export default function (self, options) {
     self.decreaseAdCountdown = function decreaseAdCountdown() {
         const sec = parseInt(self.duration) - parseInt(self.media.currentTime);
         const btn = document.getElementById('ad_countdown' + self.videoPlayerId);
+
+        if (btn && isNaN(sec)) {
+            btn.parentNode.removeChild(btn);
+            return;
+        }
 
         if (btn) {
             btn.innerHTML =
@@ -1311,17 +1349,42 @@ export default function (self, options) {
     };
 
     self.addCTAButton = (landingPage) => {
-        if (!landingPage) {
-            return;
+        if (self.vastOptions.titleCTA) {
+            const { text, link, tracking } = self.vastOptions.titleCTA;
+            return self.createAndAppendCTAButton(text, link, tracking);
         }
 
+        if (landingPage && typeof playerInstance.displayOptions.vastOptions.adCTAText === 'string') {
+            return self.createAndAppendCTAButton(
+                self.config.vastOptions.adCTAText,
+                landingPage,
+                self.vastOptions.clickthroughUrl,
+            );
+        }
+    };
+
+    /**
+     * Creates and append CTA button given the input parameters
+     *
+     * @param {string} adCTAText
+     *
+     * @param {string} displayUrl
+     *
+     * @param {string} trackingUrl
+     */
+    self.createAndAppendCTAButton = (adCTAText, displayUrl, trackingUrl) => {
         const ctaButton = document.createElement('div');
         ctaButton.id = self.videoPlayerId + '_fluid_cta';
         ctaButton.className = 'fluid_ad_cta';
 
         const link = document.createElement('span');
-        link.innerHTML =
-            self.config.vastOptions.adCTAText + '<br/><span class="ad_icon_clickthrough">' + landingPage + '</span>';
+        let innerHTML = adCTAText;
+
+        if (displayUrl) {
+            innerHTML += '<br/><span class="add_icon_clickthrough">' + displayUrl + '</span>';
+        }
+
+        link.innerHTML = innerHTML;
 
         ctaButton.addEventListener(
             'click',
@@ -1330,7 +1393,7 @@ export default function (self, options) {
                     self.pause();
                 }
 
-                const win = window.open(self.vastOptions.clickthroughUrl, '_blank');
+                const win = window.open(trackingUrl, '_blank');
                 win.focus();
                 return true;
             },

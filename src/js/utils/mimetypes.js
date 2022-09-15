@@ -16,6 +16,7 @@ export const MimetypesKind = {
     wav: 'audio/wav',
     mpd: 'application/dash+xml',
     m3u8: 'application/x-mpegurl',
+    m3u8_2: 'application/vnd.apple.mpegurl',
     jpg: 'image/jpeg',
     jpeg: 'image/jpeg',
     gif: 'image/gif',
@@ -33,7 +34,7 @@ export const MimetypesKind = {
  * @return {string}
  *         return the mimetype if it was known or empty string otherwise
  */
-export const getMimetype = function(src = '') {
+export const getMimetype = function (src = '') {
     const ext = getFileExtension(src);
     const mimetype = MimetypesKind[ext.toLowerCase()];
 

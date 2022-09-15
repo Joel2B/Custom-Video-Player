@@ -1,5 +1,4 @@
-<VAST
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="vast.xsd" version="3.0">
+<VAST xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="vast.xsd" version="3.0">
 	<Ad id="1234567">
 		<InLine>
 			<AdSystem>GDFP</AdSystem>
@@ -28,7 +27,7 @@
 						</TrackingEvents>
 						<AdParameters>
 							<![CDATA[
-{"videos":[ {"url":"https://googleads.github.io/googleads-ima-html5/media/LinearVPAIDCreative.mp4","mimetype":"video/mp4"}]}
+{"videos":[ {"url":"https://iab-publicfiles.s3.amazonaws.com/vast/VAST-4.0-Short-Intro.mp4","mimetype":"video/mp4"}]}
 ]]>
 						</AdParameters>
 						<VideoClicks>
@@ -37,15 +36,15 @@
 						</VideoClicks>
 						<MediaFiles>
 
-						<!--
+							<!--
 						<MediaFile apiFramework="VPAID" type="application/javascript">
 							https://secure-ds.serving-sys.com/BurstingCachedScripts/VPAID/HTML5_1_40_0_0/VPAIDAPI.js
 						</MediaFile>
 						 -->
 
-						<MediaFile apiFramework="VPAID" type="application/javascript">
+							<MediaFile apiFramework="VPAID" type="application/javascript">
 							https://googleads.github.io/googleads-ima-html5/vpaid/linear/VpaidVideoAd.js
-						</MediaFile>
+							</MediaFile>
 
 						</MediaFiles>
 					</Linear>

@@ -106,6 +106,7 @@ const defaults = {
         adTextPosition: 'top left',
         adCTAText: 'Visit now!',
         adCTATextPosition: 'bottom right',
+        adCTATextVast: false,
         adClickable: true,
         vastTimeout: 5000,
         showProgressbarMarkers: false,
@@ -113,7 +114,6 @@ const defaults = {
         showPlayButton: false,
         maxAllowedVastTagRedirects: 3,
         vpaidTimeout: 3000,
-
         vastAdvanced: {
             vastLoadedCallback: function() {},
             noVastVideoCallback: function() {},

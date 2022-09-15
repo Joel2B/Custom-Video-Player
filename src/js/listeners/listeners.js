@@ -129,9 +129,13 @@ class Listeners extends Update {
         on.call(player, player.media, 'error', () => {
             player.debug.warn(player.media.error);
 
-            if (player.media.networkState === player.media.NETWORK_NO_SOURCE && player.isCurrentlyPlayingAd) {
-                // Probably the video ad file was not loaded successfully
-                player.playMainVideoWhenVastFails(401);
+            if (player.isCurrentlyPlayingAd) {
+                if (player.media.networkState === player.media.NETWORK_NO_SOURCE) {
+                    // Probably the video ad file was not loaded successfully
+                    player.playMainVideoWhenVastFails(401);
+                }
+
+                return;
             }
 
             // Fallback sources are mixed with the sources of different quality

@@ -1,10 +1,41 @@
-
 import { toggleHidden } from '../utils/dom';
 import { convertTimeStringToSeconds } from '../utils/time';
 
 /* eslint-disable */
 // VAST support module
 export default function (self, options) {
+    /**
+     * Gets CTA parameters from VAST and sets them on tempOptions
+     *
+     * Fallbacks to any value that is filled on the TitleCTA extension, but needs at least an url and a text
+     *
+     * @param {HTMLElement} titleCtaElement
+     *
+     * @param {any} tmpOptions
+     */
+    self.setCTAFromVast = (titleCtaElement, tmpOptions) => {
+        if (self.config.vastOptions.adCTATextVast && titleCtaElement) {
+            const mobileText = self.extractNodeDataByTagName(titleCtaElement, 'MobileText');
+            const desktopText = self.extractNodeDataByTagName(titleCtaElement, 'PCText');
+            const link =
+                playerInstance.extractNodeDataByTagName(titleCtaElement, 'DisplayUrl') ||
+                playerInstance.extractNodeDataByTagName(titleCtaElement, 'Link');
+            const tracking = self.extractNodeDataByTagName(titleCtaElement, 'Tracking');
+            const isMobile = window.matchMedia('(max-width: 768px)').matches;
+
+            if ((desktopText || mobileText) && tracking) {
+                tmpOptions.titleCTA = {
+                    text: isMobile ? mobileText || desktopText : desktopText || mobileText,
+                    link: link || null,
+                    tracking,
+                };
+            }
+            self.config.vastOptions.adCTAText = 'TODO SET TITLE';
+            tmpOptions.iconClick = `http://todo.set/url`;
+            console.log(titleCtaElements, tmpOptions);
+        }
+    };
+
     self.getClickThroughUrlFromLinear = (linear) => {
         const videoClicks = linear.getElementsByTagName('VideoClicks');
 
@@ -139,6 +170,25 @@ export default function (self, options) {
         }
 
         return result;
+    };
+
+    /**
+     * Gets the first element found by tag name, and returns the element data
+     *
+     * @param {HTMLElement} parentNode
+     *
+     * @param {string} tagName
+     *
+     * @returns {string|null}
+     */
+    self.extractNodeDataByTagName = (parentNode, tagName) => {
+        const element = parentNode.getElementsByTagName(tagName);
+
+        if (element && element.length) {
+            return self.extractNodeData(element[0]);
+        } else {
+            return null;
+        }
     };
 
     self.extractNodeData = (parentNode) => {
@@ -416,6 +466,7 @@ export default function (self, options) {
         self.pause();
         self.toggleLoader(false);
         self.config.vastOptions.vastAdvanced.noVastVideoCallback();
+        document.querySelector('.fluid_vpaid_slot')?.remove();
 
         if (!self.vastOptions || typeof self.vastOptions.errorUrl === 'undefined') {
             self.debug.error(errorCode);
@@ -456,6 +507,12 @@ export default function (self, options) {
             self.registerErrorEvents(errorTags, tmpOptions);
         }
 
+        // Sets CTA from vast
+        const titleCta = xmlResponse.getElementsByTagName('TitleCTA');
+        if (titleCta !== null && titleCta.length) {
+            self.setCTAFromVast(titleCta[0], tmpOptions);
+        }
+
         //Get Creative
         const creative = xmlResponse.getElementsByTagName('Creative');
 
@@ -487,7 +544,7 @@ export default function (self, options) {
                     tmpOptions.duration = self.getDurationFromLinear(creativeLinear);
                     tmpOptions.mediaFileList = self.getMediaFileListFromLinear(creativeLinear);
                     tmpOptions.adParameters = self.getAdParametersFromLinear(creativeLinear);
-                    tmpOptions.iconClick = self.getIconClickThroughFromLinear(creativeLinear);
+                    tmpOptions.iconClick = tmpOptions.iconClick || self.getIconClickThroughFromLinear(creativeLinear);
 
                     if (tmpOptions.adParameters) {
                         tmpOptions.vpaid = true;
@@ -556,12 +613,7 @@ export default function (self, options) {
         const adListId = vastObj.id;
 
         const handleVastResult = function (pass, tmpOptions) {
-            if (
-                pass &&
-                typeof tmpOptions !== 'undefined' &&
-                tmpOptions.vpaid &&
-                !self.config.vastOptions.allowVPAID
-            ) {
+            if (pass && typeof tmpOptions !== 'undefined' && tmpOptions.vpaid && !self.config.vastOptions.allowVPAID) {
                 pass = false;
                 self.debug.error('VPAID not allowed, so skipping this VAST tag.');
             }
@@ -785,14 +837,22 @@ export default function (self, options) {
         // group the ads by roll
         // pushing object references and forming json
         Object.keys(ads).map(function (e) {
-            if (ads[e].roll.toLowerCase() === 'preRoll'.toLowerCase()) {
-                adGroupedByRolls.preRoll.push(ads[e]);
-            } else if (ads[e].roll.toLowerCase() === 'midRoll'.toLowerCase()) {
-                adGroupedByRolls.midRoll.push(ads[e]);
-            } else if (ads[e].roll.toLowerCase() === 'postRoll'.toLowerCase()) {
-                adGroupedByRolls.postRoll.push(ads[e]);
-            } else if (ads[e].roll.toLowerCase() === 'onPauseRoll'.toLowerCase()) {
-                adGroupedByRolls.onPauseRoll.push(ads[e]);
+            switch (ads[e].roll.toLowerCase()) {
+                case 'preRoll'.toLowerCase():
+                    adGroupedByRolls.preRoll.push(ads[e]);
+                    break;
+                case 'midRoll'.toLowerCase():
+                    adGroupedByRolls.midRoll.push(ads[e]);
+                    break;
+                case 'postRoll'.toLowerCase():
+                    adGroupedByRolls.postRoll.push(ads[e]);
+                    break;
+                case 'onPauseRoll'.toLowerCase():
+                    adGroupedByRolls.onPauseRoll.push(ads[e]);
+                    break;
+                default:
+                    console.error(`${ads[e].roll.toLowerCase()} is not a recognized roll`);
+                    break;
             }
         });
 
@@ -804,7 +864,7 @@ export default function (self, options) {
         if (event) {
             event.stopImmediatePropagation();
         }
-        //"this" is the HTML5 video tag, because it disptches the "ended" event
+        //"this" is the HTML5 video tag, because it dispatches the "ended" event
         self.deleteVastAdElements();
         self.checkForNextAd();
     };

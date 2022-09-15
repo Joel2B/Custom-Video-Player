@@ -216,6 +216,7 @@ class CVP {
         this.vastOptions = null;
         this.isCurrentlyPlayingAd = false;
         this.mainVideoCurrentTime = 0;
+        this.mainCurrentSource = null;
         this.isTimer = false;
         this.timer = null;
         this.timerPool = {};
