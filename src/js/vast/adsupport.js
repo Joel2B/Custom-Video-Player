@@ -175,6 +175,12 @@ export default function (self, options) {
                     self.hideAdMarkers();
                 }
             }
+
+            setTimeout(() => {
+                if (self.isCurrentlyPlayingAd) {
+                    self.config.vastOptions.vastAdvanced.vastPlayCallback();
+                }
+            }, 0);
         };
 
         /**

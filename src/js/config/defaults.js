@@ -116,6 +116,7 @@ const defaults = {
         vpaidTimeout: 3000,
         vastAdvanced: {
             vastLoadedCallback: function() {},
+            vastPlayCallback: function() {},
             noVastVideoCallback: function() {},
             vastVideoSkippedCallback: function() {},
             vastVideoEndedCallback: function() {},
