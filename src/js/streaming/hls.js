@@ -209,20 +209,29 @@ class Hlsjs {
             player.subtitles.checkTrack(data.id);
         });
 
+        this.hls.on(Hls.Events.LEVEL_SWITCHING, (e, data) => {
+            player.debug.log(e, data);
+
+            if (!this.hls.autoLevelEnabled && !player.multipleSourceTypes) {
+                player.toggleLoader(true);
+                player.listeners.waiting = true;
+            }
+        });
+
         this.hls.on(Hls.Events.LEVEL_SWITCHED, (e, data) => {
             player.debug.log(e, data);
 
             if (!this.hls.autoLevelEnabled || player.multipleSourceTypes) {
+                if (!player.multipleSourceTypes) {
+                    player.toggleLoader(false);
+                    player.listeners.waiting = false;
+                }
                 return;
             }
 
             player.quality.auto = true;
             player.quality.current = data.level;
             player.quality.update();
-        });
-
-        this.hls.on(Hls.Events.LEVEL_SWITCHING, (e, data) => {
-            player.debug.log(e, data);
         });
 
         this.hls.on(Hls.Events.MANIFEST_PARSED, (e, data) => {

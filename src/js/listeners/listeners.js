@@ -5,7 +5,12 @@ import { toggleClass } from '../utils/dom';
 class Listeners extends Update {
     constructor(player) {
         super(player);
+
         this.player = player;
+
+        // TODO: improve
+        // for HLS
+        this.waiting = false;
 
         this.media();
         this.controls();
@@ -31,7 +36,11 @@ class Listeners extends Update {
 
         // Display time, duration and video progress
         on.call(player, player.media, 'timeupdate seeking seeked', (event) => {
-            if (event.type === 'timeupdate') {
+            if (player.playing) {
+                this.waiting = false;
+            }
+
+            if (event.type === 'timeupdate' && !this.waiting) {
                 player.toggleLoader(false);
             }
 
