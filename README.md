@@ -25,7 +25,7 @@ Mobile
 * Forward and backward one frame
 
 ## Demo
-[Custom Video Player](https://appsdev.cyou/xv-ph-rt/)
+[Custom Video Player](https://appsdev.cyou/player/demo/)
 
 [E2E cases](https://appsdev.cyou/player/tests/)
 
