@@ -151,6 +151,10 @@ class PlayPause {
         const isFirstStart = !player.firstPlayLaunched;
         const preRolls = player.findRoll('preRoll');
 
+        if (!player.ready) {
+            return;
+        }
+
         if (!player.allowPlayStream) {
             if (isHLS(player.currentSource.src)) {
                 player.playStream = true;
@@ -193,7 +197,7 @@ class PlayPause {
                     if (player.streaming.dash && is.function(player.streaming.dash.play)) {
                         player.streaming.dash.play();
                     } else {
-                        if (player.streaming.hls && !player.streaming.hls.autoStartLoad) {
+                        if (player.streaming.hls && !player.streaming.hls.userConfig.autoStartLoad) {
                             player.streaming.hls.startLoad();
                         }
 

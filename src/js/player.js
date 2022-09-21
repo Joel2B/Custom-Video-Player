@@ -40,11 +40,12 @@ import Keyboard from './listeners/keyboard';
 import UserActivity from './user-activity';
 
 import { isDASH, isHLS, isSource } from './utils/media';
-import { createElement, insertAfter, toggleClass } from './utils/dom';
-import { off, on, once, unbindListeners } from './utils/events';
+import { createElement, insertAfter, toggleClass, replaceElement } from './utils/dom';
+import { off, on, once, unbindListeners, triggerEvent } from './utils/events';
 import { IS_ANY_SAFARI, IS_IOS, IS_ANDROID, TOUCH_ENABLED } from './utils/browser';
 import { getMimetype } from './utils/mimetypes';
 import is from './utils/is';
+import delay from './utils/promise';
 
 // TODO: remove after tweaking adsupport, vast and vpaid
 const FP_MODULES = [AdSupport, Vast, Vpaid];
@@ -53,6 +54,9 @@ class CVP {
     constructor(target, options) {
         this.version = FP_BUILD_VERSION;
         this.homepage = FP_HOMEPAGE;
+
+        // State
+        this.ready = false;
 
         // Touch device
         this.touch = TOUCH_ENABLED;
@@ -89,6 +93,11 @@ class CVP {
             this.debug.warn('Target already setup');
             return;
         }
+
+        // Cache original element state for .destroy()
+        const clone = this.media.cloneNode(true);
+        clone.autoplay = false;
+        this.original = clone;
 
         // Store reference
         this.media.cvp = this;
@@ -147,6 +156,7 @@ class CVP {
         this.config.layoutControls.playerInitCallback();
 
         const play = this.media.play;
+
         this.media.play = () => {
             const promise = play.apply(this.media, arguments);
 
@@ -176,6 +186,8 @@ class CVP {
 
             return promise;
         };
+
+        this.ready = true;
     }
 
     defineVariables = () => {
@@ -348,11 +360,16 @@ class CVP {
     };
 
     toggleLoader = (show) => {
+        if (this.isLoading === show) {
+            return;
+        }
+
+        this.isLoading = show;
+
         if (this.mobile) {
             toggleClass(this.wrapper, 'fluid_waiting', show);
         }
 
-        this.isLoading = show;
         this.controls.loader.style.opacity = show ? '1' : '0';
     };
 
@@ -674,7 +691,7 @@ class CVP {
     }
 
     get playing() {
-        return Boolean(!this.paused && !this.ended && this.media.readyState > 2);
+        return Boolean(this.ready && !this.paused && !this.ended && this.media.readyState > 2);
     }
 
     get paused() {
@@ -717,33 +734,40 @@ class CVP {
     };
 
     destroy = () => {
+        if (!this.ready) {
+            return;
+        }
+
         const wrapper = this.wrapper;
 
         if (!is.element(wrapper)) {
-            this.debug.warn('Wrapper element not found');
+            this.debug.error('Wrapper element not found');
             return;
         }
+
+        if (!is.element(this.media)) {
+            this.debug.error('Media element not found');
+            return;
+        }
+
+        // Reset overflow (incase destroyed while in fullscreen)
+        document.body.style.overflow = '';
 
         unbindListeners.call(this);
 
         // destroy video
-        if (is.element(this.media)) {
-            this.pause();
+        this.pause();
 
-            this.streaming.detach();
+        this.streaming.detach();
 
-            this.media.setAttribute('src', this.config.blankVideo);
-            this.media.load();
-            this.media.remove();
-        } else {
-            this.debug.error('Media element not found');
-        }
+        this.media.setAttribute('src', this.config.blankVideo);
+        this.media.load();
 
-        if (is.element(wrapper)) {
-            wrapper.remove();
-        } else {
-            this.debug.error('Wrapper element not found');
-        }
+        this.original.setAttribute('controls', '');
+
+        replaceElement(this.original, this.wrapper);
+
+        triggerEvent.call(this, this.original, 'destroyed', true);
 
         // Stop checking fps
         clearInterval(this.fps.interval);
@@ -751,13 +775,15 @@ class CVP {
         // TODO: ads, remove after tweaking adsupport, vast and vpaid
         clearInterval(this.timer);
 
+        this.ready = false;
+
         // Clear for garbage collection
-        setTimeout(() => {
+        return delay(200, () => {
             this.media = null;
             this.controls = null;
             this.mobileControls = null;
             this.wrapper = null;
-        }, 200);
+        });
     };
 }
 
@@ -765,7 +791,7 @@ class CVP {
  * Public Fluid Player API interface
  * @param instance
  */
-const PlayerInterface = function(instance) {
+const PlayerInterface = function (instance) {
     this.src = (src) => {
         instance.src(src);
     };
@@ -802,8 +828,8 @@ const PlayerInterface = function(instance) {
         instance.fullscreen.toggle(state);
     };
 
-    this.destroy = () => {
-        instance.destroy();
+    this.destroy = async () => {
+        await instance.destroy();
     };
 
     this.dashInstance = () => {
@@ -830,7 +856,7 @@ let playerInstances = 0;
  * @param options Fluid Player configuration options
  * @returns {playerInterface}
  */
-const playerInitializer = function(target, options = {}) {
+const playerInitializer = function (target, options = {}) {
     const instance = new CVP(target, options);
 
     const publicInstance = new PlayerInterface(instance);

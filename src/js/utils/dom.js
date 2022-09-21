@@ -70,6 +70,17 @@ export function insertAfter(element, target) {
     target.parentNode.insertBefore(element, target.nextSibling);
 }
 
+// Replace element
+export function replaceElement(newChild, oldChild) {
+    if (!is.element(oldChild) || !is.element(oldChild.parentNode) || !is.element(newChild)) {
+        return null;
+    }
+
+    oldChild.parentNode.replaceChild(newChild, oldChild);
+
+    return newChild;
+}
+
 // Toggle hidden
 export function toggleHidden(element, hidden) {
     if (!is.element(element)) {

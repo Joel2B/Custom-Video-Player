@@ -47,6 +47,8 @@ class Streaming {
             this.hls.detachMedia();
             this.hls.destroy();
 
+            clearInterval(this.hls.bufferTimer);
+
             this.hls = null;
         }
 

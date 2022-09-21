@@ -1,6 +1,5 @@
 import { createElement, emptyEl, toggleHidden } from '../utils/dom';
 import { formatTime } from '../utils/time';
-import is from '../utils/is';
 
 class Update {
     constructor(player) {
