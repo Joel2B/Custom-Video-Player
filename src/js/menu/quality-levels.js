@@ -198,6 +198,10 @@ class Quality {
     update = () => {
         const { player } = this;
 
+        if (!this.isMenuReady) {
+            return;
+        }
+
         if (!player.menu.inSubpage) {
             player.menu.restartLater();
         }
