@@ -17,7 +17,7 @@ export const getFileExtension = function(path) {
         return '';
     }
 
-    const ext = path.split('.').pop();
+    const ext = path.split('.').pop().split('?').shift();
 
     return ext === path ? '' : ext.toLowerCase();
 };
