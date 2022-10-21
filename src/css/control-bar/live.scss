@@ -1,37 +1,37 @@
 .fluid_live_badge {
-    display: none;
-    text-transform: uppercase;
-    position: relative;
-    left: 40px;
-    height: 24px;
-    line-height: 24px;
-    font-size: 13px;
-    cursor: pointer;
+  display: none;
+  text-transform: uppercase;
+  position: relative;
+  left: 40px;
+  height: 24px;
+  line-height: 24px;
+  font-size: 13px;
+  cursor: pointer;
+
+  &:before {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    vertical-align: 4%;
+    margin-right: 5px;
+    background: #757575;
+    content: '';
+    border-radius: 6px;
+  }
+
+  &.sync {
+    pointer-events: none;
+    cursor: default;
 
     &:before {
-        display: inline-block;
-        width: 6px;
-        height: 6px;
-        vertical-align: 4%;
-        margin-right: 5px;
-        background: #757575;
-        content: '';
-        border-radius: 6px;
+      background: #f00;
     }
-
-    &.sync {
-        pointer-events: none;
-        cursor: default;
-
-        &:before {
-            background: #f00;
-        }
-    }
+  }
 }
 
 .mobile.fluid_live_badge {
-    left: auto;
-    height: 44px;
-    align-items: center;
-    margin-left: 10px !important;
+  left: auto;
+  height: 44px;
+  align-items: center;
+  margin-left: 10px !important;
 }

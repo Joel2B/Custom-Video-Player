@@ -3,75 +3,75 @@ import { on } from '../utils/events';
 import { switcher } from './menu-item';
 
 class Loop {
-    constructor(player) {
-        this.player = player;
-        this.id = 'loop';
+  constructor(player) {
+    this.player = player;
+    this.id = 'loop';
 
-        this.config = this.player.config.layoutControls[this.id];
+    this.config = this.player.config.layoutControls[this.id];
 
-        this.current = false;
+    this.current = false;
 
-        this.init();
+    this.init();
+  }
+
+  init = () => {
+    const { player } = this;
+
+    if (!player.menu.isEnabled(this.id)) {
+      return;
     }
 
-    init = () => {
-        const { player } = this;
-
-        if (!player.menu.isEnabled(this.id)) {
-            return;
-        }
-
-        if (player.storage.get(this.id) === null) {
-            player.storage.set(this.id, this.config);
-        }
-
-        this.setupMenu();
+    if (player.storage.get(this.id) === null) {
+      player.storage.set(this.id, this.config);
     }
 
-    setupMenu = () => {
-        const { player } = this;
+    this.setupMenu();
+  };
 
-        const item = switcher({
-            id: this.id,
-            title: 'Loop',
-            enabled: player.storage.get(this.id),
-            instance: player,
-        });
+  setupMenu = () => {
+    const { player } = this;
 
-        player.menu.add({
-            id: this.id,
-            field: 'switcher',
-            item: item,
-        });
+    const item = switcher({
+      id: this.id,
+      title: 'Loop',
+      enabled: player.storage.get(this.id),
+      instance: player,
+    });
 
-        on.call(player, item, 'click', () => {
-            let active = false;
+    player.menu.add({
+      id: this.id,
+      field: 'switcher',
+      item,
+    });
 
-            if (!hasClass(item, 'cvp_enabled')) {
-                active = true;
-            }
+    on.call(player, item, 'click', () => {
+      let active = false;
 
-            toggleClass(item, 'cvp_enabled', active);
+      if (!hasClass(item, 'cvp_enabled')) {
+        active = true;
+      }
 
-            this.set(active);
+      toggleClass(item, 'cvp_enabled', active);
 
-            if (player.mobile) {
-                player.menu.close();
-            }
-        });
+      this.set(active);
 
-        this.set(player.storage.get(this.id));
-    }
+      if (player.mobile) {
+        player.menu.close();
+      }
+    });
 
-    set = (input) => {
-        const { player } = this;
+    this.set(player.storage.get(this.id));
+  };
 
-        this.current = input;
+  set = (input) => {
+    const { player } = this;
 
-        player.loop = input;
+    this.current = input;
 
-        player.storage.set(this.id, input);
-    }
+    player.loop = input;
+
+    player.storage.set(this.id, input);
+  };
 }
 
 export default Loop;

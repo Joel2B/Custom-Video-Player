@@ -2,72 +2,72 @@ import { createElement, emptyEl, toggleHidden } from '../utils/dom';
 import { formatTime } from '../utils/time';
 
 class Update {
-    constructor(player) {
-        this.player = player;
+  constructor(player) {
+    this.player = player;
 
-        this.updateInterval = null;
-        this.updateRefreshInterval = 60;
+    this.updateInterval = null;
+    this.updateRefreshInterval = 60;
+  }
+
+  time = () => {
+    let currentTime = formatTime(this.player.currentTime);
+
+    if (this.player.streaming.live.active) {
+      currentTime = this.player.streaming.live.timeDisplay();
     }
 
-    time = () => {
-        let currentTime = formatTime(this.player.currentTime);
+    this.player.controls.currentTime.textContent = currentTime;
+  };
 
-        if (this.player.streaming.live.active) {
-            currentTime = this.player.streaming.live.timeDisplay();
-        }
+  duration = () => {
+    const { player } = this;
 
-        this.player.controls.currentTime.textContent = currentTime;
+    if (player.streaming.live.active) {
+      toggleHidden(player.controls.separator, true);
+      toggleHidden(player.controls.duration, true);
+      return;
     }
 
-    duration = () => {
-        const { player } = this;
+    const duration = formatTime(player.duration);
+    player.controls.duration.textContent = duration;
+  };
 
-        if (player.streaming.live.active) {
-            toggleHidden(player.controls.separator, true);
-            toggleHidden(player.controls.duration, true);
-            return;
+  progress = () => {
+    if (this.updateInterval === null) {
+      this.updateInterval = setInterval(() => {
+        this.player.progressBar.update();
+        if (this.player.paused) {
+          clearInterval(this.updateInterval);
+          this.updateInterval = null;
         }
+      }, this.updateRefreshInterval);
+    }
+  };
 
-        const duration = formatTime(player.duration);
-        player.controls.duration.textContent = duration;
-    };
+  buffer = () => {
+    const buffer = this.player.controls.loadProgress;
+    const duration = this.player.duration;
+    const { buffered } = this.player.media;
 
-    progress = () => {
-        if (this.updateInterval === null) {
-            this.updateInterval = setInterval(() => {
-                this.player.progressBar.update();
-                if (this.player.paused) {
-                    clearInterval(this.updateInterval);
-                    this.updateInterval = null;
-                }
-            }, this.updateRefreshInterval);
-        }
-    };
+    emptyEl(buffer);
 
-    buffer = () => {
-        const buffer = this.player.controls.loadProgress;
-        const duration = this.player.duration;
-        const { buffered } = this.player.media;
+    for (let i = 0; i < buffered.length; i++) {
+      const start = buffered.start(i);
+      const end = buffered.end(i);
 
-        emptyEl(buffer);
+      const left = (start / duration) * 100;
+      const width = ((end - start) / duration) * 100;
 
-        for (let i = 0; i < buffered.length; i++) {
-            const start = buffered.start(i);
-            const end = buffered.end(i);
+      const el = createElement('div', {
+        class: 'buffer',
+      });
 
-            const left = (start / duration) * 100;
-            const width = ((end - start) / duration) * 100;
+      el.style.left = `${left.toFixed(2)}%`;
+      el.style.width = `${width.toFixed(2)}%`;
 
-            const el = createElement('div', {
-                class: 'buffer',
-            });
-
-            el.style.left = `${left.toFixed(2)}%`;
-            el.style.width = `${width.toFixed(2)}%`;
-
-            buffer.appendChild(el);
-        }
-    };
+      buffer.appendChild(el);
+    }
+  };
 }
 
 export default Update;

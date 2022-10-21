@@ -1,4 +1,5 @@
 # Custom Video Player
+
 HTML5 Video Player, based on Fluid Player v3.0.4
 
 Desktop
@@ -11,25 +12,28 @@ Mobile
 ![2](https://user-images.githubusercontent.com/58922368/147867825-8c5396f7-3a6e-4e64-91fa-d3da4428c4bf.jpg)
 
 ## Difference with fluid player
-* Some errors fixed
-* Smooth animations
-* Customized timeline
-* Customized thumbnails
-* A main menu
-    * Autoplay
-    * Loop
-    * Speed
-    * Quality
-    * Audio
-    * Subtitles
-* Forward and backward one frame
+
+- Some errors fixed
+- Smooth animations
+- Customized timeline
+- Customized thumbnails
+- A main menu
+  - Autoplay
+  - Loop
+  - Speed
+  - Quality
+  - Audio
+  - Subtitles
+- Forward and backward one frame
 
 ## Demo
+
 [Custom Video Player](https://appsdev.cyou/player/demo/)
 
 [E2E cases](https://appsdev.cyou/player/tests/)
 
 ## Setup
+
 ```HTML
 <!DOCTYPE html>
 <html lang="en">
@@ -92,6 +96,7 @@ Mobile
 ```
 
 ## Build Project
+
 1. install project dependencies: `npm install`
 2. run `npm run build-dev`
 
@@ -111,4 +116,5 @@ Hls.js:
 `overrideNative`: When is true, if the platform supports Media Source Extensions hls.js will take over HLS playback and will be possible to change the quality, audio and subtitles manually
 
 ## Documentation
+
 Everything you can do in [fluidplayer](https://docs.fluidplayer.com/) you can do it here

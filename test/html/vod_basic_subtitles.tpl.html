@@ -1,44 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta
-            name="viewport"
-            content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
-        />
-        <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-        <title>VOD with subtitles</title>
-        <%= htmlWebpackPlugin.tags.headTags %>
-        <style lang="css">
-            #fluid-player-e2e-case {
-                width: 90%;
-            }
-        </style>
-    </head>
-    <body>
-        <video id="fluid-player-e2e-case">
-            <source
-                src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
-                type="video/mp4"
-            />
-            <track label="English" kind="subtitles" srclang="en" src="static/subtitles/english.vtt" />
-            <track label="Deutsch" kind="subtitles" srclang="de" src="static/subtitles/deutsch.vtt" />
-        </video>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>VOD with subtitles</title>
+    <%= htmlWebpackPlugin.tags.headTags %>
+    <style lang="css">
+      #fluid-player-e2e-case {
+        width: 90%;
+      }
+    </style>
+  </head>
+  <body>
+    <video id="fluid-player-e2e-case">
+      <source
+        src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+        type="video/mp4"
+      />
+      <track label="English" kind="subtitles" srclang="en" src="static/subtitles/english.vtt" />
+      <track label="Deutsch" kind="subtitles" srclang="de" src="static/subtitles/deutsch.vtt" />
+    </video>
 
-        <%= htmlWebpackPlugin.tags.bodyTags %>
+    <%= htmlWebpackPlugin.tags.bodyTags %>
 
-        <script>
-            var instance = fluidPlayer('fluid-player-e2e-case', {
-                layoutControls: {
-                    subtitles: {
-                        active: true,
-                        language: 'en',
-                    },
-                    menu: {
-                        subtitles: true,
-                    },
-                },
-            });
-        </script>
-    </body>
+    <script>
+      const instance = fluidPlayer('fluid-player-e2e-case', {
+        layoutControls: {
+          subtitles: {
+            active: true,
+            language: 'en',
+          },
+          menu: {
+            subtitles: true,
+          },
+        },
+      });
+    </script>
+  </body>
 </html>

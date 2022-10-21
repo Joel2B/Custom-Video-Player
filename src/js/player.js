@@ -51,799 +51,803 @@ import delay from './utils/promise';
 const FP_MODULES = [AdSupport, Vast, Vpaid];
 
 class CVP {
-    constructor(target, options) {
-        this.version = FP_BUILD_VERSION;
-        this.homepage = FP_HOMEPAGE;
+  constructor(target, options) {
+    this.version = FP_BUILD_VERSION;
+    this.homepage = FP_HOMEPAGE;
 
-        // State
-        this.ready = false;
+    // State
+    this.ready = false;
 
-        // Touch device
-        this.touch = TOUCH_ENABLED;
+    // Touch device
+    this.touch = TOUCH_ENABLED;
 
-        // Mobile device
-        this.mobile = (IS_ANDROID && this.touch) || IS_IOS;
+    // Mobile device
+    this.mobile = (IS_ANDROID && this.touch) || IS_IOS;
 
-        // Set the media element
-        this.media = target;
+    // Set the media element
+    this.media = target;
 
-        if (is.string(this.media)) {
-            this.media = document.getElementById(target);
-        }
-
-        // Set config
-        this.config = defaults;
-
-        // Overwrite config
-        this.overwrite(options, this.config);
-
-        if (FP_ENV === 'development') {
-            this.config.debug = true;
-        }
-
-        // Debugging
-        this.debug = new Console(this.config.debug);
-
-        if (!(this.media instanceof HTMLVideoElement)) {
-            this.debug.error('Invalid initializer - player target must be HTMLVideoElement or ID');
-            return;
-        }
-
-        if (this.media.cvp) {
-            this.debug.warn('Target already setup');
-            return;
-        }
-
-        // Cache original element state for .destroy()
-        const clone = this.media.cloneNode(true);
-        clone.autoplay = false;
-        this.original = clone;
-
-        // Store reference
-        this.media.cvp = this;
-
-        // TODO: don't use this anymore, remove after tweaking adsupport, vast and vpaid
-        this.videoPlayerId = !is.empty(this.media.id) ? this.media.id : `fp_instance_${playerInstances++}`;
-
-        // Global variables
-        this.defineVariables();
-
-        // All control elements
-        this.controls = new Controls(this);
-        this.mobileControls = new Mobile(this);
-
-        // Install modules
-        for (const playerModule of FP_MODULES) {
-            playerModule(this);
-        }
-
-        // Listen for events if debugging
-        if (this.config.debug) {
-            on.call(this, this.media, this.config.events.join(' '), (event) => {
-                this.debug.log(`event: ${event.type}`);
-            });
-        }
-
-        // Setup local storage for user settings
-        this.storage = new Storage(this);
-
-        this.setupWrapper();
-        this.setupDevice();
-        this.setupMedia();
-        this.setupControlBar();
-
-        // Setup user activity
-        this.userActivity = new UserActivity(this);
-
-        // Create listeners
-        this.listeners = new Listeners(this);
-
-        // Setup the keyboard and its listeners
-        this.keyboard = new Keyboard(this);
-        if (this.config.layoutControls.keyboardControl) {
-            this.keyboard.listeners();
-        }
-
-        // Apply mute
-        this.initMute();
-
-        // Set sources
-        this.setVideoSources();
-
-        // Setup vast
-        this.setVastList();
-
-        this.config.layoutControls.playerInitCallback();
-
-        const play = this.media.play;
-
-        this.media.play = () => {
-            const promise = play.apply(this.media, arguments);
-
-            if (!is.promise(promise)) {
-                return null;
-            }
-
-            this.promiseTimeout = setTimeout(() => {
-                if (!this.playing) {
-                    this.debug.error('Timeout error. Failed to play video?');
-                }
-            }, 5000);
-
-            promise
-                .then(() => {
-                    clearTimeout(this.promiseTimeout);
-                })
-                .catch((error) => {
-                    this.debug.error(error);
-
-                    if (error.name === 'NotAllowedError') {
-                        this.autoPlay.playMuted();
-                    }
-
-                    clearTimeout(this.promiseTimeout);
-                });
-
-            return promise;
-        };
-
-        this.ready = true;
+    if (is.string(this.media)) {
+      this.media = document.getElementById(target);
     }
 
-    defineVariables = () => {
-        // to load ads
-        this.firstPlayLaunched = false;
+    // Set config
+    this.config = defaults;
 
-        // to display the loading animation
-        this.isLoading = false;
+    // Overwrite config
+    this.overwrite(options, this.config);
 
-        this.eventListeners = [];
+    if (FP_ENV === 'development') {
+      this.config.debug = true;
+    }
 
-        // for theater mode
-        this.originalWidth = null;
-        this.originalHeight = null;
+    // Debugging
+    this.debug = new Console(this.config.debug);
 
-        this.sources = [];
-        this.currentSource = {
-            src: '',
-            type: '',
-            title: '',
-            hd: false,
-        };
+    if (!(this.media instanceof HTMLVideoElement)) {
+      this.debug.error('Invalid initializer - player target must be HTMLVideoElement or ID');
+      return;
+    }
 
-        // to avoid displaying the play/pause animation when changing sources
-        this.isSwitchingSource = false;
+    if (this.media.cvp) {
+      this.debug.warn('Target already setup');
+      return;
+    }
 
-        // to avoid using the functions for hls, we will use the native functions
-        this.multipleSourceTypes = false;
+    // Cache original element state for .destroy()
+    const clone = this.media.cloneNode(true);
+    clone.autoplay = false;
+    this.original = clone;
 
-        // to avoid using play before loading the stream
-        this.allowPlayStream = false;
-        this.playStream = false;
+    // Store reference
+    this.media.cvp = this;
 
-        // TODO: ads, remove after tweaking adsupport, vast and vpaid
-        this.suppressClickthrough = false;
-        this.vpaidTimer = null;
-        this.vpaidAdUnit = null;
-        this.vastOptions = null;
-        this.isCurrentlyPlayingAd = false;
-        this.mainVideoCurrentTime = 0;
-        this.mainCurrentSource = null;
-        this.isTimer = false;
-        this.timer = null;
-        this.timerPool = {};
-        this.adList = {};
-        this.adPool = {};
-        this.adGroupedByRolls = {};
-        this.onPauseRollAdPods = [];
-        this.currentOnPauseRollAd = '';
-        this.preRollAdsResolved = false;
-        this.preRollAdPods = [];
-        this.preRollAdPodsLength = 0;
-        this.preRollVastResolved = 0;
-        this.temporaryAdPods = [];
-        this.availableRolls = ['preRoll', 'midRoll', 'postRoll', 'onPauseRoll'];
-        this.supportedNonLinearAd = ['300x250', '468x60', '728x90'];
-        this.autoplayAfterAd = true;
-        this.nonLinearDuration = 15;
-        this.supportedStaticTypes = ['image/gif', 'image/jpeg', 'image/png'];
-        this.nonLinearVerticalAlign = 'bottom';
-        this.vpaidNonLinearCloseButton = true;
-        this.inLineFound = null;
-    };
+    // TODO: don't use this anymore, remove after tweaking adsupport, vast and vpaid
+    this.videoPlayerId = !is.empty(this.media.id) ? this.media.id : `fp_instance_${playerInstances++}`;
 
-    setupWrapper = () => {
-        this.wrapper = createElement('div', {
-            class: 'fluid_video_wrapper',
+    // Global variables
+    this.defineVariables();
+
+    // All control elements
+    this.controls = new Controls(this);
+    this.mobileControls = new Mobile(this);
+
+    // Install modules
+    for (const playerModule of FP_MODULES) {
+      playerModule(this);
+    }
+
+    // Listen for events if debugging
+    if (this.config.debug) {
+      on.call(this, this.media, this.config.events.join(' '), (event) => {
+        this.debug.log(`event: ${event.type}`);
+      });
+    }
+
+    // Setup local storage for user settings
+    this.storage = new Storage(this);
+
+    this.setupWrapper();
+    this.setupDevice();
+    this.setupMedia();
+    this.setupControlBar();
+
+    // Setup user activity
+    this.userActivity = new UserActivity(this);
+
+    // Create listeners
+    this.listeners = new Listeners(this);
+
+    // Setup the keyboard and its listeners
+    this.keyboard = new Keyboard(this);
+    if (this.config.layoutControls.keyboardControl) {
+      this.keyboard.listeners();
+    }
+
+    // Apply mute
+    this.initMute();
+
+    // Set sources
+    this.setVideoSources();
+
+    // Setup vast
+    this.setVastList();
+
+    this.config.layoutControls.playerInitCallback();
+
+    const play = this.media.play;
+
+    this.media.play = () => {
+      const promise = play.apply(this.media, arguments);
+
+      if (!is.promise(promise)) {
+        return null;
+      }
+
+      this.promiseTimeout = setTimeout(() => {
+        if (!this.playing) {
+          this.debug.error('Timeout error. Failed to play video?');
+        }
+      }, 5000);
+
+      promise
+        .then(() => {
+          clearTimeout(this.promiseTimeout);
+        })
+        .catch((error) => {
+          this.debug.error(error);
+
+          if (error.name === 'NotAllowedError') {
+            this.autoPlay.playMuted();
+          }
+
+          clearTimeout(this.promiseTimeout);
         });
 
-        toggleClass(this.wrapper, 'fluid_player_layout_' + this.config.layoutControls.layout, true);
-
-        // Assign the height/width dimensions to the wrapper
-        let width = `${this.media.clientWidth}px`;
-        let height = `${this.media.clientHeight}px`;
-
-        if (this.config.layoutControls.fillToContainer) {
-            width = '100%';
-            height = '100%';
-        }
-
-        this.wrapper.style.width = width;
-        this.wrapper.style.height = height;
-
-        insertAfter(this.wrapper, this.media);
-        this.wrapper.appendChild(this.media);
-
-        this.controls.setup();
-        this.mobileControls.setup();
-
-        this.posterImage();
-
-        this.logo = new Logo(this);
-
-        this.title = new Title(this);
-
-        this.shortcuts = new Shortcuts(this);
+      return promise;
     };
 
-    setupMedia = () => {
-        this.originalWidth = this.media.offsetWidth;
-        this.originalHeight = this.media.offsetHeight;
+    this.ready = true;
+  }
 
-        this.media.style.width = '100%';
-        this.media.style.height = '100%';
+  defineVariables = () => {
+    // to load ads
+    this.firstPlayLaunched = false;
 
-        this.media.setAttribute('playsinline', '');
-        this.media.setAttribute('webkit-playsinline', '');
+    // to display the loading animation
+    this.isLoading = false;
 
-        // Remove the default controls
-        this.media.removeAttribute('controls');
+    this.eventListeners = [];
 
-        this.menu = new Menu(this);
-        this.audio = new Audio(this);
-        this.subtitles = new Subtitles(this);
+    // for theater mode
+    this.originalWidth = null;
+    this.originalHeight = null;
 
-        this.streaming = new Streaming(this);
-
-        this.fps = new Fps(this);
+    this.sources = [];
+    this.currentSource = {
+      src: '',
+      type: '',
+      title: '',
+      hd: false,
     };
 
-    setupControlBar = () => {
-        this.controlBar = new ControlBar(this);
-        if (this.config.layoutControls.controlBar.autoHide) {
-            this.controlBar.linkControlBarUserActivity();
+    // to avoid displaying the play/pause animation when changing sources
+    this.isSwitchingSource = false;
+
+    // to avoid using the functions for hls, we will use the native functions
+    this.multipleSourceTypes = false;
+
+    // to avoid using play before loading the stream
+    this.allowPlayStream = false;
+    this.playStream = false;
+
+    // TODO: ads, remove after tweaking adsupport, vast and vpaid
+    this.suppressClickthrough = false;
+    this.vpaidTimer = null;
+    this.vpaidAdUnit = null;
+    this.vastOptions = null;
+    this.isCurrentlyPlayingAd = false;
+    this.mainVideoCurrentTime = 0;
+    this.mainCurrentSource = null;
+    this.isTimer = false;
+    this.timer = null;
+    this.timerPool = {};
+    this.adList = {};
+    this.adPool = {};
+    this.adGroupedByRolls = {};
+    this.onPauseRollAdPods = [];
+    this.currentOnPauseRollAd = '';
+    this.preRollAdsResolved = false;
+    this.preRollAdPods = [];
+    this.preRollAdPodsLength = 0;
+    this.preRollVastResolved = 0;
+    this.temporaryAdPods = [];
+    this.availableRolls = ['preRoll', 'midRoll', 'postRoll', 'onPauseRoll'];
+    this.supportedNonLinearAd = ['300x250', '468x60', '728x90'];
+    this.autoplayAfterAd = true;
+    this.nonLinearDuration = 15;
+    this.supportedStaticTypes = ['image/gif', 'image/jpeg', 'image/png'];
+    this.nonLinearVerticalAlign = 'bottom';
+    this.vpaidNonLinearCloseButton = true;
+    this.inLineFound = null;
+  };
+
+  setupWrapper = () => {
+    this.wrapper = createElement('div', {
+      class: 'fluid_video_wrapper',
+    });
+
+    toggleClass(this.wrapper, 'fluid_player_layout_' + this.config.layoutControls.layout, true);
+
+    // Assign the height/width dimensions to the wrapper
+    let width = `${this.media.clientWidth}px`;
+    let height = `${this.media.clientHeight}px`;
+
+    if (this.config.layoutControls.fillToContainer) {
+      width = '100%';
+      height = '100%';
+    }
+
+    this.wrapper.style.width = width;
+    this.wrapper.style.height = height;
+
+    insertAfter(this.wrapper, this.media);
+    this.wrapper.appendChild(this.media);
+
+    this.controls.setup();
+    this.mobileControls.setup();
+
+    this.posterImage();
+
+    this.logo = new Logo(this);
+
+    this.title = new Title(this);
+
+    this.shortcuts = new Shortcuts(this);
+  };
+
+  setupMedia = () => {
+    this.originalWidth = this.media.offsetWidth;
+    this.originalHeight = this.media.offsetHeight;
+
+    this.media.style.width = '100%';
+    this.media.style.height = '100%';
+
+    this.media.setAttribute('playsinline', '');
+    this.media.setAttribute('webkit-playsinline', '');
+
+    // Remove the default controls
+    this.media.removeAttribute('controls');
+
+    this.menu = new Menu(this);
+    this.audio = new Audio(this);
+    this.subtitles = new Subtitles(this);
+
+    this.streaming = new Streaming(this);
+
+    this.fps = new Fps(this);
+  };
+
+  setupControlBar = () => {
+    this.controlBar = new ControlBar(this);
+    if (this.config.layoutControls.controlBar.autoHide) {
+      this.controlBar.linkControlBarUserActivity();
+    }
+
+    this.playPause = new PlayPause(this);
+
+    this.progressBar = new ProgressBar(this);
+
+    this.preview = new Preview(this);
+
+    if (this.config.layoutControls.controlForwardRewind.show) {
+      this.skipControls = new Skip(this);
+    }
+
+    this.download = new Download(this);
+    this.fullscreen = new Fullscreen(this);
+    this.theatre = new Theatre(this);
+    this.HtmlOnPause = new HtmlOnPause(this);
+    this.contextMenu = new ContextMenu(this);
+
+    this.volumeControl = new VolumeControl(this);
+    this.volumeControl.init();
+
+    this.autoPlay = new Autoplay(this);
+    this.loopMenu = new Loop(this);
+    this.speedMenu = new Speed(this);
+    this.audio.init();
+    this.subtitles.init();
+    this.quality = new Quality(this);
+    this.menu.init();
+  };
+
+  resize = () => {
+    this.recalculateAdDimensions();
+    this.resizeVpaidAuto();
+
+    this.progressBar.resize();
+  };
+
+  overwrite = (from, to) => {
+    for (const key in from) {
+      if (is.object(from[key])) {
+        this.overwrite(from[key], to[key]);
+      } else {
+        to[key] = from[key];
+      }
+    }
+  };
+
+  toggleLoader = (show) => {
+    if (this.isLoading === show) {
+      return;
+    }
+
+    this.isLoading = show;
+
+    if (this.mobile) {
+      toggleClass(this.wrapper, 'fluid_waiting', show);
+    }
+
+    this.controls.loader.style.opacity = show ? '1' : '0';
+  };
+
+  findRoll = (roll) => {
+    const ids = [];
+    ids.length = 0;
+
+    if (!roll || !this.hasOwnProperty('adList')) {
+      return;
+    }
+
+    for (const key in this.adList) {
+      if (!this.adList.hasOwnProperty(key)) {
+        continue;
+      }
+
+      if (this.adList[key].roll === roll) {
+        ids.push(key);
+      }
+    }
+
+    return ids;
+  };
+
+  setupDevice = () => {
+    toggleClass(this.wrapper, 'fluid_touch', this.touch);
+    toggleClass(this.wrapper, this.mobile ? 'fluid_mobile' : 'fluid_desktop', true);
+
+    if (!this.touch) {
+      return;
+    }
+
+    this.config.layoutControls.controlBar.autoHide = true;
+    this.config.layoutControls.playButtonShowing = true;
+    this.config.layoutControls.playPauseAnimation = this.mobile;
+  };
+
+  src = (sources) => {
+    if (is.object(sources)) {
+      sources = [sources];
+    }
+
+    this.setSources(sources);
+  };
+
+  setVideoSources = () => {
+    const sources = Array.from(this.media.querySelectorAll('source'));
+
+    this.setSources(sources);
+  };
+
+  setSources = (sources) => {
+    if (!is.array(sources)) {
+      return;
+    }
+
+    this.sources = [];
+
+    for (const source of sources) {
+      if (!source.src || !isSource(source.src)) {
+        continue;
+      }
+
+      const type = (source.type || '').toLowerCase() || getMimetype(source.src);
+
+      if (!type) {
+        continue;
+      }
+
+      let hd = source.hd;
+
+      if (is.element(source)) {
+        if (is.nullOrUndefined(hd)) {
+          hd = source.getAttribute('data-fluid-hd') !== null;
         }
 
-        this.playPause = new PlayPause(this);
+        source.remove();
+      }
 
-        this.progressBar = new ProgressBar(this);
+      this.sources.push({
+        src: source.src,
+        type,
+        title: source.title,
+        hd,
+      });
+    }
 
-        this.preview = new Preview(this);
+    if (this.sources.length === 0) {
+      return;
+    }
 
-        if (this.config.layoutControls.controlForwardRewind.show) {
-            this.skipControls = new Skip(this);
+    this.multipleSourceTypes = false;
+
+    this.currentSource = this.sources[0];
+
+    this.source = this.currentSource;
+
+    this.sources.reverse();
+
+    if (!isHLS(this.currentSource.src) && !isDASH(this.currentSource.src)) {
+      this.multipleSourceTypes = this.sources.some((source) => isHLS(source.src) || isDASH(source.src));
+
+      this.quality.add(this.sources);
+
+      this.autoPlay.apply();
+    }
+  };
+
+  loadSource = (currentTime, paused) => {
+    once.call(this, this.media, 'loadedmetadata', () => {
+      this.speed = this.speedMenu.current;
+      this.loop = this.loopMenu.current;
+      this.currentTime = currentTime;
+
+      this.speedMenu.lock = false;
+
+      // Safari ios and mac fix to set currentTime
+      if (IS_ANY_SAFARI) {
+        once.call(this, this.media, 'canplaythrough', () => {
+          this.currentTime = currentTime;
+        });
+      }
+
+      // Resume playing
+      if (!paused) {
+        if (this.firstPlayLaunched) {
+          this.isSwitchingSource = true;
         }
-
-        this.download = new Download(this);
-        this.fullscreen = new Fullscreen(this);
-        this.theatre = new Theatre(this);
-        this.HtmlOnPause = new HtmlOnPause(this);
-        this.contextMenu = new ContextMenu(this);
-
-        this.volumeControl = new VolumeControl(this);
-        this.volumeControl.init();
-
-        this.autoPlay = new Autoplay(this);
-        this.loopMenu = new Loop(this);
-        this.speedMenu = new Speed(this);
-        this.audio.init();
-        this.subtitles.init();
-        this.quality = new Quality(this);
-        this.menu.init();
-    };
-
-    resize = () => {
-        this.recalculateAdDimensions();
-        this.resizeVpaidAuto();
-
-        this.progressBar.resize();
-    };
-
-    overwrite = (from, to) => {
-        for (const key in from) {
-            if (is.object(from[key])) {
-                this.overwrite(from[key], to[key]);
-            } else {
-                to[key] = from[key];
-            }
-        }
-    };
-
-    toggleLoader = (show) => {
-        if (this.isLoading === show) {
-            return;
-        }
-
-        this.isLoading = show;
 
         if (this.mobile) {
-            toggleClass(this.wrapper, 'fluid_waiting', show);
+          this.controlBar.toggleMobile(false);
         }
 
-        this.controls.loader.style.opacity = show ? '1' : '0';
-    };
+        this.play();
+      }
+    });
 
-    findRoll = (roll) => {
-        const ids = [];
-        ids.length = 0;
+    this.media.load();
+  };
 
-        if (!roll || !this.hasOwnProperty('adList')) {
-            return;
-        }
+  set source(source) {
+    const src = source.src;
 
-        for (const key in this.adList) {
-            if (!this.adList.hasOwnProperty(key)) {
-                continue;
+    this.debug.log('Set source: ', src);
+
+    this.currentSource = source;
+
+    if (this.firstPlayLaunched) {
+      this.isSwitchingSource = true;
+    }
+
+    this.streaming.detach();
+
+    if (isHLS(src) || isDASH(src)) {
+      this.streaming.init();
+    } else {
+      this.media.src = src;
+    }
+  }
+
+  get source() {
+    return this.media.currentSrc;
+  }
+
+  // Set the poster for the video, taken from custom params
+  posterImage = () => {
+    if (!this.config.layoutControls.posterImage) {
+      return;
+    }
+
+    const poster = createElement('div', {
+      class: 'fluid_poster',
+    });
+
+    if (['auto', 'contain', 'cover'].indexOf(this.config.layoutControls.posterImageSize) === -1) {
+      this.debug.error('Not allowed value in posterImageSize');
+      return;
+    }
+
+    poster.style.backgroundImage = `url('${this.config.layoutControls.posterImage}')`;
+    poster.style.backgroundSize = `${this.config.layoutControls.posterImageSize}`;
+
+    this.controls.poster = poster;
+    this.wrapper.appendChild(poster);
+  };
+
+  // This is called when a media type is unsupported
+  // We'll find the current source and try set the next source if it exists
+  nextSource = () => {
+    this.menu.remove('qualityLevels');
+
+    for (let i = this.sources.length - 1; i > 0; i--) {
+      if (this.sources[i].src === this.currentSource.src && this.sources[i - 1].src) {
+        this.source = this.sources[i - 1];
+
+        if (!isHLS(this.source) && !isDASH(this.source)) {
+          on.call(this, this.media, 'canplay', () => {
+            if (this.autoPlay.applied) {
+              this.autoPlay.applied = false;
+              this.autoPlay.apply();
             }
+          });
 
-            if (this.adList[key].roll === roll) {
-                ids.push(key);
-            }
+          this.media.load();
         }
 
-        return ids;
-    };
+        return;
+      }
+    }
+  };
 
-    setupDevice = () => {
-        toggleClass(this.wrapper, 'fluid_touch', this.touch);
-        toggleClass(this.wrapper, this.mobile ? 'fluid_mobile' : 'fluid_desktop', true);
-
-        if (!this.touch) {
-            return;
-        }
-
-        this.config.layoutControls.controlBar.autoHide = true;
-        this.config.layoutControls.playButtonShowing = true;
-        this.config.layoutControls.playPauseAnimation = this.mobile;
-    };
-
-    src = (sources) => {
-        if (is.object(sources)) {
-            sources = [sources];
-        }
-
-        this.setSources(sources);
-    };
-
-    setVideoSources = () => {
-        const sources = Array.from(this.media.querySelectorAll('source'));
-
-        this.setSources(sources);
-    };
-
-    setSources = (sources) => {
-        if (!is.array(sources)) {
-            return;
-        }
-
-        this.sources = [];
-
-        for (const source of sources) {
-            if (!source.src || !isSource(source.src)) {
-                continue;
-            }
-
-            const type = (source.type || '').toLowerCase() || getMimetype(source.src);
-
-            if (!type) {
-                continue;
-            }
-
-            let hd = source.hd;
-
-            if (is.element(source)) {
-                if (is.nullOrUndefined(hd)) {
-                    hd = source.getAttribute('data-fluid-hd') !== null;
-                }
-
-                source.remove();
-            }
-
-            this.sources.push({
-                src: source.src,
-                type: type,
-                title: source.title,
-                hd: hd,
-            });
-        }
-
-        if (this.sources.length === 0) {
-            return;
-        }
-
-        this.multipleSourceTypes = false;
-
-        this.currentSource = this.sources[0];
-
-        this.source = this.currentSource;
-
-        this.sources.reverse();
-
-        if (!isHLS(this.currentSource.src) && !isDASH(this.currentSource.src)) {
-            this.multipleSourceTypes = this.sources.some((source) => isHLS(source.src) || isDASH(source.src));
-
-            this.quality.add(this.sources);
-
-            this.autoPlay.apply();
-        }
-    };
-
-    loadSource = (currentTime, paused) => {
-        once.call(this, this.media, 'loadedmetadata', () => {
-            this.speed = this.speedMenu.current;
-            this.loop = this.loopMenu.current;
-            this.currentTime = currentTime;
-
-            this.speedMenu.lock = false;
-
-            // Safari ios and mac fix to set currentTime
-            if (IS_ANY_SAFARI) {
-                once.call(this, this.media, 'canplaythrough', () => {
-                    this.currentTime = currentTime;
-                });
-            }
-
-            // Resume playing
-            if (!paused) {
-                if (this.firstPlayLaunched) {
-                    this.isSwitchingSource = true;
-                }
-
-                if (this.mobile) {
-                    this.controlBar.toggleMobile(false);
-                }
-
-                this.play();
-            }
-        });
-
-        this.media.load();
-    };
-
-    set source(source) {
-        const src = source.src;
-
-        this.debug.log('Set source: ', src);
-
-        this.currentSource = source;
-
-        if (this.firstPlayLaunched) {
-            this.isSwitchingSource = true;
-        }
-
-        this.streaming.detach();
-
-        if (isHLS(src) || isDASH(src)) {
-            this.streaming.init();
-        } else {
-            this.media.src = src;
-        }
+  // "API" Functions
+  play = () => {
+    if (!is.function(this.media.play)) {
+      return null;
     }
 
-    get source() {
-        return this.media.currentSrc;
+    return this.media.play();
+  };
+
+  pause = () => {
+    if (!this.playing || !is.function(this.media.pause)) {
+      return null;
     }
 
-    // Set the poster for the video, taken from custom params
-    posterImage = () => {
-        if (!this.config.layoutControls.posterImage) {
-            return;
-        }
+    return this.media.pause();
+  };
 
-        const poster = createElement('div', {
-            class: 'fluid_poster',
-        });
-
-        if (['auto', 'contain', 'cover'].indexOf(this.config.layoutControls.posterImageSize) === -1) {
-            this.debug.error('Not allowed value in posterImageSize');
-            return;
-        }
-
-        poster.style.backgroundImage = `url('${this.config.layoutControls.posterImage}')`;
-        poster.style.backgroundSize = `${this.config.layoutControls.posterImageSize}`;
-
-        this.controls.poster = poster;
-        this.wrapper.appendChild(poster);
-    };
-
-    // This is called when a media type is unsupported
-    // We'll find the current source and try set the next source if it exists
-    nextSource = () => {
-        this.menu.remove('qualityLevels');
-
-        for (let i = this.sources.length - 1; i > 0; i--) {
-            if (this.sources[i].src === this.currentSource.src && this.sources[i - 1].src) {
-                this.source = this.sources[i - 1];
-
-                if (!isHLS(this.source) && !isDASH(this.source)) {
-                    on.call(this, this.media, 'canplay', () => {
-                        if (this.autoPlay.applied) {
-                            this.autoPlay.applied = false;
-                            this.autoPlay.apply();
-                        }
-                    });
-
-                    this.media.load();
-                }
-
-                return;
-            }
-        }
-    };
-
-    // "API" Functions
-    play = () => {
-        if (!is.function(this.media.play)) {
-            return null;
-        }
-
-        return this.media.play();
-    };
-
-    pause = () => {
-        if (!this.playing || !is.function(this.media.pause)) {
-            return null;
-        }
-
-        return this.media.pause();
-    };
-
-    set currentTime(input) {
-        if (!this.duration) {
-            return;
-        }
-
-        if (this.streaming.live.active && this.streaming.live.setCurrentTime) {
-            this.streaming.live.setCurrentTime(input);
-            return;
-        }
-
-        const inputIsValid = is.number(input) && input > 0;
-
-        this.media.currentTime = inputIsValid ? Math.min(input, this.duration) : 0;
+  set currentTime(input) {
+    if (!this.duration) {
+      return;
     }
 
-    get currentTime() {
-        if (this.streaming.live.active && this.streaming.live.getCurrentTime) {
-            return this.streaming.live.getCurrentTime();
-        }
-
-        return Number(this.media.currentTime);
+    if (this.streaming.live.active && this.streaming.live.setCurrentTime) {
+      this.streaming.live.setCurrentTime(input);
+      return;
     }
 
-    get duration() {
-        if (this.streaming.live.active && this.streaming.live.duration) {
-            return this.streaming.live.duration();
-        }
+    const inputIsValid = is.number(input) && input > 0;
 
-        const duration = (this.media || {}).duration;
+    this.media.currentTime = inputIsValid ? Math.min(input, this.duration) : 0;
+  }
 
-        return !is.number(duration) || duration === Infinity ? 0 : duration;
+  get currentTime() {
+    if (this.streaming.live.active && this.streaming.live.getCurrentTime) {
+      return this.streaming.live.getCurrentTime();
     }
 
-    set volume(volume) {
-        this.media.volume = volume;
+    return Number(this.media.currentTime);
+  }
+
+  get duration() {
+    if (this.streaming.live.active && this.streaming.live.duration) {
+      return this.streaming.live.duration();
     }
 
-    get volume() {
-        return Number(this.media.volume);
+    const duration = (this.media || {}).duration;
+
+    return !is.number(duration) || duration === Infinity ? 0 : duration;
+  }
+
+  set volume(volume) {
+    this.media.volume = volume;
+  }
+
+  get volume() {
+    return Number(this.media.volume);
+  }
+
+  initMute = () => {
+    if (!this.config.layoutControls.mute) {
+      return;
     }
 
-    initMute = () => {
-        if (!this.config.layoutControls.mute) {
-            return;
-        }
+    this.volume = 0;
+    this.muted = true;
+  };
 
-        this.volume = 0;
-        this.muted = true;
-    };
-
-    toggleMute = () => {
-        if ((this.volume !== 0 || IS_IOS) && !this.muted) {
-            this.volume = 0;
-            this.muted = true;
-        } else {
-            this.volume = this.volumeControl.latestVolume;
-            this.muted = false;
-        }
-
-        // Persistent settings
-        this.storage.set('volume', this.volumeControl.latestVolume);
-        this.storage.set('mute', this.muted);
-    };
-
-    set muted(mute) {
-        this.media.muted = mute;
+  toggleMute = () => {
+    if ((this.volume !== 0 || IS_IOS) && !this.muted) {
+      this.volume = 0;
+      this.muted = true;
+    } else {
+      this.volume = this.volumeControl.latestVolume;
+      this.muted = false;
     }
 
-    get muted() {
-        return Boolean(this.media.muted);
+    // Persistent settings
+    this.storage.set('volume', this.volumeControl.latestVolume);
+    this.storage.set('mute', this.muted);
+  };
+
+  set muted(mute) {
+    this.media.muted = mute;
+  }
+
+  get muted() {
+    return Boolean(this.media.muted);
+  }
+
+  set speed(input) {
+    setTimeout(() => {
+      if (this.media) {
+        this.media.playbackRate = input;
+      }
+    }, 0);
+  }
+
+  get speed() {
+    return Number(this.media.playbackRate);
+  }
+
+  set loop(loop) {
+    this.media.loop = loop;
+  }
+
+  get loop() {
+    return Boolean(this.media.loop);
+  }
+
+  get playing() {
+    return Boolean(this.ready && !this.paused && !this.ended && this.media.readyState > 2);
+  }
+
+  get paused() {
+    return Boolean(this.media.paused);
+  }
+
+  get ended() {
+    return Boolean(this.media.ended);
+  }
+
+  skipTo = (time) => {
+    this.currentTime = time;
+  };
+
+  /**
+   * Add event listeners
+   * @param {String} event - Event type
+   * @param {Function} callback - Callback for when event occurs
+   */
+  on = (event, callback) => {
+    on.call(this, this.media, event, callback);
+  };
+
+  /**
+   * Add event listeners once
+   * @param {String} event - Event type
+   * @param {Function} callback - Callback for when event occurs
+   */
+  once = (event, callback) => {
+    once.call(this, this.media, event, callback);
+  };
+
+  /**
+   * Remove event listeners
+   * @param {String} event - Event type
+   * @param {Function} callback - Callback for when event occurs
+   */
+  off = (event, callback) => {
+    off(this.media, event, callback);
+  };
+
+  destroy = () => {
+    if (!this.ready) {
+      return;
     }
 
-    set speed(input) {
-        setTimeout(() => {
-            if (this.media) {
-                this.media.playbackRate = input;
-            }
-        }, 0);
+    const wrapper = this.wrapper;
+
+    if (!is.element(wrapper)) {
+      this.debug.error('Wrapper element not found');
+      return;
     }
 
-    get speed() {
-        return Number(this.media.playbackRate);
+    if (!is.element(this.media)) {
+      this.debug.error('Media element not found');
+      return;
     }
 
-    set loop(loop) {
-        this.media.loop = loop;
-    }
+    // Reset overflow (incase destroyed while in fullscreen)
+    document.body.style.overflow = '';
 
-    get loop() {
-        return Boolean(this.media.loop);
-    }
+    unbindListeners.call(this);
 
-    get playing() {
-        return Boolean(this.ready && !this.paused && !this.ended && this.media.readyState > 2);
-    }
+    // destroy video
+    this.pause();
 
-    get paused() {
-        return Boolean(this.media.paused);
-    }
+    this.streaming.detach();
 
-    get ended() {
-        return Boolean(this.media.ended);
-    }
+    this.media.setAttribute('src', this.config.blankVideo);
+    this.media.load();
 
-    skipTo = (time) => {
-        this.currentTime = time;
-    };
+    this.original.setAttribute('controls', '');
 
-    /**
-     * Add event listeners
-     * @param {String} event - Event type
-     * @param {Function} callback - Callback for when event occurs
-     */
-    on = (event, callback) => {
-        on.call(this, this.media, event, callback);
-    };
+    replaceElement(this.original, this.wrapper);
 
-    /**
-     * Add event listeners once
-     * @param {String} event - Event type
-     * @param {Function} callback - Callback for when event occurs
-     */
-    once = (event, callback) => {
-        once.call(this, this.media, event, callback);
-    };
+    triggerEvent.call(this, this.original, 'destroyed', true);
 
-    /**
-     * Remove event listeners
-     * @param {String} event - Event type
-     * @param {Function} callback - Callback for when event occurs
-     */
-    off = (event, callback) => {
-        off(this.media, event, callback);
-    };
+    // Stop checking fps
+    clearInterval(this.fps.interval);
 
-    destroy = () => {
-        if (!this.ready) {
-            return;
-        }
+    // TODO: ads, remove after tweaking adsupport, vast and vpaid
+    clearInterval(this.timer);
 
-        const wrapper = this.wrapper;
+    this.ready = false;
 
-        if (!is.element(wrapper)) {
-            this.debug.error('Wrapper element not found');
-            return;
-        }
-
-        if (!is.element(this.media)) {
-            this.debug.error('Media element not found');
-            return;
-        }
-
-        // Reset overflow (incase destroyed while in fullscreen)
-        document.body.style.overflow = '';
-
-        unbindListeners.call(this);
-
-        // destroy video
-        this.pause();
-
-        this.streaming.detach();
-
-        this.media.setAttribute('src', this.config.blankVideo);
-        this.media.load();
-
-        this.original.setAttribute('controls', '');
-
-        replaceElement(this.original, this.wrapper);
-
-        triggerEvent.call(this, this.original, 'destroyed', true);
-
-        // Stop checking fps
-        clearInterval(this.fps.interval);
-
-        // TODO: ads, remove after tweaking adsupport, vast and vpaid
-        clearInterval(this.timer);
-
-        this.ready = false;
-
-        // Clear for garbage collection
-        return delay(200, () => {
-            this.media = null;
-            this.controls = null;
-            this.mobileControls = null;
-            this.wrapper = null;
-        });
-    };
+    // Clear for garbage collection
+    return delay(200, () => {
+      this.media = null;
+      this.controls = null;
+      this.mobileControls = null;
+      this.wrapper = null;
+    });
+  };
 }
 
 /**
  * Public Fluid Player API interface
  * @param instance
  */
-const PlayerInterface = function (instance) {
-    this.src = (src) => {
-        instance.src(src);
-    };
+class PlayerInterface {
+  constructor(instance) {
+    this.instance = instance;
+  }
 
-    this.play = () => {
-        return instance.play();
-    };
+  src = (src) => {
+    this.instance.src(src);
+  };
 
-    this.pause = () => {
-        return instance.pause();
-    };
+  play = () => {
+    return this.instance.play();
+  };
 
-    this.skipTo = (time) => {
-        instance.skipTo(time);
-    };
+  pause = () => {
+    return this.instance.pause();
+  };
 
-    this.setPlaybackSpeed = (speed) => {
-        instance.speed = speed;
-    };
+  skipTo = (time) => {
+    this.instance.skipTo(time);
+  };
 
-    this.setVolume = (volume) => {
-        instance.volume = volume;
-    };
+  setPlaybackSpeed = (speed) => {
+    this.instance.speed = speed;
+  };
 
-    this.setHtmlOnPauseBlock = (options) => {
-        return instance.HtmlOnPause.setHtmlOnPauseBlock(options);
-    };
+  setVolume = (volume) => {
+    this.instance.volume = volume;
+  };
 
-    this.toggleControlBar = (state) => {
-        instance.controlBar.toggleControlBar(state);
-    };
+  setHtmlOnPauseBlock = (options) => {
+    return this.instance.HtmlOnPause.setHtmlOnPauseBlock(options);
+  };
 
-    this.toggleFullScreen = (state) => {
-        instance.fullscreen.toggle(state);
-    };
+  toggleControlBar = (state) => {
+    this.instance.controlBar.toggleControlBar(state);
+  };
 
-    this.destroy = async () => {
-        await instance.destroy();
-    };
+  toggleFullScreen = (state) => {
+    this.instance.fullscreen.toggle(state);
+  };
 
-    this.dashInstance = () => {
-        return instance.streaming.dash ? instance.streaming.dash : null;
-    };
+  destroy = async () => {
+    await this.instance.destroy();
+  };
 
-    this.hlsInstance = () => {
-        return instance.streaming.hls ? instance.streaming.hls : null;
-    };
+  dashInstance = () => {
+    return this.instance.streaming.dash ? this.instance.streaming.dash : null;
+  };
 
-    this.on = (event, callback) => {
-        instance.on(event, callback);
-    };
-};
+  hlsInstance = () => {
+    return this.instance.streaming.hls ? this.instance.streaming.hls : null;
+  };
+
+  on = (event, callback) => {
+    this.instance.on(event, callback);
+  };
+}
 
 const FP_DEVELOPMENT_MODE = FP_ENV === 'development';
 
@@ -856,37 +860,37 @@ let playerInstances = 0;
  * @param options Fluid Player configuration options
  * @returns {playerInterface}
  */
-const playerInitializer = function (target, options = {}) {
-    const instance = new CVP(target, options);
+function playerInitializer(target, options = {}) {
+  const instance = new CVP(target, options);
 
-    const publicInstance = new PlayerInterface(instance);
+  const publicInstance = new PlayerInterface(instance);
 
-    if (window && FP_DEVELOPMENT_MODE) {
-        const debugApi = {
-            id: target,
-            options: options,
-            instance: publicInstance,
-            internals: instance,
-        };
+  if (window && FP_DEVELOPMENT_MODE) {
+    const debugApi = {
+      id: target,
+      options,
+      instance: publicInstance,
+      internals: instance,
+    };
 
-        if (is.nullOrUndefined(window.fluidPlayerDebug)) {
-            window.fluidPlayerDebug = [];
-        }
-
-        window.fluidPlayerDebug.push(debugApi);
-
-        console.log(
-            'Created instance of Fluid Player.',
-            `Debug API available at window.fluidPlayerDebug[${window.fluidPlayerDebug.length - 1}].`,
-            debugApi,
-        );
+    if (is.nullOrUndefined(window.fluidPlayerDebug)) {
+      window.fluidPlayerDebug = [];
     }
 
-    return publicInstance;
-};
+    window.fluidPlayerDebug.push(debugApi);
+
+    console.log(
+      'Created instance of Fluid Player.',
+      `Debug API available at window.fluidPlayerDebug[${window.fluidPlayerDebug.length - 1}].`,
+      debugApi,
+    );
+  }
+
+  return publicInstance;
+}
 
 if (FP_DEVELOPMENT_MODE) {
-    console.log(`Fluid Player - Development Build ${FP_DEBUG ? '(in debug mode)' : ''}`);
+  console.log(`Fluid Player - Development Build ${FP_DEBUG ? '(in debug mode)' : ''}`);
 }
 
 export default playerInitializer;

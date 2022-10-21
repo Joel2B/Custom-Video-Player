@@ -2,63 +2,63 @@ import { toggleClass } from '../utils/dom';
 import { on } from '../utils/events';
 
 class Live {
-    constructor(player) {
-        this.player = player;
+  constructor(player) {
+    this.player = player;
 
-        this.active = false;
+    this.active = false;
 
-        this.setCurrentTime = null;
-        this.getCurrentTime = null;
-        this.duration = null;
-        this.timeDisplay = null;
+    this.setCurrentTime = null;
+    this.getCurrentTime = null;
+    this.duration = null;
+    this.timeDisplay = null;
+  }
+
+  init = () => {
+    const { player } = this;
+
+    this.active = true;
+
+    player.controls.live.style.display = 'inline-block';
+
+    if (player.mobile) {
+      toggleClass(player.controls.duration, 'hide', true);
+
+      player.controls.live.style.display = 'flex';
     }
 
-    init = () => {
-        const { player } = this;
+    return this;
+  };
 
-        this.active = true;
+  onClick = (callback) => {
+    const { player } = this;
+    const event = player.mobile ? 'touchend' : 'click';
 
-        player.controls.live.style.display = 'inline-block';
+    on.call(player, player.controls.live, event, () => {
+      callback();
 
-        if (player.mobile) {
-            toggleClass(player.controls.duration, 'hide', true);
+      if (player.paused) {
+        player.play();
+      }
 
-            player.controls.live.style.display = 'flex';
-        }
+      player.controlBar.toggleMobile(false);
+    });
+  };
 
-        return this;
-    };
+  toggleStatus = (input) => {
+    const { player } = this;
 
-    onClick = (callback) => {
-        const { player } = this;
-        const event = player.mobile ? 'touchend' : 'click';
+    toggleClass(player.controls.live, 'sync', input);
+  };
 
-        on.call(player, player.controls.live, event, () => {
-            callback();
+  destroy = () => {
+    const { player } = this;
 
-            if (player.paused) {
-                player.play();
-            }
+    player.controls.live.style.removeProperty('display');
 
-            player.controlBar.toggleMobile(false);
-        });
-    };
+    toggleClass(player.controls.duration, 'hide', false);
 
-    toggleStatus = (input) => {
-        const { player } = this;
-
-        toggleClass(player.controls.live, 'sync', input);
-    };
-
-    destroy = () => {
-        const { player } = this;
-
-        player.controls.live.style.removeProperty('display');
-
-        toggleClass(player.controls.duration, 'hide', false);
-
-        this.active = false;
-    };
+    this.active = false;
+  };
 }
 
 export default Live;

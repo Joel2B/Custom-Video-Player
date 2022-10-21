@@ -1,51 +1,51 @@
 .fluid_initial_play_container {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    margin: auto;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  z-index: 0;
+
+  * {
+    pointer-events: auto;
+  }
+
+  .fluid_initial_play {
+    width: 60px;
+    height: 60px;
+    border-radius: 50px;
     display: flex;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
-    pointer-events: none;
-    z-index: 0;
+    cursor: pointer;
 
-    * {
-        pointer-events: auto;
+    .fluid_initial_play_button {
+      border-style: solid;
+      border-width: 15px 0 15px 21px;
+      border-color: transparent transparent transparent #ffffff;
     }
 
-    .fluid_initial_play {
-        width: 60px;
-        height: 60px;
-        border-radius: 50px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        cursor: pointer;
-
-        .fluid_initial_play_button {
-            border-style: solid;
-            border-width: 15px 0 15px 21px;
-            border-color: transparent transparent transparent #ffffff;
-        }
-
-        .fluid_initial_pause_button {
-            width: 8px;
-            height: 31px;
-            border: 9px solid #fff;
-            border-top: 0;
-            border-bottom: 0;
-        }
+    .fluid_initial_pause_button {
+      width: 8px;
+      height: 31px;
+      border: 9px solid #fff;
+      border-top: 0;
+      border-bottom: 0;
     }
+  }
 
-    .fluid_initial_play_color {
-        background-color: rgb(0 0 0 / 40%) !important;
-    }
+  .fluid_initial_play_color {
+    background-color: rgb(0 0 0 / 40%) !important;
+  }
 }
 
 .fluid_desktop .fluid_initial_play_button {
-    position: relative;
-    left: 2px;
+  position: relative;
+  left: 2px;
 }

@@ -5,81 +5,81 @@ import { formatTime } from '../utils/time';
 import is from '../utils/is';
 
 class PreviewTime {
-    constructor(player) {
-        this.player = player;
+  constructor(player) {
+    this.player = player;
 
-        this.render();
+    this.render();
+  }
+
+  move = (event) => {
+    const progress = this.player.controls.progressContainer;
+    const width = progress.clientWidth;
+    let offsetX = getEventOffsetX(progress, event);
+
+    if (offsetX < 0 || offsetX > width) {
+      return;
     }
 
-    move = (event) => {
-        const progress = this.player.controls.progressContainer;
-        const width = progress.clientWidth;
-        let offsetX = getEventOffsetX(progress, event);
+    const preview = this.preview;
+    const seconds = (this.player.duration * offsetX) / width;
+    const left = parseInt(computedStyle(progress, 'left').replace('px', ''));
+    const scrollLimit = width - preview.clientWidth;
 
-        if (offsetX < 0 || offsetX > width) {
-            return;
-        }
+    offsetX -= preview.clientWidth / 2;
 
-        const preview = this.preview;
-        const seconds = (this.player.duration * offsetX) / width;
-        const left = parseInt(computedStyle(progress, 'left').replace('px', ''));
-        const scrollLimit = width - preview.clientWidth;
+    let positionX = left;
 
-        offsetX -= preview.clientWidth / 2;
+    if (offsetX >= 0) {
+      if (offsetX <= scrollLimit) {
+        positionX = offsetX + left;
+      } else {
+        positionX = scrollLimit + left;
+      }
+    }
 
-        let positionX = left;
+    let previewWidth = 32 + (seconds >= 3600 ? 20 : 0);
+    let timeDisplay = formatTime(seconds);
 
-        if (offsetX >= 0) {
-            if (offsetX <= scrollLimit) {
-                positionX = offsetX + left;
-            } else {
-                positionX = scrollLimit + left;
-            }
-        }
+    if (this.player.streaming.live.active) {
+      previewWidth += 10;
+      timeDisplay = `- ${formatTime(this.player.duration - seconds)}`;
+    }
 
-        let previewWidth = 32 + (seconds >= 3600 ? 20 : 0);
-        let timeDisplay = formatTime(seconds);
+    preview.style.width = `${previewWidth}px`;
+    preview.style.left = `${positionX}px`;
+    preview.style.visibility = 'visible';
+    preview.innerText = timeDisplay;
+  };
 
-        if (this.player.streaming.live.active) {
-            previewWidth += 10;
-            timeDisplay = `- ${formatTime(this.player.duration - seconds)}`;
-        }
+  hide = () => {
+    this.preview.style.visibility = 'hidden';
+  };
 
-        preview.style.width = `${previewWidth}px`;
-        preview.style.left = `${positionX}px`;
-        preview.style.visibility = 'visible';
-        preview.innerText = timeDisplay;
-    };
+  render = () => {
+    const { player } = this;
 
-    hide = () => {
-        this.preview.style.visibility = 'hidden';
-    };
+    if (!player.config.layoutControls.showTimeOnHover || is.nullOrUndefined(player.controls)) {
+      return;
+    }
 
-    render = () => {
-        const { player } = this;
+    this.preview = createElement('div', {
+      class: 'fluid_timeline_preview_time',
+    });
 
-        if (!player.config.layoutControls.showTimeOnHover || is.nullOrUndefined(player.controls)) {
-            return;
-        }
+    player.controls.container.appendChild(this.preview);
 
-        this.preview = createElement('div', {
-            class: 'fluid_timeline_preview_time',
-        });
+    this.listeners();
+  };
 
-        player.controls.container.appendChild(this.preview);
+  listeners = () => {
+    const { player } = this;
 
-        this.listeners();
-    };
+    // show thumbnails
+    on.call(player, player.controls.progressContainer, 'mousemove touchmove', this.move);
 
-    listeners = () => {
-        const { player } = this;
-
-        // show thumbnails
-        on.call(player, player.controls.progressContainer, 'mousemove touchmove', this.move);
-
-        // hide thumbnails
-        on.call(player, player.controls.progressContainer, 'mouseleave touchend', this.hide);
-    };
+    // hide thumbnails
+    on.call(player, player.controls.progressContainer, 'mouseleave touchend', this.hide);
+  };
 }
 
 export default PreviewTime;

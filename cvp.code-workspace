@@ -1,39 +1,41 @@
 {
-    "folders": [
-        {
-            "path": "."
-        }
-    ],
-    "settings": {
-        "search.exclude": {
-            "**/node_modules": true,
-            "**/dist": true
-        },
-
-        // Linting
-        "css.validate": false,
-        "scss.validate": false,
-        "javascript.validate.enable": false,
-
-        // Formatting
-        "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "editor.tabSize": 4,
-        "editor.insertSpaces": true,
-        "editor.formatOnSave": false,
-
-        // Trim on save
-        "files.trimTrailingWhitespace": true,
-
-        // Special file associations
-        "files.associations": {
-            ".eslintrc": "jsonc"
-        },
-
-        "eslint.workingDirectories": [{ "mode": "auto" }],
-        "eslint.validate": ["javascript"],
-        "editor.codeActionsOnSave": {
-            "source.fixAll": true
-        },
-        "liveServer.settings.port": 5501,
+  "folders": [
+    {
+      "path": "."
     }
+  ],
+  "settings": {
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true
+    },
+
+    // Linting
+    "css.validate": false,
+    "scss.validate": false,
+    "javascript.validate.enable": false,
+
+    // Formatting
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.formatOnSave": false,
+
+    // Trim on save
+    "files.trimTrailingWhitespace": true,
+
+    // Special file associations
+    "files.associations": {
+      ".eslintrc": "jsonc"
+    },
+
+    "eslint.workingDirectories": [{ "mode": "auto" }],
+    "eslint.validate": ["javascript"],
+    "editor.codeActionsOnSave": {
+      "source.fixAll": true
+    },
+    "[xml]": {
+      "editor.defaultFormatter": "DotJoshJohnson.xml"
+    }
+  }
 }

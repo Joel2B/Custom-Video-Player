@@ -1,26 +1,26 @@
 .fluid_timeline_preview_thumbnails {
-    border: 2px solid rgb(255, 255, 255) !important;
-    border-radius: 3px;
-    visibility: hidden;
-    position: absolute;
-    bottom: 75px;
-    position: absolute;
-    opacity: 1;
-    background-repeat: no-repeat;
+  border: 2px solid rgb(255, 255, 255) !important;
+  border-radius: 3px;
+  visibility: hidden;
+  position: absolute;
+  bottom: 75px;
+  position: absolute;
+  opacity: 1;
+  background-repeat: no-repeat;
 
-    .fluid_tooltip {
-        position: absolute;
-        width: 100%;
-        display: flex !important;
-        justify-content: center;
+  .fluid_tooltip {
+    position: absolute;
+    width: 100%;
+    display: flex !important;
+    justify-content: center;
 
-        span {
-            font-size: 13px;
-            font-weight: 500;
-        }
+    span {
+      font-size: 13px;
+      font-weight: 500;
     }
+  }
 }
 
 .fluid_mobile .fluid_tooltip {
-    display: none !important;
+  display: none !important;
 }

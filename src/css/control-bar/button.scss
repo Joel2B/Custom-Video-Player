@@ -1,21 +1,21 @@
 .fluid_button {
-    display: inline-block;
-    width: 24px;
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  position: relative;
+  cursor: pointer;
+
+  &:before {
+    content: '';
+    background: url('../static/fluid-icons.svg') no-repeat;
+    position: absolute;
     height: 24px;
-    position: relative;
-    cursor: pointer;
+    width: 24px;
+    opacity: 0.8;
+    transition: opacity 0.3s ease-in-out;
+  }
 
-    &:before {
-        content: '';
-        background: url('../static/fluid-icons.svg') no-repeat;
-        position: absolute;
-        height: 24px;
-        width: 24px;
-        opacity: 0.8;
-        transition: opacity 0.3s ease-in-out;
-    }
-
-    &:hover::before {
-        opacity: 1;
-    }
+  &:hover::before {
+    opacity: 1;
+  }
 }

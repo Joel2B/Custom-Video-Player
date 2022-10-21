@@ -26,12 +26,12 @@ export const IS_IPOD = /iPod/i.test(USER_AGENT);
  * @type {string|null}
  */
 export const IOS_VERSION = (function() {
-    const match = USER_AGENT.match(/OS (\d+)_/i);
+  const match = USER_AGENT.match(/OS (\d+)_/i);
 
-    if (match && match[1]) {
-        return match[1];
-    }
-    return null;
+  if (match && match[1]) {
+    return match[1];
+  }
+  return null;
 })();
 
 /**
@@ -51,23 +51,23 @@ export const IS_ANDROID = /Android/i.test(USER_AGENT);
  * @type {number|string|null}
  */
 export const ANDROID_VERSION = (function() {
-    // This matches Android Major.Minor.Patch versions
-    // ANDROID_VERSION is Major.Minor as a Number, if Minor isn't available, then only Major is returned
-    const match = USER_AGENT.match(/Android (\d+)(?:\.(\d+))?(?:\.(\d+))*/i);
+  // This matches Android Major.Minor.Patch versions
+  // ANDROID_VERSION is Major.Minor as a Number, if Minor isn't available, then only Major is returned
+  const match = USER_AGENT.match(/Android (\d+)(?:\.(\d+))?(?:\.(\d+))*/i);
 
-    if (!match) {
-        return null;
-    }
-
-    const major = match[1] && parseFloat(match[1]);
-    const minor = match[2] && parseFloat(match[2]);
-
-    if (major && minor) {
-        return parseFloat(match[1] + '.' + match[2]);
-    } else if (major) {
-        return major;
-    }
+  if (!match) {
     return null;
+  }
+
+  const major = match[1] && parseFloat(match[1]);
+  const minor = match[2] && parseFloat(match[2]);
+
+  if (major && minor) {
+    return parseFloat(match[1] + '.' + match[2]);
+  } else if (major) {
+    return major;
+  }
+  return null;
 })();
 
 /**
@@ -117,12 +117,12 @@ export const IS_CHROME = !IS_EDGE && (/Chrome/i.test(USER_AGENT) || /CriOS/i.tes
  * @type {number|null}
  */
 export const CHROME_VERSION = (function() {
-    const match = USER_AGENT.match(/(Chrome|CriOS)\/(\d+)/);
+  const match = USER_AGENT.match(/(Chrome|CriOS)\/(\d+)/);
 
-    if (match && match[2]) {
-        return parseFloat(match[2]);
-    }
-    return null;
+  if (match && match[2]) {
+    return parseFloat(match[2]);
+  }
+  return null;
 })();
 
 /**
@@ -133,15 +133,15 @@ export const CHROME_VERSION = (function() {
  * @type {number|null}
  */
 export const IE_VERSION = (function() {
-    const result = /MSIE\s(\d+)\.\d/.exec(USER_AGENT);
-    let version = result && parseFloat(result[1]);
+  const result = /MSIE\s(\d+)\.\d/.exec(USER_AGENT);
+  let version = result && parseFloat(result[1]);
 
-    if (!version && /Trident\/7.0/i.test(USER_AGENT) && /rv:11.0/.test(USER_AGENT)) {
-        // IE 11 has a different user agent string than other IE versions
-        version = 11.0;
-    }
+  if (!version && /Trident\/7.0/i.test(USER_AGENT) && /rv:11.0/.test(USER_AGENT)) {
+    // IE 11 has a different user agent string than other IE versions
+    version = 11.0;
+  }
 
-    return version;
+  return version;
 })();
 
 /**
@@ -170,10 +170,10 @@ export const IS_WINDOWS = /Windows/i.test(USER_AGENT);
  * @type {Boolean}
  */
 export const TOUCH_ENABLED = Boolean(
-    Dom.isReal() &&
-        ('ontouchstart' in window ||
-            window.navigator.maxTouchPoints ||
-            (window.DocumentTouch && window.document instanceof window.DocumentTouch)),
+  Dom.isReal() &&
+    ('ontouchstart' in window ||
+      window.navigator.maxTouchPoints ||
+      (window.DocumentTouch && window.document instanceof window.DocumentTouch)),
 );
 
 /**

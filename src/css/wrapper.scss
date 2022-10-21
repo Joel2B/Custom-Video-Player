@@ -1,38 +1,39 @@
 .fluid_video_wrapper {
-    direction: ltr;
+  direction: ltr;
+  position: relative;
+  overflow: hidden;
+  font-family: $font-family;
+  font-size: 12px;
+  max-width: 100%;
+  min-width: 200px;
+  -webkit-tap-highlight-color: transparent;
+  // prevents stuck progress bar
+  // Webkit
+  -webkit-user-select: none;
+  // Konqueror HTML
+  -khtml-user-select: none;
+  // Firefox
+  -moz-user-select: none;
+  // Internet Explorer/Edge
+  -ms-user-select: none;
+  user-select: none;
+  z-index: 0;
+
+  &,
+  * {
+    -webkit-box-sizing: content-box;
+    -moz-box-sizing: content-box;
+    box-sizing: content-box;
+  }
+
+  video {
     position: relative;
-    overflow: hidden;
-    font-family: $font-family;
-    font-size: 12px;
-    max-width: 100%;
-    min-width: 200px;
-    -webkit-tap-highlight-color: transparent;
-    // prevents stuck progress bar
-    // Webkit
-    -webkit-user-select: none;
-    // Konqueror HTML
-    -khtml-user-select: none;
-    // Firefox
-    -moz-user-select: none;
-    // Internet Explorer/Edge
-    -ms-user-select: none;
-    user-select: none;
-    z-index: 0;
+    background-color: #000000;
+    display: block;
+  }
 
-    &, * {
-        -webkit-box-sizing: content-box;
-        -moz-box-sizing: content-box;
-        box-sizing: content-box;
-    }
-
-    video {
-        position: relative;
-        background-color: #000000;
-        display: block;
-    }
-
-    .initial_controls_show {
-        visibility: visible !important;
-        opacity: 1 !important;
-    }
+  .initial_controls_show {
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
 }

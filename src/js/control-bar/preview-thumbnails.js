@@ -7,219 +7,219 @@ import fetch from '../utils/fetch';
 import is from '../utils/is';
 
 class PreviewThumbnails {
-    constructor(player) {
-        this.player = player;
-        this.loaded = false;
-        this.data = [];
+  constructor(player) {
+    this.player = player;
+    this.loaded = false;
+    this.data = [];
+  }
+
+  init = () => {
+    return new Promise((resolve) => {
+      const option = this.player.config.layoutControls.timelinePreview;
+      if (option.type === 'VTT' && is.string(option.file)) {
+        this.getThumbnails(option.file).then(() => {
+          this.render();
+          resolve();
+        });
+        return;
+      }
+
+      if (option.type === 'static' && is.array(option.frames)) {
+        this.data = option.frames;
+        option.spriteImage = true;
+        this.render();
+      }
+      resolve();
+    });
+  };
+
+  parseVtt = (vttRawData) => {
+    if (!vttRawData.length) {
+      return [];
     }
 
-    init = () => {
-        return new Promise((resolve) => {
-            const option = this.player.config.layoutControls.timelinePreview;
-            if (option.type === 'VTT' && is.string(option.file)) {
-                this.getThumbnails(option.file).then(() => {
-                    this.render();
-                    resolve();
-                });
-                return;
-            }
+    const result = [];
+    let tempThumbnailData = null;
+    let tempThumbnailCoordinates = null;
 
-            if (option.type === 'static' && is.array(option.frames)) {
-                this.data = option.frames;
-                option.spriteImage = true;
-                this.render();
-            }
-            resolve();
-        });
-    };
+    for (const vtt of vttRawData) {
+      tempThumbnailData = vtt.text.split('#');
+      let xCoords = 0;
+      let yCoords = 0;
+      let wCoords = 122.5;
+      let hCoords = 69;
 
-    parseVtt = (vttRawData) => {
-        if (!vttRawData.length) {
-            return [];
+      // .vtt file contains sprite corrdinates
+      if (tempThumbnailData.length === 2 && tempThumbnailData[1].indexOf('xywh=') === 0) {
+        tempThumbnailCoordinates = tempThumbnailData[1].substring(5);
+        tempThumbnailCoordinates = tempThumbnailCoordinates.split(',');
+
+        if (tempThumbnailCoordinates.length === 4) {
+          this.player.config.layoutControls.timelinePreview.spriteImage = true;
+          xCoords = parseInt(tempThumbnailCoordinates[0]);
+          yCoords = parseInt(tempThumbnailCoordinates[1]);
+          wCoords = parseInt(tempThumbnailCoordinates[2]);
+          hCoords = parseInt(tempThumbnailCoordinates[3]);
         }
+      }
 
-        const result = [];
-        let tempThumbnailData = null;
-        let tempThumbnailCoordinates = null;
+      const thumbnail = this.player.config.layoutControls.timelinePreview;
+      let imageUrl = thumbnail.sprite ? thumbnail.sprite : tempThumbnailData[0];
+      if (thumbnail.spriteRelativePath && thumbnail.file.indexOf('/') !== -1) {
+        imageUrl = thumbnail.file.substring(0, thumbnail.file.lastIndexOf('/') + 1) + tempThumbnailData[0];
+      }
 
-        for (const vtt of vttRawData) {
-            tempThumbnailData = vtt.text.split('#');
-            let xCoords = 0;
-            let yCoords = 0;
-            let wCoords = 122.5;
-            let hCoords = 69;
+      result.push({
+        startTime: vtt.startTime,
+        endTime: vtt.endTime,
+        image: imageUrl,
+        x: xCoords,
+        y: yCoords,
+        w: wCoords,
+        h: hCoords,
+      });
+    }
 
-            // .vtt file contains sprite corrdinates
-            if (tempThumbnailData.length === 2 && tempThumbnailData[1].indexOf('xywh=') === 0) {
-                tempThumbnailCoordinates = tempThumbnailData[1].substring(5);
-                tempThumbnailCoordinates = tempThumbnailCoordinates.split(',');
+    return result;
+  };
 
-                if (tempThumbnailCoordinates.length === 4) {
-                    this.player.config.layoutControls.timelinePreview.spriteImage = true;
-                    xCoords = parseInt(tempThumbnailCoordinates[0]);
-                    yCoords = parseInt(tempThumbnailCoordinates[1]);
-                    wCoords = parseInt(tempThumbnailCoordinates[2]);
-                    hCoords = parseInt(tempThumbnailCoordinates[3]);
-                }
-            }
+  getThumbnails = (url) => {
+    return new Promise((resolve) => {
+      fetch(url).then((response) => {
+        const parser = new WebVTT.Parser(window, WebVTT.StringDecoder());
+        const cues = [];
 
-            const thumbnail = this.player.config.layoutControls.timelinePreview;
-            let imageUrl = thumbnail.sprite ? thumbnail.sprite : tempThumbnailData[0];
-            if (thumbnail.spriteRelativePath && thumbnail.file.indexOf('/') !== -1) {
-                imageUrl = thumbnail.file.substring(0, thumbnail.file.lastIndexOf('/') + 1) + tempThumbnailData[0];
-            }
+        parser.oncue = (cue) => {
+          cues.push(cue);
+          resolve();
+        };
+        parser.parse(response);
+        parser.flush();
 
-            result.push({
-                startTime: vtt.startTime,
-                endTime: vtt.endTime,
-                image: imageUrl,
-                x: xCoords,
-                y: yCoords,
-                w: wCoords,
-                h: hCoords,
-            });
-        }
+        this.data = this.parseVtt(cues);
+      });
+    });
+  };
 
-        return result;
-    };
+  move = (event) => {
+    const { player } = this;
+    if (player.isCurrentlyPlayingAd) {
+      this.hide();
+      return;
+    }
 
-    getThumbnails = (url) => {
-        return new Promise((resolve) => {
-            fetch(url).then((response) => {
-                const parser = new WebVTT.Parser(window, WebVTT.StringDecoder());
-                const cues = [];
+    const progress = player.controls.progressContainer;
+    const width = progress.clientWidth;
+    if (!width) {
+      return;
+    }
 
-                parser.oncue = (cue) => {
-                    cues.push(cue);
-                    resolve();
-                };
-                parser.parse(response);
-                parser.flush();
+    // get the hover position
+    let offsetX = getEventOffsetX(progress, event);
+    const seconds = (player.duration * offsetX) / width;
+    // get the thumbnail coordinates
+    const size = this.getThumbSize(seconds);
+    if (!size) {
+      return;
+    }
 
-                this.data = this.parseVtt(cues);
-            });
-        });
-    };
+    const preview = this.preview;
+    // preview border is set to 2px, a total of 4px on both sides
+    // and they are subtracted from the position of the timeline preview
+    // so that it stays within the width of the timeline
+    const borderLeft = parseInt(computedStyle(preview, 'border-left-width').replace('px', '')) * 2;
+    const scrollLimit = Math.max(width - size.w - borderLeft, 0);
+    // add the top position to the tooltip so it is not along with the preview
+    const topTooltip = 7;
+    // get the left position of the timeline
+    const left = findPosition(progress, player.wrapper).left;
 
-    move = (event) => {
-        const { player } = this;
-        if (player.isCurrentlyPlayingAd) {
-            this.hide();
-            return;
-        }
+    offsetX = offsetX - size.w / 2;
+    let positionX = left;
 
-        const progress = player.controls.progressContainer;
-        const width = progress.clientWidth;
-        if (!width) {
-            return;
-        }
+    if (offsetX >= 0) {
+      if (offsetX <= scrollLimit) {
+        positionX = offsetX + left;
+      } else {
+        positionX = scrollLimit + left;
+      }
+    } else {
+      positionX = left;
+    }
 
-        // get the hover position
-        let offsetX = getEventOffsetX(progress, event);
-        const seconds = (player.duration * offsetX) / width;
-        // get the thumbnail coordinates
-        const size = this.getThumbSize(seconds);
-        if (!size) {
-            return;
-        }
+    preview.style.background = `url(${size.image})`;
+    preview.style.backgroundRepeat = 'no-repeat';
+    preview.style.backgroundAttachment = 'scroll';
+    preview.style.backgroundPosition = `-${size.x}px -${size.y}px`;
 
-        const preview = this.preview;
-        // preview border is set to 2px, a total of 4px on both sides
-        // and they are subtracted from the position of the timeline preview
-        // so that it stays within the width of the timeline
-        const borderLeft = parseInt(computedStyle(preview, 'border-left-width').replace('px', '')) * 2;
-        const scrollLimit = Math.max(width - size.w - borderLeft, 0);
-        // add the top position to the tooltip so it is not along with the preview
-        const topTooltip = 7;
-        // get the left position of the timeline
-        const left = findPosition(progress, player.wrapper).left;
+    preview.style.width = size.w + 'px';
+    preview.style.height = size.h + 'px';
+    preview.style.left = `${positionX}px`;
 
-        offsetX = offsetX - size.w / 2;
-        let positionX = left;
+    this.tooltip.style.top = size.h + topTooltip + 'px';
+    this.tooltipText.textContent = formatTime(seconds);
 
-        if (offsetX >= 0) {
-            if (offsetX <= scrollLimit) {
-                positionX = offsetX + left;
-            } else {
-                positionX = scrollLimit + left;
-            }
-        } else {
-            positionX = left;
-        }
+    if (!player.config.layoutControls.timelinePreview.spriteImage) {
+      preview.style.backgroundSize = 'contain';
+    }
 
-        preview.style.background = `url(${size.image})`;
-        preview.style.backgroundRepeat = 'no-repeat';
-        preview.style.backgroundAttachment = 'scroll';
-        preview.style.backgroundPosition = `-${size.x}px -${size.y}px`;
+    this.show();
+  };
 
-        preview.style.width = size.w + 'px';
-        preview.style.height = size.h + 'px';
-        preview.style.left = `${positionX}px`;
+  getThumbSize = (second) => {
+    if (is.empty(this.data)) {
+      return;
+    }
 
-        this.tooltip.style.top = size.h + topTooltip + 'px';
-        this.tooltipText.textContent = formatTime(seconds);
+    for (const data of this.data) {
+      if (second >= data.startTime && second <= data.endTime) {
+        return data;
+      }
+    }
+  };
 
-        if (!player.config.layoutControls.timelinePreview.spriteImage) {
-            preview.style.backgroundSize = 'contain';
-        }
+  show = () => {
+    this.preview.style.visibility = 'visible';
+  };
 
-        this.show();
-    };
+  hide = () => {
+    this.preview.style.visibility = 'hidden';
+  };
 
-    getThumbSize = (second) => {
-        if (is.empty(this.data)) {
-            return;
-        }
+  render = () => {
+    if (is.empty(this.data) || is.nullOrUndefined(this.player.controls)) {
+      return;
+    }
 
-        for (const data of this.data) {
-            if (second >= data.startTime && second <= data.endTime) {
-                return data;
-            }
-        }
-    };
+    this.preview = createElement('div', {
+      class: 'fluid_timeline_preview_thumbnails',
+    });
 
-    show = () => {
-        this.preview.style.visibility = 'visible';
-    };
+    this.tooltip = createElement('div', {
+      class: 'fluid_tooltip',
+    });
 
-    hide = () => {
-        this.preview.style.visibility = 'hidden';
-    };
+    this.tooltipText = createElement('span');
 
-    render = () => {
-        if (is.empty(this.data) || is.nullOrUndefined(this.player.controls)) {
-            return;
-        }
+    this.tooltip.appendChild(this.tooltipText);
+    this.preview.appendChild(this.tooltip);
 
-        this.preview = createElement('div', {
-            class: 'fluid_timeline_preview_thumbnails',
-        });
+    this.player.controls.container.appendChild(this.preview);
 
-        this.tooltip = createElement('div', {
-            class: 'fluid_tooltip',
-        });
+    this.listeners();
 
-        this.tooltipText = createElement('span');
+    this.loaded = true;
+  };
 
-        this.tooltip.appendChild(this.tooltipText);
-        this.preview.appendChild(this.tooltip);
+  listeners = () => {
+    const { player } = this;
 
-        this.player.controls.container.appendChild(this.preview);
+    // show thumbnails
+    on.call(player, player.controls.progressContainer, 'mousemove touchmove', this.move);
 
-        this.listeners();
-
-        this.loaded = true;
-    };
-
-    listeners = () => {
-        const { player } = this;
-
-        // show thumbnails
-        on.call(player, player.controls.progressContainer, 'mousemove touchmove', this.move);
-
-        // hide thumbnails
-        on.call(player, player.controls.progressContainer, 'mouseleave touchend', this.hide);
-    };
+    // hide thumbnails
+    on.call(player, player.controls.progressContainer, 'mouseleave touchend', this.hide);
+  };
 }
 
 export default PreviewThumbnails;

@@ -3,152 +3,152 @@ import { off, on } from '../utils/events';
 import is from '../utils/is';
 
 class ProgressBar {
-    constructor(player) {
-        this.player = player;
-        this.positionX = 0;
-        this.timer = null;
-        this.initiallyPaused = false;
-        this.playPauseAnimation = null;
+  constructor(player) {
+    this.player = player;
+    this.positionX = 0;
+    this.timer = null;
+    this.initiallyPaused = false;
+    this.playPauseAnimation = null;
 
-        this.listeners();
+    this.listeners();
+  }
+
+  update = (seeking = false) => {
+    const { player } = this;
+    const { progressContainer, playProgress, scrubberProgressContainer } = player.controls;
+    const width = progressContainer.clientWidth;
+
+    if (seeking) {
+      this.positionX = Math.max(Math.min(this.positionX, width), 0);
+      player.currentTime = (player.duration * this.positionX) / width;
     }
 
-    update = (seeking = false) => {
-        const { player } = this;
-        const { progressContainer, playProgress, scrubberProgressContainer } = player.controls;
-        const width = progressContainer.clientWidth;
+    const scaleX = Math.min(player.currentTime / player.duration, 1);
+    const translateX = scaleX * width;
 
-        if (seeking) {
-            this.positionX = Math.max(Math.min(this.positionX, width), 0);
-            player.currentTime = (player.duration * this.positionX) / width;
-        }
+    playProgress.style.transform = `scaleX(${scaleX})`;
+    scrubberProgressContainer.style.transform = `translateX(${translateX}px)`;
+  };
 
-        const scaleX = Math.min(player.currentTime / player.duration, 1);
-        const translateX = scaleX * width;
+  start = (event) => {
+    const { player } = this;
 
-        playProgress.style.transform = `scaleX(${scaleX})`;
-        scrubberProgressContainer.style.transform = `translateX(${translateX}px)`;
-    };
+    if (player.isCurrentlyPlayingAd) {
+      return;
+    }
 
-    start = (event) => {
-        const { player } = this;
+    // hide animations
+    if (this.playPauseAnimation === null) {
+      this.playPauseAnimation = player.config.layoutControls.playPauseAnimation;
+      player.config.layoutControls.playPauseAnimation = false;
+    }
 
-        if (player.isCurrentlyPlayingAd) {
-            return;
-        }
+    this.positionX = getEventOffsetX(player.controls.progressContainer, event);
 
-        // hide animations
-        if (this.playPauseAnimation === null) {
-            this.playPauseAnimation = player.config.layoutControls.playPauseAnimation;
-            player.config.layoutControls.playPauseAnimation = false;
-        }
+    this.initiallyPaused = player.paused;
+    if (!this.initiallyPaused) {
+      this.timer = setTimeout(() => {
+        player.pause();
+      }, 300);
+    }
 
-        this.positionX = getEventOffsetX(player.controls.progressContainer, event);
+    on.call(player, document, 'mousemove touchmove', this.move);
+    on.call(player, document, 'mouseup touchend mouseleave', this.end);
+  };
 
-        this.initiallyPaused = player.paused;
-        if (!this.initiallyPaused) {
-            this.timer = setTimeout(() => {
-                player.pause();
-            }, 300);
-        }
+  move = (event) => {
+    const { player } = this;
+    const { progressContainer, scrubberProgress } = player.controls;
 
-        on.call(player, document, 'mousemove touchmove', this.move);
-        on.call(player, document, 'mouseup touchend mouseleave', this.end);
-    };
+    toggleClass(player.wrapper, 'fluid_seeking', true);
 
-    move = (event) => {
-        const { player } = this;
-        const { progressContainer, scrubberProgress } = player.controls;
+    player.preview.current.move(event);
 
-        toggleClass(player.wrapper, 'fluid_seeking', true);
+    this.positionX = getEventOffsetX(progressContainer, event);
 
-        player.preview.current.move(event);
+    this.update(true);
 
-        this.positionX = getEventOffsetX(progressContainer, event);
+    // resize
+    scrubberProgress.style.setProperty('transform', 'none', 'important');
 
-        this.update(true);
+    if (player.touch) {
+      return;
+    }
 
-        // resize
-        scrubberProgress.style.setProperty('transform', 'none', 'important');
+    for (const node of progressContainer.childNodes) {
+      if (node.className.includes('scrubber')) {
+        continue;
+      }
+      node.style.transform = 'none';
+    }
+  };
 
-        if (player.touch) {
-            return;
-        }
+  end = (event) => {
+    const { player } = this;
+    const { progressContainer, scrubberProgress } = player.controls;
 
-        for (const node of progressContainer.childNodes) {
-            if (node.className.includes('scrubber')) {
-                continue;
-            }
-            node.style.transform = 'none';
-        }
-    };
+    toggleClass(player.wrapper, 'fluid_seeking', false);
 
-    end = (event) => {
-        const { player } = this;
-        const { progressContainer, scrubberProgress } = player.controls;
+    player.preview.current.hide(event);
 
-        toggleClass(player.wrapper, 'fluid_seeking', false);
+    // back to normal size
+    for (const node of progressContainer.childNodes) {
+      node.style.removeProperty('transform');
+    }
 
-        player.preview.current.hide(event);
+    scrubberProgress.style.removeProperty('transform');
 
-        // back to normal size
-        for (const node of progressContainer.childNodes) {
-            node.style.removeProperty('transform');
-        }
+    const positionX = getEventOffsetX(progressContainer, event);
+    if (is.number(positionX)) {
+      this.positionX = positionX;
+    }
 
-        scrubberProgress.style.removeProperty('transform');
+    this.update(true);
 
-        const positionX = getEventOffsetX(progressContainer, event);
-        if (is.number(positionX)) {
-            this.positionX = positionX;
-        }
+    if (!this.initiallyPaused) {
+      clearTimeout(this.timer);
 
-        this.update(true);
+      player.play();
 
-        if (!this.initiallyPaused) {
-            clearTimeout(this.timer);
+      player.controlBar.toggleMobile(false);
+    }
 
-            player.play();
+    // restore animations
+    setTimeout(() => {
+      if (this.playPauseAnimation === null) {
+        return;
+      }
 
-            player.controlBar.toggleMobile(false);
-        }
+      player.config.layoutControls.playPauseAnimation = this.playPauseAnimation;
+      this.playPauseAnimation = null;
+    }, 200);
 
-        // restore animations
-        setTimeout(() => {
-            if (this.playPauseAnimation === null) {
-                return;
-            }
+    off.call(player, document, 'mousemove touchmove', this.move);
+    off.call(player, document, 'mouseup touchend mouseleave', this.end);
+  };
 
-            player.config.layoutControls.playPauseAnimation = this.playPauseAnimation;
-            this.playPauseAnimation = null;
-        }, 200);
+  hover = (event) => {
+    const { progressContainer, hoverProgress } = this.player.controls;
+    const width = progressContainer.clientWidth;
+    const positionX = getEventOffsetX(progressContainer, event);
+    const scaleX = positionX / width;
 
-        off.call(player, document, 'mousemove touchmove', this.move);
-        off.call(player, document, 'mouseup touchend mouseleave', this.end);
-    };
+    hoverProgress.style.transform = `scaleX(${scaleX})`;
+  };
 
-    hover = (event) => {
-        const { progressContainer, hoverProgress } = this.player.controls;
-        const width = progressContainer.clientWidth;
-        const positionX = getEventOffsetX(progressContainer, event);
-        const scaleX = positionX / width;
+  listeners = () => {
+    const { player } = this;
+    const { progressContainer } = player.controls;
 
-        hoverProgress.style.transform = `scaleX(${scaleX})`;
-    };
+    on.call(player, progressContainer, 'mousedown touchstart', this.start);
+    on.call(player, progressContainer, 'mousemove', this.hover);
+  };
 
-    listeners = () => {
-        const { player } = this;
-        const { progressContainer } = player.controls;
-
-        on.call(player, progressContainer, 'mousedown touchstart', this.start);
-        on.call(player, progressContainer, 'mousemove', this.hover);
-    };
-
-    resize = () => {
-        setTimeout(() => {
-            this.update();
-        }, 100);
-    };
+  resize = () => {
+    setTimeout(() => {
+      this.update();
+    }, 100);
+  };
 }
 
 export default ProgressBar;

@@ -3,84 +3,84 @@ import { on } from './utils/events';
 import is from './utils/is';
 
 class Logo {
-    constructor(player) {
-        this.player = player;
-        this.init();
+  constructor(player) {
+    this.player = player;
+    this.init();
+  }
+
+  init = () => {
+    this.config = this.player.config.layoutControls.logo;
+
+    if (!this.config.imageUrl) {
+      return;
     }
 
-    init = () => {
-        this.config = this.player.config.layoutControls.logo;
+    this.create();
+    this.setup();
+  };
 
-        if (!this.config.imageUrl) {
-            return;
-        }
+  create = () => {
+    const { config } = this;
 
-        this.create();
-        this.setup();
-    };
+    // Container for the logo
+    this.el = createElement('div');
 
-    create = () => {
-        const { config } = this;
+    const className = config.hideWithControls ? 'logo_maintain_display' : 'initial_controls_show';
+    toggleClass(this.el, className, true);
 
-        // Container for the logo
-        this.el = createElement('div');
+    // The logo itself
+    this.img = createElement('img', {
+      src: config.imageUrl,
+    });
+  };
 
-        const className = config.hideWithControls ? 'logo_maintain_display' : 'initial_controls_show';
-        toggleClass(this.el, className, true);
+  setup = () => {
+    const { player, config, img } = this;
 
-        // The logo itself
-        this.img = createElement('img', {
-            src: config.imageUrl,
-        });
-    };
+    img.style.width = config.width;
+    img.style.height = config.height;
+    img.style.position = 'absolute';
+    img.style.margin = config.imageMargin;
 
-    setup = () => {
-        const { player, config, img } = this;
+    const position = config.position.toLowerCase();
 
-        img.style.width = config.width;
-        img.style.height = config.height;
-        img.style.position = 'absolute';
-        img.style.margin = config.imageMargin;
+    if (position.indexOf('bottom') !== -1) {
+      img.style.bottom = 0;
+    } else {
+      img.style.top = 0;
+    }
 
-        const position = config.position.toLowerCase();
+    if (position.indexOf('right') !== -1) {
+      img.style.right = 0;
+    } else {
+      img.style.left = 0;
+    }
 
-        if (position.indexOf('bottom') !== -1) {
-            img.style.bottom = 0;
-        } else {
-            img.style.top = 0;
-        }
+    if (config.opacity) {
+      img.style.opacity = config.opacity;
+    }
 
-        if (position.indexOf('right') !== -1) {
-            img.style.right = 0;
-        } else {
-            img.style.left = 0;
-        }
+    if (!is.empty(config.clickUrl)) {
+      img.style.cursor = 'pointer';
 
-        if (config.opacity) {
-            img.style.opacity = config.opacity;
-        }
+      on.call(player, img, 'click', () => {
+        window.open(config.clickUrl, '_blank').focus();
+      });
+    }
 
-        if (!is.empty(config.clickUrl)) {
-            img.style.cursor = 'pointer';
+    // If a mouseOverImage is provided then we must set up the listeners for it
+    if (config.mouseOverImageUrl) {
+      on.call(player, img, 'mouseover', () => {
+        img.src = config.mouseOverImageUrl;
+      });
+      on.call(player, img, 'mouseout', () => {
+        img.src = config.imageUrl;
+      });
+    }
 
-            on.call(player, img, 'click', () => {
-                window.open(config.clickUrl, '_blank').focus();
-            });
-        }
-
-        // If a mouseOverImage is provided then we must set up the listeners for it
-        if (config.mouseOverImageUrl) {
-            on.call(player, img, 'mouseover', () => {
-                img.src = config.mouseOverImageUrl;
-            });
-            on.call(player, img, 'mouseout', () => {
-                img.src = config.imageUrl;
-            });
-        }
-
-        this.el.appendChild(img);
-        player.wrapper.appendChild(this.el);
-    };
+    this.el.appendChild(img);
+    player.wrapper.appendChild(this.el);
+  };
 }
 
 export default Logo;

@@ -1,218 +1,218 @@
 .fluid_mobile {
-    font-family: Arial, sans-serif;
+  font-family: Arial, sans-serif;
+
+  .fluid_initial_play_container {
+    background-color: rgba(0, 0, 0, 0.7);
+    opacity: 1;
+    transition: opacity 0.5s ease;
+    z-index: 1;
+
+    .fluid_initial_play {
+      transition: opacity 0.5s cubic-bezier(1, 0, 1, 0);
+    }
+
+    .fluid_initial_play_button {
+      border-color: transparent transparent transparent #ccc !important;
+    }
+
+    .fluid_initial_pause_button {
+      border-color: #ccc !important;
+    }
+  }
+
+  &.fluid_show_controls {
+    .fluid_mobile_controls {
+      transform: translate(0, 0);
+    }
+
+    .fluid_initial_play_container .fluid_initial_play {
+      opacity: 1;
+    }
+
+    .fluid_options {
+      transform: translate(0, 0);
+    }
+  }
+
+  &.fluid_hide_controls {
+    .fluid_mobile_controls {
+      transform: translate3d(0, 52px, 0);
+    }
 
     .fluid_initial_play_container {
-        background-color: rgba(0, 0, 0, 0.7);
-        opacity: 1;
-        transition: opacity 0.5s ease;
-        z-index: 1;
-
-        .fluid_initial_play {
-            transition: opacity 0.5s cubic-bezier(1, 0, 1, 0);
-        }
-
-        .fluid_initial_play_button {
-            border-color: transparent transparent transparent #ccc !important;
-        }
-
-        .fluid_initial_pause_button {
-            border-color: #ccc !important;
-        }
+      opacity: 0;
+      pointer-events: none;
     }
+  }
 
-    &.fluid_show_controls {
-        .fluid_mobile_controls {
-            transform: translate(0, 0);
-        }
+  &.fluid_show_options {
+    .fluid_initial_play_container {
+      opacity: 1;
 
-        .fluid_initial_play_container .fluid_initial_play {
-            opacity: 1;
-        }
-
-        .fluid_options {
-            transform: translate(0, 0);
-        }
-    }
-
-    &.fluid_hide_controls {
-        .fluid_mobile_controls {
-            transform: translate3d(0, 52px, 0);
-        }
-
-        .fluid_initial_play_container {
-            opacity: 0;
-            pointer-events: none;
-        }
-    }
-
-    &.fluid_show_options {
-        .fluid_initial_play_container {
-            opacity: 1;
-
-            .fluid_initial_play,
-            .fluid_initial_pause {
-                opacity: 0;
-                transition-timing-function: cubic-bezier(0, 1, 0, 1);
-            }
-        }
-
-        .fluid_mobile_main_menu {
-            opacity: 0 !important;
-        }
-
-        .fluid_mobile_close_main_menu {
-            opacity: 1 !important;
-        }
-
-        .fluid_video_loading {
-            opacity: 0 !important;
-        }
-
-        .fluid_options {
-            transform: translate(0, 0);
-        }
-    }
-
-    &.fluid_seeking {
-        .fluid_mobile_controls {
-            transform: translate(0, 0);
-        }
-
-        .fluid_initial_play_container {
-            opacity: 0;
-            transition-duration: 0.2s;
-            transition-timing-function: ease;
-        }
-
-        .fluid_options {
-            transform: translate(0, -52px);
-        }
-    }
-
-    &.fluid_paused .fluid_initial_play {
-        transition: opacity 0.2s ease;
-    }
-
-    &.fluid_playing .fluid_initial_play {
+      .fluid_initial_play,
+      .fluid_initial_pause {
         opacity: 0;
-        transition: none;
+        transition-timing-function: cubic-bezier(0, 1, 0, 1);
+      }
     }
 
-    &.fluid_waiting .fluid_initial_play {
-        opacity: 0 !important;
-        transition: none;
+    .fluid_mobile_main_menu {
+      opacity: 0 !important;
     }
 
-    // ads
-    .skip_button {
-        bottom: 75px;
+    .fluid_mobile_close_main_menu {
+      opacity: 1 !important;
     }
+
+    .fluid_video_loading {
+      opacity: 0 !important;
+    }
+
+    .fluid_options {
+      transform: translate(0, 0);
+    }
+  }
+
+  &.fluid_seeking {
+    .fluid_mobile_controls {
+      transform: translate(0, 0);
+    }
+
+    .fluid_initial_play_container {
+      opacity: 0;
+      transition-duration: 0.2s;
+      transition-timing-function: ease;
+    }
+
+    .fluid_options {
+      transform: translate(0, -52px);
+    }
+  }
+
+  &.fluid_paused .fluid_initial_play {
+    transition: opacity 0.2s ease;
+  }
+
+  &.fluid_playing .fluid_initial_play {
+    opacity: 0;
+    transition: none;
+  }
+
+  &.fluid_waiting .fluid_initial_play {
+    opacity: 0 !important;
+    transition: none;
+  }
+
+  // ads
+  .skip_button {
+    bottom: 75px;
+  }
 }
 
 .fluid_mobile_controls {
-    align-items: center;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, black 100%);
-    bottom: 0;
+  align-items: center;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, black 100%);
+  bottom: 0;
+  display: flex;
+  color: #ccc;
+  position: absolute;
+  width: 100%;
+  z-index: 5;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  box-sizing: border-box;
+
+  div {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font: inherit;
+    font-size: 100%;
+    vertical-align: baseline;
+  }
+
+  .fluid_time_elapsed {
+    margin: 0 10px 0 15px;
+  }
+
+  .fluid_time_elapsed,
+  .fluid_total_time {
+    justify-content: center;
+    font-size: 14px;
+    line-height: 44px;
+    text-align: center;
     display: flex;
-    color: #ccc;
-    position: absolute;
-    width: 100%;
-    z-index: 5;
-    transition: opacity 0.5s ease, transform 0.5s ease;
-    box-sizing: border-box;
+    flex: 0 0 auto;
+    align-items: center;
+    margin-left: 10px;
+  }
 
-    div {
-        margin: 0;
-        padding: 0;
-        border: 0;
-        font: inherit;
-        font-size: 100%;
-        vertical-align: baseline;
+  .fluid_controls_progress_container {
+    margin: 0 5px;
+    height: 44px;
+    position: relative;
+    display: flex;
+    flex: 1 1;
+    align-items: center;
+
+    top: 0;
+    right: 0;
+    left: 0;
+
+    .fluid_controls_progress {
+      background-color: rgba(255, 255, 255, 0.2);
+      width: 100%;
+      height: 2px;
+
+      .fluid_controls_play_progress {
+        transform: scaleX(0);
+        transform-origin: 0px 0px;
+        position: absolute;
+        width: 100%;
+        height: 2px;
+      }
     }
 
-    .fluid_time_elapsed {
-        margin: 0 10px 0 15px;
+    .fluid_controls_load_progress {
+      position: absolute;
+      width: 100%;
+      height: 2px;
+
+      .buffer {
+        position: absolute;
+        height: 2px;
+        background-color: rgba(255, 255, 255, 0.4);
+        z-index: -1;
+      }
     }
 
-    .fluid_time_elapsed,
-    .fluid_total_time {
-        justify-content: center;
-        font-size: 14px;
-        line-height: 44px;
-        text-align: center;
-        display: flex;
-        flex: 0 0 auto;
-        align-items: center;
-        margin-left: 10px;
+    .fluid_controls_ad_progress {
+      height: 2px;
     }
 
-    .fluid_controls_progress_container {
-        margin: 0 5px;
-        height: 44px;
-        position: relative;
-        display: flex;
-        flex: 1 1;
-        align-items: center;
-
-        top: 0;
-        right: 0;
-        left: 0;
-
-        .fluid_controls_progress {
-            background-color: rgba(255, 255, 255, 0.2);
-            width: 100%;
-            height: 2px;
-
-            .fluid_controls_play_progress {
-                transform: scaleX(0);
-                transform-origin: 0px 0px;
-                position: absolute;
-                width: 100%;
-                height: 2px;
-            }
-        }
-
-        .fluid_controls_load_progress {
-            position: absolute;
-            width: 100%;
-            height: 2px;
-
-            .buffer {
-                position: absolute;
-                height: 2px;
-                background-color: rgba(255, 255, 255, 0.4);
-                z-index: -1;
-            }
-        }
-
-        .fluid_controls_ad_progress {
-            height: 2px;
-        }
-
-        .fluid_controls_scrubber_progress {
-            width: 8px;
-            height: 8px;
-            border-radius: 20px;
-            background-color: #fff;
-            position: relative;
-        }
-
-        .fluid_controls_scrubber_progress_container {
-            position: absolute;
-            left: -4px;
-        }
+    .fluid_controls_scrubber_progress {
+      width: 8px;
+      height: 8px;
+      border-radius: 20px;
+      background-color: #fff;
+      position: relative;
     }
 
-    .fluid_control_fullscreen {
-        display: flex;
-        align-items: center;
-        flex: 0 0 44px;
-        height: 44px;
-        order: 10;
-        justify-content: center;
+    .fluid_controls_scrubber_progress_container {
+      position: absolute;
+      left: -4px;
     }
+  }
+
+  .fluid_control_fullscreen {
+    display: flex;
+    align-items: center;
+    flex: 0 0 44px;
+    height: 44px;
+    order: 10;
+    justify-content: center;
+  }
 }
 
 .fluid_touch {
-    touch-action: manipulation;
+  touch-action: manipulation;
 }

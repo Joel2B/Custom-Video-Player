@@ -12,12 +12,12 @@ import is from './is';
  *           The extension in lower case or an empty string if no
  *           extension could be found.
  */
-export const getFileExtension = function(path) {
-    if (!is.string(path)) {
-        return '';
-    }
+export function getFileExtension(path) {
+  if (!is.string(path)) {
+    return '';
+  }
 
-    const ext = path.split('.').pop().split('?').shift();
+  const ext = path.split('.').pop().split('?').shift();
 
-    return ext === path ? '' : ext.toLowerCase();
-};
+  return ext === path ? '' : ext.toLowerCase();
+}

@@ -9,10 +9,10 @@ import playerInitializer from './index';
 import './css/player.scss';
 
 if (window) {
-    /**
-     * Register public interface.
-     */
-    if (!window.fluidPlayer) {
-        window.fluidPlayer = playerInitializer;
-    }
+  /**
+   * Register public interface.
+   */
+  if (!window.fluidPlayer) {
+    window.fluidPlayer = playerInitializer;
+  }
 }

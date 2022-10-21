@@ -1,60 +1,60 @@
 .fluid_icon {
-    display: inline-block;
-    width: 24px;
-    height: 24px;
-    position: relative;
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  position: relative;
 
-    &:before {
-        content: '';
-        background: url('../static/fluid-icons.svg') no-repeat;
-        position: absolute;
-        height: 24px;
-        width: 24px;
-    }
+  &:before {
+    content: '';
+    background: url('../static/fluid-icons.svg') no-repeat;
+    position: absolute;
+    height: 24px;
+    width: 24px;
+  }
 }
 
 .fluid_icon_autoPlay:before {
-    background-position: -382px -52px;
+  background-position: -382px -52px;
 }
 
 .fluid_icon_loop:before {
-    background-position: -381px -18px;
-    width: 26px;
+  background-position: -381px -18px;
+  width: 26px;
 }
 
 .fluid_icon_playbackRate:before {
-    background-position: -343px -18px;
-    height: 25px;
-    width: 25px;
+  background-position: -343px -18px;
+  height: 25px;
+  width: 25px;
 }
 
 .fluid_icon_qualityLevels:before {
-    background-position: -343px -53px;
-    width: 26px;
+  background-position: -343px -53px;
+  width: 26px;
 }
 
 .fluid_icon_subtitles:before {
-    background-position: -303px -53px;
+  background-position: -303px -53px;
 }
 
 .fluid_icon_audio:before {
-    background-position: -305px -17px;
-    width: 26px;
+  background-position: -305px -17px;
+  width: 26px;
 }
 
 .fluid_icon_settings:before {
-    background-position: -266px -19px;
+  background-position: -266px -19px;
 }
 
 .fluid_icon_open_settings:before {
-    background-position: -232px -54px;
+  background-position: -232px -54px;
 }
 
 .fluid_icon_close_settings:before {
-    background-position: -127px -17px;
+  background-position: -127px -17px;
 }
 
 .fluid_icon_forward:before,
 .fluid_icon_rewind:before {
-    background-position: -15px -17px;
+  background-position: -15px -17px;
 }

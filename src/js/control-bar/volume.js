@@ -4,139 +4,139 @@ import { innerWidth } from '../utils/window';
 import is from '../utils/is';
 
 class Volume {
-    constructor(player) {
-        this.player = player;
+  constructor(player) {
+    this.player = player;
 
-        this.id = 'volume';
-        this.muteId = 'mute';
+    this.id = 'volume';
+    this.muteId = 'mute';
 
-        this.persistent = player.config.layoutControls.persistentSettings[this.id];
+    this.persistent = player.config.layoutControls.persistentSettings[this.id];
 
-        this.defaultValue = 1;
-        this.latestVolume = 1;
+    this.defaultValue = 1;
+    this.latestVolume = 1;
+  }
+
+  init = () => {
+    const { player } = this;
+
+    if (player.storage.get(this.id) === null || !this.persistent) {
+      player.storage.set(this.id, this.defaultValue);
     }
 
-    init = () => {
-        const { player } = this;
+    this.apply();
+  };
 
-        if (player.storage.get(this.id) === null || !this.persistent) {
-            player.storage.set(this.id, this.defaultValue);
-        }
+  apply = () => {
+    const { player } = this;
 
-        this.apply();
-    };
+    this.setVolume(player.storage.get(this.id));
 
-    apply = () => {
-        const { player } = this;
+    if (player.storage.get(this.muteId)) {
+      player.toggleMute();
+    }
 
-        this.setVolume(player.storage.get(this.id));
+    setTimeout(() => {
+      this.update();
+    }, 0);
+  };
 
-        if (player.storage.get(this.muteId)) {
-            player.toggleMute();
-        }
+  update = () => {
+    const { player } = this;
+    const { controls } = player;
+    const { scrubberVolumeContainer, scrubberVolume, volume, mute } = controls;
+    const cmMute = player.contextMenu.mute;
+    const width = volume.clientWidth;
 
-        setTimeout(() => {
-            this.update();
-        }, 0);
-    };
+    if (!player.mobile && !width && innerWidth() >= 375) {
+      this.waitRendering();
+      return;
+    }
 
-    update = () => {
-        const { player } = this;
-        const { controls } = player;
-        const { scrubberVolumeContainer, scrubberVolume, volume, mute } = controls;
-        const cmMute = player.contextMenu.mute;
-        const width = volume.clientWidth;
+    if (player.volume !== 0) {
+      this.latestVolume = player.volume;
+      player.storage.set(this.muteId, false);
+    } else {
+      player.storage.set(this.muteId, true);
+    }
 
-        if (!player.mobile && !width && innerWidth() >= 375) {
-            this.waitRendering();
-            return;
-        }
+    const notMuted = player.volume && !player.muted;
 
-        if (player.volume !== 0) {
-            this.latestVolume = player.volume;
-            player.storage.set(this.muteId, false);
-        } else {
-            player.storage.set(this.muteId, true);
-        }
+    toggleClass(mute, 'fluid_button_mute', !notMuted);
+    toggleClass(mute, 'fluid_button_volume', notMuted);
 
-        const notMuted = player.volume && !player.muted;
+    cmMute.innerHTML = player.config.captions[notMuted ? 'mute' : 'unmute'];
 
-        toggleClass(mute, 'fluid_button_mute', !notMuted);
-        toggleClass(mute, 'fluid_button_volume', notMuted);
+    scrubberVolumeContainer.style.width = player.volume * width + 'px';
+    scrubberVolume.style.left = player.volume * width - scrubberVolume.clientWidth / 2 + 'px';
+  };
 
-        cmMute.innerHTML = player.config.captions[notMuted ? 'mute' : 'unmute'];
+  waitRendering = () => {
+    const { player } = this;
 
-        scrubberVolumeContainer.style.width = player.volume * width + 'px';
-        scrubberVolume.style.left = player.volume * width - scrubberVolume.clientWidth / 2 + 'px';
-    };
+    if (!is.nullOrUndefined(player.controls) && player.controls.volume.clientWidth) {
+      this.update();
+    } else {
+      setTimeout(this.waitRendering, 100);
+    }
+  };
 
-    waitRendering = () => {
-        const { player } = this;
+  updateVolume = (positionX) => {
+    const { player } = this;
+    const width = player.controls.volumeContainer.clientWidth;
 
-        if (!is.nullOrUndefined(player.controls) && player.controls.volume.clientWidth) {
-            this.update();
-        } else {
-            setTimeout(this.waitRendering, 100);
-        }
-    };
+    let newVolume = positionX / width;
 
-    updateVolume = (positionX) => {
-        const { player } = this;
-        const width = player.controls.volumeContainer.clientWidth;
+    if (newVolume < 0.05) {
+      newVolume = 0;
+      player.muted = true;
+    } else if (newVolume > 0.95) {
+      newVolume = 1;
+    }
 
-        let newVolume = positionX / width;
+    if (player.muted && newVolume > 0) {
+      player.muted = false;
+    }
 
-        if (newVolume < 0.05) {
-            newVolume = 0;
-            player.muted = true;
-        } else if (newVolume > 0.95) {
-            newVolume = 1;
-        }
+    this.setVolume(newVolume);
+  };
 
-        if (player.muted && newVolume > 0) {
-            player.muted = false;
-        }
+  setVolume = (volume) => {
+    this.player.volume = volume;
 
-        this.setVolume(newVolume);
-    };
+    // If user scrolls to volume 0, we should not store 0 as
+    // latest volume - there is a property called "muted" already
+    // and storing 0 will break the toggle.
+    // In case user scrolls to 0 we assume last volume to be 1
+    // for toggle.
+    const latestVolume = volume === 0 ? 1 : volume;
 
-    setVolume = (volume) => {
-        this.player.volume = volume;
+    this.latestVolume = latestVolume;
 
-        // If user scrolls to volume 0, we should not store 0 as
-        // latest volume - there is a property called "muted" already
-        // and storing 0 will break the toggle.
-        // In case user scrolls to 0 we assume last volume to be 1
-        // for toggle.
-        const latestVolume = volume === 0 ? 1 : volume;
+    this.player.storage.set(this.id, latestVolume);
+  };
 
-        this.latestVolume = latestVolume;
+  move = (event) => {
+    const positionX = getEventOffsetX(this.player.controls.volumeContainer, event);
 
-        this.player.storage.set(this.id, latestVolume);
-    };
+    this.updateVolume(positionX);
+  };
 
-    move = (event) => {
-        const positionX = getEventOffsetX(this.player.controls.volumeContainer, event);
+  end = (event) => {
+    const { player } = this;
+    const positionX = getEventOffsetX(player.controls.volumeContainer, event);
 
-        this.updateVolume(positionX);
-    };
+    if (is.number(positionX)) {
+      this.updateVolume(positionX);
+    }
 
-    end = (event) => {
-        const { player } = this;
-        const positionX = getEventOffsetX(player.controls.volumeContainer, event);
+    off.call(player, document, 'mousemove touchmove', this.move);
+    off.call(player, document, 'mouseup touchend mouseleave', this.end);
+  };
 
-        if (is.number(positionX)) {
-            this.updateVolume(positionX);
-        }
-
-        off.call(player, document, 'mousemove touchmove', this.move);
-        off.call(player, document, 'mouseup touchend mouseleave', this.end);
-    };
-
-    start = () => {
-        on.call(this.player, document, 'mousemove touchmove', this.move);
-        on.call(this.player, document, 'mouseup touchend mouseleave', this.end);
-    };
+  start = () => {
+    on.call(this.player, document, 'mousemove touchmove', this.move);
+    on.call(this.player, document, 'mouseup touchend mouseleave', this.end);
+  };
 }
 
 export default Volume;
