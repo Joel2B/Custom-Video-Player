@@ -45,6 +45,11 @@
   }
 }
 
+.fluid_waiting .fluid_initial_play {
+  opacity: 0 !important;
+  transition: none;
+}
+
 .fluid_desktop .fluid_initial_play_button {
   position: relative;
   left: 2px;

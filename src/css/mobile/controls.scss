@@ -1,3 +1,7 @@
+.fluid_touch {
+  touch-action: manipulation;
+}
+
 .fluid_mobile {
   font-family: Arial, sans-serif;
 
@@ -95,11 +99,6 @@
 
   &.fluid_playing .fluid_initial_play {
     opacity: 0;
-    transition: none;
-  }
-
-  &.fluid_waiting .fluid_initial_play {
-    opacity: 0 !important;
     transition: none;
   }
 
@@ -211,8 +210,4 @@
     order: 10;
     justify-content: center;
   }
-}
-
-.fluid_touch {
-  touch-action: manipulation;
 }

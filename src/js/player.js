@@ -366,9 +366,7 @@ class CVP {
 
     this.isLoading = show;
 
-    if (this.mobile) {
-      toggleClass(this.wrapper, 'fluid_waiting', show);
-    }
+    toggleClass(this.wrapper, 'fluid_waiting', show);
 
     this.controls.loader.style.opacity = show ? '1' : '0';
   };
