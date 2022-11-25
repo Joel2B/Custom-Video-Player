@@ -16,7 +16,7 @@ class PreviewThumbnails {
   init = () => {
     return new Promise((resolve) => {
       const option = this.player.config.layoutControls.timelinePreview;
-      if (option.type === 'VTT' && is.string(option.file)) {
+      if (option.type === 'VTT' && is.string(option.file) && !is.empty(option.file)) {
         this.getThumbnails(option.file).then(() => {
           this.render();
           resolve();
