@@ -183,6 +183,10 @@ class PreviewThumbnails {
   };
 
   hide = () => {
+    if (is.empty(this.data)) {
+      return;
+    }
+
     this.preview.style.visibility = 'hidden';
   };
 
