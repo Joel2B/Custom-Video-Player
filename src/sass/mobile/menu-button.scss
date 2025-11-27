@@ -1,3 +1,5 @@
+@use '../vars' as *;
+
 .fluid_mobile {
   .fluid_options {
     transition: transform 0.5s ease;
@@ -11,8 +13,8 @@
       position: absolute;
       top: 50%;
       left: 50%;
-      margin-left: -12px;
       margin-top: -12px;
+      margin-left: -12px;
       opacity: 1;
       transition: opacity 0.2s linear;
       pointer-events: none;

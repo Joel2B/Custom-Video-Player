@@ -1,4 +1,6 @@
-@import 'icons';
+@use 'icons';
+@use 'switch' as *;
+@use 'selector' as *;
 
 .fluid_desktop .cvp_options_menu {
   font: 400 14px/20px 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -60,8 +62,9 @@
         height: 27px;
       }
 
-      @import 'switch';
-      @import 'selector';
+
+      @include cvp_switch;
+      @include cvp_selector;
 
       .cvp_switch:hover,
       .cvp_selector:hover,

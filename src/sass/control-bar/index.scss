@@ -1,13 +1,13 @@
-@import 'button';
-@import 'progress';
-@import 'preview-time';
-@import 'preview-thumbnails';
-@import 'subtitles';
-@import 'time-display';
-@import 'live';
-@import 'volume';
-@import 'theatre';
-@import 'menu';
+@use 'button';
+@use 'progress';
+@use 'preview-time';
+@use 'preview-thumbnails';
+@use 'subtitles';
+@use 'time-display';
+@use 'live';
+@use 'volume';
+@use 'theatre';
+@use 'menu';
 
 .fluid_controls_container {
   color: #fff;

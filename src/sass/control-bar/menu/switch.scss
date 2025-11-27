@@ -1,84 +1,86 @@
-.cvp_switch {
-  position: relative;
-  padding: 6px 70px 6px 22px;
-  line-height: 15px;
-  cursor: pointer;
-  color: #ccc;
-  overflow: hidden;
-  white-space: nowrap;
-  box-sizing: border-box;
-
-  span {
-    position: absolute;
-    display: inline-block;
-    background-color: #999;
-    top: 6px;
-    right: 22px;
-    margin: 0;
-    width: 25px;
-    height: 15px;
-    border-radius: 7px;
+@mixin cvp_switch {
+  .cvp_switch {
+    position: relative;
+    padding: 6px 70px 6px 22px;
+    line-height: 15px;
+    cursor: pointer;
+    color: #ccc;
     overflow: hidden;
-    transition: background-color 0.2s linear;
-    font-size: 0;
-    color: transparent;
+    white-space: nowrap;
+    box-sizing: border-box;
 
-    &:before {
-      content: ' ';
-      left: 0;
-      opacity: 0;
-    }
-
-    &:after {
-      content: ' ';
-      right: 0;
-      opacity: 1;
-    }
-
-    div {
+    span {
       position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 11px;
-      height: 11px;
-      background: #fff;
-      z-index: 3;
-      border-radius: 50%;
+      display: inline-block;
+      background-color: #999;
+      top: 6px;
+      right: 22px;
+      margin: 0;
+      width: 25px;
+      height: 15px;
+      border-radius: 7px;
+      overflow: hidden;
+      transition: background-color 0.2s linear;
       font-size: 0;
       color: transparent;
-      transform: translate(0, 0);
-      transition: transform 0.2s ease;
-    }
-  }
 
-  span:before,
-  span:after {
-    position: absolute;
-    color: #000;
-    top: 0;
-    width: 18px;
-    text-align: center;
-    font-size: 9px;
-    line-height: 16px;
-    z-index: 2;
-    transition: opacity 0.2s linear;
-  }
+      &:before {
+        content: ' ';
+        left: 0;
+        opacity: 0;
+      }
 
-  &.cvp_enabled {
-    span {
-      background-color: #f00;
+      &:after {
+        content: ' ';
+        right: 0;
+        opacity: 1;
+      }
 
       div {
-        transform: translate(10px, 0);
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 11px;
+        height: 11px;
+        background: #fff;
+        z-index: 3;
+        border-radius: 50%;
+        font-size: 0;
+        color: transparent;
+        transform: translate(0, 0);
+        transition: transform 0.2s ease;
       }
     }
 
-    span:before {
-      opacity: 1;
+    span:before,
+    span:after {
+      position: absolute;
+      color: #000;
+      top: 0;
+      width: 18px;
+      text-align: center;
+      font-size: 9px;
+      line-height: 16px;
+      z-index: 2;
+      transition: opacity 0.2s linear;
     }
 
-    span:after {
-      opacity: 1;
+    &.cvp_enabled {
+      span {
+        background-color: #f00;
+
+        div {
+          transform: translate(10px, 0);
+        }
+      }
+
+      span:before {
+        opacity: 1;
+      }
+
+      span:after {
+        opacity: 1;
+      }
     }
   }
 }

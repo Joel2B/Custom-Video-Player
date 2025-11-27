@@ -1,3 +1,5 @@
+@use '../vars' as *;
+
 .fluid_mobile .cvp_options_menu {
   position: absolute;
   z-index: 10;
@@ -46,7 +48,9 @@
       display: flex;
       flex-flow: row wrap;
       will-change: transform;
-      transition: opacity 0.15s linear, transform 0.15s ease-out;
+      transition:
+        opacity 0.15s linear,
+        transform 0.15s ease-out;
 
       > div:active {
         color: #fff;
@@ -323,7 +327,9 @@
       pointer-events: none;
       opacity: 0;
       transform: translate(260px, 0);
-      transition: opacity 0.15s linear, transform 0.15s ease-out;
+      transition:
+        opacity 0.15s linear,
+        transform 0.15s ease-out;
     }
   }
 }
