@@ -221,11 +221,28 @@ class Fullscreen {
 
     // iOS native fullscreen doesn't need the request step
     if (IS_IOS && this.player.config.layoutControls.fullscreen.iosNative) {
-      this.target.webkitEnterFullscreen();
-    } else if (!Fullscreen.native || this.forceFallback) {
+      if (typeof this.target.webkitEnterFullscreen === 'function') {
+        this.target.webkitEnterFullscreen();
+        return;
+      }
+
+      if (this.target.requestFullscreen) {
+        this.target.requestFullscreen().catch(() => {
+          this.toggleFallback(true);
+        });
+        return;
+      }
+
+      this.toggleFallback(true);
+      return;
+    }
+
+    if (!Fullscreen.native || this.forceFallback) {
       this.toggleFallback(true);
     } else if (!this.prefix) {
-      this.target.requestFullscreen({ navigationUI: 'hide' });
+      this.target.requestFullscreen?.({ navigationUI: 'hide' }).catch?.(() => {
+        this.toggleFallback(true);
+      });
     } else if (!is.empty(this.prefix)) {
       this.target[`${this.prefix}Request${this.property}`]();
     }
