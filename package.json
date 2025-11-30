@@ -13,7 +13,8 @@
     "lint-fix": "eslint src --ext .js --fix",
     "serve": "webpack serve --open",
     "test": "npm run build-dev && webpack serve --open --no-client-overlay --mode=production",
-    "watch": "webpack -w"
+    "watch": "webpack -w",
+    "deploy": "powershell -ExecutionPolicy Bypass -File ./deploy.ps1"
   },
   "repository": {
     "type": "git",

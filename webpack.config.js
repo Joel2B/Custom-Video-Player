@@ -8,10 +8,39 @@ const CopyPlugin = require('copy-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const WebpackObfuscatorPlugin = require('webpack-obfuscator');
 
+// Lightweight .env loader (avoids extra deps)
+const loadEnv = () => {
+  const envPath = path.resolve(__dirname, '.env');
+  if (!fs.existsSync(envPath)) {
+    return {};
+  }
+
+  return fs
+    .readFileSync(envPath, 'utf8')
+    .split(/\r?\n/)
+    .reduce((acc, line) => {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) {
+        return acc;
+      }
+
+      const eqIndex = trimmed.indexOf('=');
+      if (eqIndex === -1) {
+        return acc;
+      }
+
+      const key = trimmed.slice(0, eqIndex).trim();
+      const value = trimmed.slice(eqIndex + 1).trim();
+      acc[key] = value;
+      return acc;
+    }, {});
+};
+
+const envVars = loadEnv();
+const getEnv = (key) => process.env[key] || envVars[key];
+
 // Loading the current package.json - will be used to determine version etc.
 const packageJSON = require(path.resolve(__dirname, 'package.json'));
-// Loading cdn
-const cdnJSON = require(path.resolve(__dirname, 'deploy.json'));
 
 // Validate package version is valid semver
 if (!semver.valid(packageJSON.version)) {
@@ -22,7 +51,11 @@ if (!semver.valid(packageJSON.version)) {
 const getDistOptions = (mode) => {
   const fullVersion = packageJSON.version;
   const majorVersion = semver.major(packageJSON.version);
-  const cdnRoot = cdnJSON.cdn;
+  const cdnRoot = getEnv('DEPLOY_CDN');
+
+  if (!cdnRoot && mode !== 'development') {
+    throw new Error('DEPLOY_CDN must be set in .env (or environment) for CDN builds.');
+  }
 
   switch (mode) {
     case 'development':

@@ -2,3 +2,6 @@ node_modules/
 dist/
 dist-cdn/
 .vscode/
+.env
+*.zip
+
