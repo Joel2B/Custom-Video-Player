@@ -14,7 +14,7 @@
     "serve": "webpack serve --open",
     "test": "npm run build-dev && webpack serve --open --no-client-overlay --mode=production",
     "watch": "webpack -w",
-    "deploy": "powershell -ExecutionPolicy Bypass -File ./deploy.ps1"
+    "deploy": "pwsh -ExecutionPolicy Bypass -File ./deploy.ps1"
   },
   "repository": {
     "type": "git",
