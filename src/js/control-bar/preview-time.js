@@ -37,7 +37,7 @@ class PreviewTime {
       }
     }
 
-    let previewWidth = 32 + (seconds >= 3600 ? 20 : 0);
+    let previewWidth = 32 + (seconds >= 86400 ? 40 : seconds >= 3600 ? 20 : 0);
     let timeDisplay = formatTime(seconds);
 
     if (this.player.streaming.live.active) {
