@@ -9,14 +9,23 @@ export function convertTimeStringToSeconds(str) {
 
 // Format time to hh:mm:ss
 export function formatTime(duration) {
-  const formatDateObj = new Date(duration * 1000);
-  const formatHours = pad(formatDateObj.getUTCHours());
-  const formatMinutes = pad(formatDateObj.getUTCMinutes());
-  const formatSeconds = pad(formatDateObj.getSeconds());
+  const totalSeconds = Math.floor(duration);
 
-  return formatHours >= 1
-    ? formatHours + ':' + formatMinutes + ':' + formatSeconds
-    : formatMinutes + ':' + formatSeconds;
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  const d = pad(days);
+  const h = pad(hours);
+  const m = pad(minutes);
+  const s = pad(seconds);
+
+  if (days > 0) {
+    return `${d}:${h}:${m}:${s}`;
+  }
+
+  return hours >= 1 ? `${h}:${m}:${s}` : `${m}:${s}`;
 }
 
 export function pad(value) {
