@@ -151,7 +151,7 @@ Replace("{{REMOTE_ARCHIVE}}", $remoteArchivePath)
 $remoteScript = $remoteScript -replace "`r`n", "`n"
 
 $localScriptPath = Join-Path $env:TEMP "deploy-cdn-remote.sh"
-Set-Content -Path $localScriptPath -Value $remoteScript -NoNewline -Encoding UTF8
+Set-Content -Path $localScriptPath -Value $remoteScript -NoNewline -Encoding UTF8NoBOM
 
 Write-Host ">>> Local remote script created at $localScriptPath"
 
