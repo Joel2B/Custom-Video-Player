@@ -28,9 +28,9 @@ Mobile
 
 ## Demo
 
-[Custom Video Player](https://appsdev.cyou/player/demo/)
+[Custom Video Player](https://player-demo.tinyapps.download/)
 
-[E2E cases](https://appsdev.cyou/player/tests/)
+[E2E cases](https://player.tinyapps.download/)
 
 ## Setup
 
@@ -60,7 +60,7 @@ Mobile
     <video id="player">
       <source src="https://d3rlna7iyyu8wu.cloudfront.net/skip_armstrong/skip_armstrong_multi_language_subs.m3u8" type="application/x-mpegURL" />
     </video>
-    <script src="https://appsdev.cyou/player/v1/current/player.min.js"></script>
+    <script src="https://player.tinyapps.download/v1/current/player.min.js"></script>
     <script>
       const options = {
         layoutControls: {
