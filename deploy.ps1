@@ -43,9 +43,14 @@ $remoteUser = $env:DEPLOY_USER
 $remoteDir = $env:DEPLOY_DIR
 $localKey = $env:DEPLOY_KEY
 $archiveName = $env:DEPLOY_ARCHIVE_NAME
+$distName = $env:DEPLOY_DIST_NAME
 
 if (-not $archiveName -or $archiveName -eq "") {
   $archiveName = "cdn-dist.zip"
+}
+
+if (-not $distName -or $distName -eq "") {
+  $distName = "dist.zip"
 }
 
 if (-not $remoteHost -or -not $remoteUser -or -not $remoteDir) {
@@ -67,14 +72,21 @@ $archivePath = Join-Path $projectRoot $archiveName
 $remoteArchivePath = "/tmp/$archiveName"
 $remoteScriptRemote = "/tmp/deploy-cdn-remote.sh"
 
+$distPath = Join-Path $projectRoot $distName
+$remoteDistPath = "/tmp/$distName"
+
 Write-Host ">>> Deploying CDN to $sshTarget in $remoteDir"
 Write-Host ">>> Using archive: $archivePath"
+Write-Host ">>> Using archive: $distPath"
 Write-Host ">>> Using SSH key: $localKey"
 
 # ==== 3. Build CDN (npm run build-cdn) ====
 
 Write-Host ">>> Running npm run build-cdn..."
 npm run build-cdn
+
+Write-Host ">>> Running npm run build..."
+npm run build-dev
 
 if ($LASTEXITCODE -ne 0) {
   Write-Error "npm run build-cdn failed with exit code $LASTEXITCODE"
@@ -88,6 +100,13 @@ if (-not (Test-Path $cdnDist)) {
   exit 1
 }
 
+$dist = Join-Path $projectRoot "dist"
+
+if (-not (Test-Path $dist)) {
+  Write-Error "dist-cdn directory not found at $dist (build should generate it)"
+  exit 1
+}
+
 # ==== 4. Create ZIP from dist-cdn contents ====
 
 Write-Host ">>> Creating ZIP from dist-cdn contents..."
@@ -96,14 +115,25 @@ if (Test-Path $archivePath) {
   Remove-Item $archivePath -Force
 }
 
+if (Test-Path $distPath) {
+  Remove-Item $distPath -Force
+}
+
 Compress-Archive -Path (Join-Path $cdnDist '*') -DestinationPath $archivePath -Force
+Compress-Archive -Path (Join-Path $dist '*') -DestinationPath $distPath -Force
 
 if (-not (Test-Path $archivePath)) {
   Write-Error "ZIP file was not created: $archivePath"
   exit 1
 }
 
+if (-not (Test-Path $distPath)) {
+  Write-Error "ZIP file was not created: $distPath"
+  exit 1
+}
+
 Write-Host ">>> ZIP created at $archivePath"
+Write-Host ">>> ZIP created at $distPath"
 
 # ==== 5. Upload ZIP via SCP ====
 
@@ -112,6 +142,11 @@ $scpTargetZip = "{0}@{1}:{2}" -f $remoteUser, $remoteHost, $remoteArchivePath
 Write-Host ">>> Running: scp -i `"$localKey`" `"$archivePath`" `"$scpTargetZip`""
 
 scp -i "$localKey" "$archivePath" "$scpTargetZip"
+
+$scpTargetZip = "{0}@{1}:{2}" -f $remoteUser, $remoteHost, $remoteDistPath
+Write-Host ">>> Running: scp -i `"$localKey`" `"$distPath`" `"$scpTargetZip`""
+
+scp -i "$localKey" "$distPath" "$scpTargetZip"
 
 if ($LASTEXITCODE -ne 0) {
   Write-Error "There was an error uploading the ZIP via scp. Exit code: $LASTEXITCODE"
@@ -126,6 +161,7 @@ set -e
 
 APP_DIR="{{REMOTE_DIR}}"
 ARCHIVE="{{REMOTE_ARCHIVE}}"
+DIST="{{REMOTE_DIST}}"
 
 echo ">>> Starting CDN remote deploy in $APP_DIR"
 mkdir -p "$APP_DIR"
@@ -137,16 +173,19 @@ fi
 
 echo ">>> Extracting archive $ARCHIVE into $APP_DIR..."
 unzip -oq "$ARCHIVE" -d "$APP_DIR"
+unzip -oq "$DIST" -d "$APP_DIR"
 
 echo ">>> Removing temporary archive $ARCHIVE..."
 rm -f "$ARCHIVE"
+rm -f "$DIST"
 
 echo ">>> CDN remote deploy completed successfully."
 '@
 
 $remoteScript = $remoteScriptTemplate.
 Replace("{{REMOTE_DIR}}", $remoteDir).
-Replace("{{REMOTE_ARCHIVE}}", $remoteArchivePath)
+Replace("{{REMOTE_ARCHIVE}}", $remoteArchivePath).
+Replace("{{REMOTE_DIST}}", $remoteDistPath)
 
 $remoteScript = $remoteScript -replace "`r`n", "`n"
 
@@ -181,6 +220,10 @@ if ($LASTEXITCODE -ne 0) {
 
 if (Test-Path $archivePath) {
   Remove-Item $archivePath -Force
+}
+
+if (Test-Path $distPath) {
+  Remove-Item $distPath -Force
 }
 
 Write-Host "CDN deploy finished successfully."
