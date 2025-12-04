@@ -179,4 +179,8 @@ if ($LASTEXITCODE -ne 0) {
   exit 1
 }
 
+if (Test-Path $archivePath) {
+  Remove-Item $archivePath -Force
+}
+
 Write-Host "CDN deploy finished successfully."
