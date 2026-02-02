@@ -10,14 +10,26 @@
     <title>VOD responsive</title>
     <%= htmlWebpackPlugin.tags.headTags %>
     <style lang="css">
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+
       #video-container {
         display: inline-block;
-        width: 70%;
+        width: clamp(320px, 50vw, 960px);
         position: relative;
+        margin: 0 auto;
       }
 
       #video-container.resized {
-        width: 40%;
+        width: clamp(280px, 35vw, 720px);
       }
 
       #video-container #spacer {

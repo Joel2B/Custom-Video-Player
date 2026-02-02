@@ -10,8 +10,23 @@
     <title>HLS VOD with VAST HLS</title>
     <%= htmlWebpackPlugin.tags.headTags %>
     <style lang="css">
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+
       #fluid-player-e2e-case {
-        width: 90%;
+        width: clamp(320px, 50vw, 960px);
+        max-width: 90vw;
+        margin: 0 auto;
+        height: auto;
+        aspect-ratio: 16 / 9;
       }
     </style>
   </head>
