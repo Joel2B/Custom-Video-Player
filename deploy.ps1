@@ -1,6 +1,9 @@
 #!/usr/bin/env pwsh
 param()
 
+npm install
+npm update
+
 $ErrorActionPreference = "Stop"
 
 # ==== 1. Project root & .env ====
