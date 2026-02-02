@@ -1,22 +1,26 @@
-const path = require('path');
-const fs = require('fs');
-const webpack = require('webpack');
-const semver = require('semver');
-const cheerio = require('cheerio');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const CopyPlugin = require('copy-webpack-plugin');
-const TerserPlugin = require('terser-webpack-plugin');
-const WebpackObfuscatorPlugin = require('webpack-obfuscator');
+import { dirname as _dirname, resolve as _resolve } from 'path';
+import { existsSync, readFileSync, readdirSync } from 'fs';
+import webpack from 'webpack';
+import { fileURLToPath } from 'url';
+import { valid, major } from 'semver';
+import { load } from 'cheerio';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
+import CopyPlugin from 'copy-webpack-plugin';
+import TerserPlugin from 'terser-webpack-plugin';
+import WebpackObfuscatorPlugin from 'webpack-obfuscator';
+
+const { DefinePlugin, optimize } = webpack;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = _dirname(__filename);
 
 // Lightweight .env loader (avoids extra deps)
 const loadEnv = () => {
-  const envPath = path.resolve(__dirname, '.env');
-  if (!fs.existsSync(envPath)) {
+  const envPath = _resolve(__dirname, '.env');
+  if (!existsSync(envPath)) {
     return {};
   }
 
-  return fs
-    .readFileSync(envPath, 'utf8')
+  return readFileSync(envPath, 'utf8')
     .split(/\r?\n/)
     .reduce((acc, line) => {
       const trimmed = line.trim();
@@ -40,17 +44,17 @@ const envVars = loadEnv();
 const getEnv = (key) => process.env[key] || envVars[key];
 
 // Loading the current package.json - will be used to determine version etc.
-const packageJSON = require(path.resolve(__dirname, 'package.json'));
+const packageJSON = JSON.parse(readFileSync(_resolve(__dirname, 'package.json'), 'utf8'));
 
 // Validate package version is valid semver
-if (!semver.valid(packageJSON.version)) {
+if (!valid(packageJSON.version)) {
   throw new Error('Invalid package version - ' + packageJSON.version);
 }
 
 // Distribution options configure how build paths are going to be configured.
 const getDistOptions = (mode) => {
   const fullVersion = packageJSON.version;
-  const majorVersion = semver.major(packageJSON.version);
+  const majorVersion = major(packageJSON.version);
   const cdnRoot = getEnv('DEPLOY_CDN');
 
   if (!cdnRoot && mode !== 'development') {
@@ -60,17 +64,17 @@ const getDistOptions = (mode) => {
   switch (mode) {
     case 'development':
       return {
-        path: path.resolve(__dirname, 'dist'),
+        path: _resolve(__dirname, 'dist'),
         publicPath: '',
       };
     case 'current':
       return {
-        path: path.resolve(__dirname, 'dist-cdn/v' + majorVersion + '/current/'),
+        path: _resolve(__dirname, 'dist-cdn/v' + majorVersion + '/current/'),
         publicPath: cdnRoot + '/v' + majorVersion + '/current/',
       };
     case 'versioned':
       return {
-        path: path.resolve(__dirname, 'dist-cdn/' + fullVersion + '/'),
+        path: _resolve(__dirname, 'dist-cdn/' + fullVersion + '/'),
         publicPath: cdnRoot + '/' + fullVersion + '/',
       };
     default:
@@ -79,7 +83,7 @@ const getDistOptions = (mode) => {
 };
 
 // Webpack configuration
-module.exports = (env, argv) => {
+export default (env, argv) => {
   const mode = typeof argv.mode !== 'undefined' ? argv.mode : 'development';
   const debug = mode === 'development' && !!env.debug;
   const dist = typeof env.dist !== 'undefined' ? env.dist : 'development';
@@ -92,13 +96,13 @@ module.exports = (env, argv) => {
 
   const plugins = [
     // Define common variables for use in Fluid Player
-    new webpack.DefinePlugin({
+    new DefinePlugin({
       FP_BUILD_VERSION: JSON.stringify(packageJSON.version),
       FP_HOMEPAGE: JSON.stringify(packageJSON.homepage),
       FP_ENV: JSON.stringify(mode),
       FP_DEBUG: JSON.stringify(debug),
     }),
-    new webpack.optimize.LimitChunkCountPlugin({
+    new optimize.LimitChunkCountPlugin({
       maxChunks: 1, // disable creating additional chunks
     }),
   ];
@@ -107,14 +111,14 @@ module.exports = (env, argv) => {
   if (mode === 'development') {
     // Locate all E2E cases
     const caseFiles = [];
-    fs.readdirSync(path.resolve(__dirname, 'test/html/')).forEach((file) => {
-      const absPath = path.resolve(__dirname, 'test/html/', file);
-      const caseHtml = cheerio.load(fs.readFileSync(absPath));
+    readdirSync(_resolve(__dirname, 'test/html/')).forEach((file) => {
+      const absPath = _resolve(__dirname, 'test/html/', file);
+      const caseHtml = load(readFileSync(absPath));
       const publicName = file.replace('.tpl', '');
 
       plugins.push(
         new HtmlWebpackPlugin({
-          template: path.resolve(__dirname, 'test/html/', file),
+          template: _resolve(__dirname, 'test/html/', file),
           inject: false,
           filename: publicName,
           scriptLoading: 'blocking',
@@ -130,7 +134,7 @@ module.exports = (env, argv) => {
     // Emit all cases as separate HTML pages
     plugins.push(
       new HtmlWebpackPlugin({
-        template: path.resolve(__dirname, 'test/index.html'),
+        template: _resolve(__dirname, 'test/index.html'),
         filename: 'index.html',
         inject: false,
         templateParameters: {
@@ -144,8 +148,8 @@ module.exports = (env, argv) => {
       new CopyPlugin({
         patterns: [
           {
-            from: path.resolve(__dirname, 'test/static/'),
-            to: path.resolve(distOptions.path, 'static'),
+            from: _resolve(__dirname, 'test/static/'),
+            to: _resolve(distOptions.path, 'static'),
           },
         ],
       }),
@@ -159,7 +163,7 @@ module.exports = (env, argv) => {
         controlFlowFlattening: false,
         deadCodeInjection: false,
         debugProtection: false,
-        debugProtectionInterval: false,
+        debugProtectionInterval: 0,
         disableConsoleOutput: false,
         identifierNamesGenerator: 'mangled-shuffled',
         log: false,
@@ -212,6 +216,14 @@ module.exports = (env, argv) => {
       publicPath: distOptions.publicPath,
       clean: true,
     },
+    performance:
+      mode === 'production'
+        ? {
+            hints: 'warning',
+            maxAssetSize: 350 * 1024,
+            maxEntrypointSize: 350 * 1024,
+          }
+        : false,
     module: {
       rules: [
         {
