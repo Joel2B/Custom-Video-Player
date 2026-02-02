@@ -94,19 +94,58 @@ class Dash {
     const live = player.streaming.live;
 
     live.init().onClick(() => {
-      this.dash.seek(this.dash.duration());
+      this.dash.seek(player.duration);
     });
 
-    live.setCurrentTime = (input) => this.dash.seek(input);
+    live.setCurrentTime = (input) => {
+      if (!is.number(input)) {
+        return;
+      }
 
-    live.getCurrentTime = () => this.dash.time();
+      const duration = player.duration;
+      const seekTo = Math.max(0, Math.min(input, duration));
 
-    live.duration = () => this.dash.duration();
+      this.dash.seek(seekTo);
+    };
+
+    live.getCurrentTime = () => {
+      if (is.function(this.dash.timeInDvrWindow)) {
+        const dvrTime = this.dash.timeInDvrWindow();
+        return is.number(dvrTime) && dvrTime >= 0 ? dvrTime : 0;
+      }
+
+      const time = this.dash.time();
+      return is.number(time) && time >= 0 ? time : 0;
+    };
+
+    live.duration = () => {
+      const duration = this.dash.duration();
+      return is.number(duration) && duration > 0 ? duration : 0;
+    };
 
     live.timeDisplay = () => {
-      const liveDelay = player.duration - player.currentTime;
+      let liveDelay = player.duration - player.currentTime;
 
-      live.toggleStatus(liveDelay < this.liveThresholdSecs);
+      if (is.function(this.dash.getCurrentLiveLatency)) {
+        const latency = this.dash.getCurrentLiveLatency();
+
+        if (is.number(latency) && latency >= 0) {
+          liveDelay = latency;
+        }
+      }
+
+      liveDelay = Math.max(liveDelay, 0);
+      let syncThreshold = this.liveThresholdSecs;
+
+      if (is.function(this.dash.getTargetLiveDelay)) {
+        const targetLiveDelay = this.dash.getTargetLiveDelay();
+
+        if (is.number(targetLiveDelay) && targetLiveDelay > 0) {
+          syncThreshold = targetLiveDelay;
+        }
+      }
+
+      live.toggleStatus(liveDelay < syncThreshold);
 
       return `- ${formatTime(liveDelay)}`;
     };
