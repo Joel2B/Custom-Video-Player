@@ -113,7 +113,7 @@ const defaults = {
     url: 'https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js',
     customUrl: '',
     debug: false,
-    overrideNative: false,
+    overrideNative: true,
     config: (options) => {
       return options;
     },

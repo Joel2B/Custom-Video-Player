@@ -12,8 +12,6 @@
     "lint": "eslint src --ext .js",
     "lint-fix": "eslint src --ext .js --fix",
     "serve": "webpack serve --open",
-    "test": "npm run build-dev && webpack serve --open --no-client-overlay --mode=production",
-    "watch": "webpack -w",
     "deploy": "pwsh -ExecutionPolicy Bypass -File ./deploy.ps1"
   },
   "repository": {
