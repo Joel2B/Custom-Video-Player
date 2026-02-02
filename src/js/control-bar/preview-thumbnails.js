@@ -103,11 +103,6 @@ class PreviewThumbnails {
 
   move = (event) => {
     const { player } = this;
-    if (player.isCurrentlyPlayingAd) {
-      this.hide();
-      return;
-    }
-
     const progress = player.controls.progressContainer;
     const width = progress.clientWidth;
     if (!width) {

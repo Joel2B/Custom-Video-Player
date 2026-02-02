@@ -81,14 +81,7 @@ class Autoplay {
 
     if (force) {
       this.applied = true;
-
-      if (player.findRoll('preRoll')) {
-        setTimeout(() => {
-          player.playPause.toggle();
-        }, 500);
-      } else {
-        player.playPause.toggle();
-      }
+      player.playPause.toggle();
     }
 
     return true;

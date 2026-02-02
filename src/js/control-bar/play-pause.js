@@ -12,8 +12,8 @@ class PlayPause {
   }
 
   /**
-     * Play button in the middle when the video loads
-     */
+   * Play button in the middle when the video loads
+   */
   init = () => {
     const { player } = this;
     const { title, logo } = player;
@@ -81,11 +81,7 @@ class PlayPause {
     const { player } = this;
     const { initialPlay, playButton } = this;
 
-    if (
-      (player.isCurrentlyPlayingAd && !player.mobile) ||
-            !player.config.layoutControls.playPauseAnimation ||
-            player.isSwitchingSource
-    ) {
+    if (!player.config.layoutControls.playPauseAnimation || player.isSwitchingSource) {
       this.hideInitPlayButton();
       player.isSwitchingSource = false;
       return;
@@ -99,10 +95,6 @@ class PlayPause {
       }
 
       paused = !paused;
-
-      if (player.isCurrentlyPlayingAd && player.ended) {
-        paused = !paused;
-      }
     }
 
     toggleClass(playButton, 'fluid_initial_play_button', !paused);
@@ -149,7 +141,6 @@ class PlayPause {
   toggle = () => {
     const { player } = this;
     const isFirstStart = !player.firstPlayLaunched;
-    const preRolls = player.findRoll('preRoll');
 
     if (!player.ready) {
       return;
@@ -167,16 +158,6 @@ class PlayPause {
 
       toggleClass(this.initialPlay, 'fluid_initial_play_color', false);
 
-      if (preRolls.length === 0) {
-        player.config.vastOptions.vastAdvanced.noVastVideoCallback();
-      } else {
-        player.isCurrentlyPlayingAd = true;
-
-        // trigger the loading of the VAST Tag
-        player.prepareVast('preRoll');
-        player.preRollAdPodsLength = preRolls.length;
-      }
-
       // Remove the div that was placed as a fix for poster image and DASH streaming, if it exists
       const poster = player.controls.poster;
       if (poster) {
@@ -184,43 +165,22 @@ class PlayPause {
       }
     }
 
-    if (!isFirstStart || !player.isCurrentlyPlayingAd) {
-      const ads =
-                player.isCurrentlyPlayingAd && !is.nullOrUndefined(player.vastOptions) && player.vastOptions.vpaid;
-
-      if (player.paused) {
-        if (ads) {
-          // resume the vpaid linear ad
-          player.resumeVpaidAd();
-        } else {
-          // resume the regular linear vast or content video player
-          if (player.streaming.dash && is.function(player.streaming.dash.play)) {
-            player.streaming.dash.play();
-          } else {
-            if (player.streaming.hls && !player.streaming.hls.userConfig.autoStartLoad) {
-              player.streaming.hls.startLoad();
-            }
-
-            player.play();
-          }
-
-          player.HtmlOnPause.toggle(false);
-        }
+    if (player.paused) {
+      if (player.streaming.dash && is.function(player.streaming.dash.play)) {
+        player.streaming.dash.play();
       } else {
-        if (ads) {
-          // pause the vpaid linear ad
-          player.pauseVpaidAd();
-        } else {
-          // pause the regular linear vast or content video player
-          player.pause();
-          player.HtmlOnPause.toggle(true);
+        if (player.streaming.hls && !player.streaming.hls.userConfig.autoStartLoad) {
+          player.streaming.hls.startLoad();
         }
+
+        player.play();
       }
 
-      player.toggleOnPauseAd();
+      player.HtmlOnPause.toggle(false);
+    } else {
+      player.pause();
+      player.HtmlOnPause.toggle(true);
     }
-
-    player.adTimer();
   };
 }
 export default PlayPause;

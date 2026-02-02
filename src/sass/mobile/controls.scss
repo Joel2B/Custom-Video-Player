@@ -101,11 +101,6 @@
     opacity: 0;
     transition: none;
   }
-
-  // ads
-  .skip_button {
-    bottom: 75px;
-  }
 }
 
 .fluid_mobile_controls {
@@ -182,10 +177,6 @@
         background-color: rgba(255, 255, 255, 0.4);
         z-index: -1;
       }
-    }
-
-    .fluid_controls_ad_progress {
-      height: 2px;
     }
 
     .fluid_controls_scrubber_progress {

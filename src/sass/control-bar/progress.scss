@@ -67,7 +67,6 @@
 
   .fluid_controls_progress,
   .fluid_controls_load_progress,
-  .fluid_controls_ad_progress,
   .fluid_controls_scrubber_progress {
     transform: scaleY(0.6);
     transition: transform 0.1s cubic-bezier(0.4, 0, 1, 1);
@@ -76,7 +75,6 @@
   @media (hover: hover) and (pointer: fine) {
     &:hover .fluid_controls_progress,
     &:hover .fluid_controls_load_progress,
-    &:hover .fluid_controls_ad_progress,
     &:hover .fluid_controls_scrubber_progress_container .fluid_controls_scrubber_progress {
       transform: none !important;
       transition: transform 0.1s cubic-bezier(0, 0, 0.2, 1);

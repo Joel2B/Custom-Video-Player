@@ -93,12 +93,6 @@ class Controls {
     });
     this.progressContainer.appendChild(this.loadProgress);
 
-    // Ad progress
-    this.adProgress = createElement('div', {
-      class: 'fluid_controls_ad_progress',
-    });
-    this.progressContainer.appendChild(this.adProgress);
-
     // Controls
     const controls = createElement('div', {
       class: 'fluid_controls',

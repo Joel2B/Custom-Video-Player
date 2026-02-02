@@ -63,29 +63,8 @@ class Listeners extends Update {
         this.updateRefreshInterval = 30;
       }
 
-      // TODO: remove after tweaking adsupport, vast and vpaid
       if (event.type === 'loadeddata') {
-        player.prepareVastAds();
-
         player.speedMenu.set(player.storage.get(player.speedMenu.id), true);
-      }
-    });
-
-    // Handle the media finishing
-    on.call(player, player.media, 'ended', () => {
-      // TODO: ads, remove after tweaking adsupport, vast and vpaid
-      if (player.isCurrentlyPlayingAd && player.autoplayAfterAd) {
-        // It may be in-stream ending, and if it's not postroll then we don't execute anything
-        return;
-      }
-
-      // we can remove timer as no more ad will be shown
-      if (Math.floor(player.currentTime) >= Math.floor(player.duration)) {
-        // play pre-roll ad
-        // sometime pre-roll ad will be missed because we are clearing the timer
-        player.adKeytimePlay(Math.floor(player.duration));
-
-        clearInterval(player.timer);
       }
     });
 
@@ -105,10 +84,6 @@ class Listeners extends Update {
       if (event.type === 'pause') {
         toggleClass(player.wrapper, 'fluid_playing', false);
         toggleClass(player.wrapper, 'fluid_paused', true);
-
-        if (player.mobile && player.isCurrentlyPlayingAd) {
-          player.controlBar.toggleMobile(true);
-        }
       }
 
       if (player.firstPlayLaunched) {
@@ -125,11 +100,6 @@ class Listeners extends Update {
     on.call(player, player.media, 'volumechange', player.volumeControl.update);
 
     on.call(player, player.media, 'ratechange', () => {
-      if (player.isCurrentlyPlayingAd) {
-        player.speed = 1;
-        return;
-      }
-
       if (!player.speedMenu.lock) {
         player.speedMenu.set(player.speed);
       }
@@ -137,15 +107,6 @@ class Listeners extends Update {
 
     on.call(player, player.media, 'error', () => {
       player.debug.warn(player.media.error);
-
-      if (player.isCurrentlyPlayingAd) {
-        if (player.media.networkState === player.media.NETWORK_NO_SOURCE) {
-          // Probably the video ad file was not loaded successfully
-          player.playMainVideoWhenVastFails(401);
-        }
-
-        return;
-      }
 
       // Fallback sources are mixed with the sources of different quality
       if (player.media.error.code === 4) {

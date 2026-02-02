@@ -36,9 +36,7 @@ class Dash {
       return;
     }
 
-    // TODO: ads don't work in autoplay until you do a play/pause
-    // If false we want to override the autoPlay, as it comes from postRoll
-    const autoPlay = !player.autoplayAfterAd ? player.autoplayAfterAd : player.autoPlay.apply(false);
+    const autoPlay = player.autoPlay.apply(false);
 
     let settings = {
       debug: {

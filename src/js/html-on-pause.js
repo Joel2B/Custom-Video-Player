@@ -9,11 +9,6 @@ class HtmlOnPause {
   }
 
   init = () => {
-    // If onPauseRoll is defined than HtmlOnPauseBlock won't be shown
-    if (this.player.hasValidOnPauseAd()) {
-      return;
-    }
-
     this.options = this.player.config.layoutControls.htmlOnPauseBlock;
     if (!this.options.html) {
       return;

@@ -8,10 +8,6 @@ class Keyboard {
 
   onKeyboardSeekPosition = (keyCode) => {
     const { player } = this;
-    if (player.isCurrentlyPlayingAd) {
-      return;
-    }
-
     player.currentTime = this.getNewCurrentTimeValueByKeyCode(keyCode, player.currentTime, player.duration);
   };
 
@@ -185,7 +181,7 @@ class Keyboard {
       return;
     }
 
-    const inScopeClick = player.wrapper.contains(event.target) || event.target.id === 'skipHref_' + player.media.id;
+    const inScopeClick = player.wrapper.contains(event.target);
 
     if (inScopeClick) {
       return;

@@ -12,10 +12,6 @@ class ControlBar {
     // false: hide
     const { player } = this;
 
-    if (player.isCurrentlyPlayingAd && !player.paused) {
-      player.toggleAdCountdown(input);
-    }
-
     const controls = player.controls.container;
     const title = player.title.el;
     const logo = player.logo.el;
@@ -26,13 +22,9 @@ class ControlBar {
     toggleClass(title, 'fade_out', !input);
     toggleClass(title, 'fade_in', input);
 
-    if (player.isCurrentlyPlayingAd && player.config.layoutControls.logo.showOverAds) {
-      toggleClass(logo, 'fade_out', true);
-    } else {
-      if (player.config.layoutControls.logo.hideWithControls) {
-        toggleClass(logo, 'fade_out', !input);
-        toggleClass(logo, 'fade_in', input);
-      }
+    if (player.config.layoutControls.logo.hideWithControls) {
+      toggleClass(logo, 'fade_out', !input);
+      toggleClass(logo, 'fade_in', input);
     }
 
     let cursor = 'default';

@@ -33,10 +33,6 @@ class ProgressBar {
   start = (event) => {
     const { player } = this;
 
-    if (player.isCurrentlyPlayingAd) {
-      return;
-    }
-
     // hide animations
     if (this.playPauseAnimation === null) {
       this.playPauseAnimation = player.config.layoutControls.playPauseAnimation;

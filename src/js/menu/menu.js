@@ -288,10 +288,6 @@ class Menu {
     const event = this.player.mobile ? 'touchend' : 'click';
 
     on.call(this.player, this.btn, event, () => {
-      if (this.player.isCurrentlyPlayingAd) {
-        return;
-      }
-
       if (this.isClosed()) {
         toggleClass(this.menu, 'cvp_visible', true);
 

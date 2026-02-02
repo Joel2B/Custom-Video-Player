@@ -589,11 +589,6 @@ class Subtitles {
       return;
     }
 
-    if (this.player.isCurrentlyPlayingAd) {
-      // remove subtitles
-      emptyEl(this.subtitles);
-    }
-
     const tracks = this.getTracks();
     const data = this.currentTrack.split('-');
     const type = data[0];

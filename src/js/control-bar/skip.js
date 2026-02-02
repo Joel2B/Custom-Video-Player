@@ -8,10 +8,6 @@ class Skip {
 
   skip = (period) => {
     const { player } = this;
-    if (player.isCurrentlyPlayingAd) {
-      return;
-    }
-
     let skipTo = player.currentTime + period;
     if (skipTo < 0) {
       skipTo = 0;

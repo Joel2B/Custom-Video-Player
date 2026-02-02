@@ -91,7 +91,7 @@ class Speed {
   set = (index, force = false) => {
     const { player } = this;
 
-    if (!player.menu.isEnabled(this.id) || player.isCurrentlyPlayingAd) {
+    if (!player.menu.isEnabled(this.id)) {
       this.current = index;
       return;
     }

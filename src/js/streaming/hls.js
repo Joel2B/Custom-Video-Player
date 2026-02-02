@@ -253,10 +253,6 @@ class Hlsjs {
     });
 
     this.hls.on(Hls.Events.ERROR, (e, data) => {
-      if (player.isCurrentlyPlayingAd) {
-        return;
-      }
-
       if (!data.fatal) {
         return;
       }

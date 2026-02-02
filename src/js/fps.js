@@ -61,10 +61,6 @@ class Fps {
   check = () => {
     const { player } = this;
 
-    if (player.isCurrentlyPlayingAd) {
-      return;
-    }
-
     clearInterval(this.interval);
 
     if (this.stop || (IS_ANDROID && IS_FIREFOX) || (IS_IOS && IS_SAFARI)) {

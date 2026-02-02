@@ -206,7 +206,7 @@ class Mobile {
     });
 
     on.call(player, player.wrapper, 'touchstart', (event) => {
-      if (player.playPause.initialPlay.contains(event.target) || player.paused || player.isCurrentlyPlayingAd) {
+      if (player.playPause.initialPlay.contains(event.target) || player.paused) {
         return;
       }
 
@@ -297,10 +297,6 @@ class Mobile {
     });
 
     on.call(player, player.media, 'ended', () => {
-      if (player.isCurrentlyPlayingAd) {
-        return;
-      }
-
       player.controlBar.toggleMobile(true);
     });
   };

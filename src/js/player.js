@@ -19,10 +19,6 @@ import Quality from './menu/quality-levels';
 
 import Storage from './storage';
 
-import AdSupport from './vast/adsupport';
-import Vast from './vast/vast';
-import Vpaid from './vast/vpaid';
-
 import HtmlOnPause from './html-on-pause';
 import Logo from './logo';
 import Fps from './fps';
@@ -46,9 +42,6 @@ import { IS_ANY_SAFARI, IS_IOS, IS_ANDROID, TOUCH_ENABLED } from './utils/browse
 import { getMimetype } from './utils/mimetypes';
 import is from './utils/is';
 import delay from './utils/promise';
-
-// TODO: remove after tweaking adsupport, vast and vpaid
-const FP_MODULES = [AdSupport, Vast, Vpaid];
 
 class CVP {
   constructor(target, options) {
@@ -102,7 +95,6 @@ class CVP {
     // Store reference
     this.media.cvp = this;
 
-    // TODO: don't use this anymore, remove after tweaking adsupport, vast and vpaid
     this.videoPlayerId = !is.empty(this.media.id) ? this.media.id : `fp_instance_${playerInstances++}`;
 
     // Global variables
@@ -111,11 +103,6 @@ class CVP {
     // All control elements
     this.controls = new Controls(this);
     this.mobileControls = new Mobile(this);
-
-    // Install modules
-    for (const playerModule of FP_MODULES) {
-      playerModule(this);
-    }
 
     // Listen for events if debugging
     if (this.config.debug) {
@@ -149,9 +136,6 @@ class CVP {
 
     // Set sources
     this.setVideoSources();
-
-    // Setup vast
-    this.setVastList();
 
     this.config.layoutControls.playerInitCallback();
 
@@ -191,7 +175,6 @@ class CVP {
   }
 
   defineVariables = () => {
-    // to load ads
     this.firstPlayLaunched = false;
 
     // to display the loading animation
@@ -220,36 +203,6 @@ class CVP {
     // to avoid using play before loading the stream
     this.allowPlayStream = false;
     this.playStream = false;
-
-    // TODO: ads, remove after tweaking adsupport, vast and vpaid
-    this.suppressClickthrough = false;
-    this.vpaidTimer = null;
-    this.vpaidAdUnit = null;
-    this.vastOptions = null;
-    this.isCurrentlyPlayingAd = false;
-    this.mainVideoCurrentTime = 0;
-    this.mainCurrentSource = null;
-    this.isTimer = false;
-    this.timer = null;
-    this.timerPool = {};
-    this.adList = {};
-    this.adPool = {};
-    this.adGroupedByRolls = {};
-    this.onPauseRollAdPods = [];
-    this.currentOnPauseRollAd = '';
-    this.preRollAdsResolved = false;
-    this.preRollAdPods = [];
-    this.preRollAdPodsLength = 0;
-    this.preRollVastResolved = 0;
-    this.temporaryAdPods = [];
-    this.availableRolls = ['preRoll', 'midRoll', 'postRoll', 'onPauseRoll'];
-    this.supportedNonLinearAd = ['300x250', '468x60', '728x90'];
-    this.autoplayAfterAd = true;
-    this.nonLinearDuration = 15;
-    this.supportedStaticTypes = ['image/gif', 'image/jpeg', 'image/png'];
-    this.nonLinearVerticalAlign = 'bottom';
-    this.vpaidNonLinearCloseButton = true;
-    this.inLineFound = null;
   };
 
   setupWrapper = () => {
@@ -343,15 +296,15 @@ class CVP {
   };
 
   resize = () => {
-    this.recalculateAdDimensions();
-    this.resizeVpaidAuto();
-
     this.progressBar.resize();
   };
 
   overwrite = (from, to) => {
     for (const key in from) {
       if (is.object(from[key])) {
+        if (!is.object(to[key])) {
+          to[key] = {};
+        }
         this.overwrite(from[key], to[key]);
       } else {
         to[key] = from[key];
@@ -369,27 +322,6 @@ class CVP {
     toggleClass(this.wrapper, 'fluid_waiting', show);
 
     this.controls.loader.style.opacity = show ? '1' : '0';
-  };
-
-  findRoll = (roll) => {
-    const ids = [];
-    ids.length = 0;
-
-    if (!roll || !this.hasOwnProperty('adList')) {
-      return;
-    }
-
-    for (const key in this.adList) {
-      if (!this.adList.hasOwnProperty(key)) {
-        continue;
-      }
-
-      if (this.adList[key].roll === roll) {
-        ids.push(key);
-      }
-    }
-
-    return ids;
   };
 
   setupDevice = () => {
@@ -769,9 +701,6 @@ class CVP {
 
     // Stop checking fps
     clearInterval(this.fps.interval);
-
-    // TODO: ads, remove after tweaking adsupport, vast and vpaid
-    clearInterval(this.timer);
 
     this.ready = false;
 
