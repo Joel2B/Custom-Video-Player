@@ -72,6 +72,10 @@ class Theatre {
     this.active = !this.active;
     player.storage.set('theatre', this.active);
 
+    if (player.controls.theatreTooltip) {
+      player.controls.theatreTooltip.textContent = player.config.captions[this.active ? 'exitTheatre' : 'theatre'];
+    }
+
     // Trigger theatre event
     triggerEvent.call(player, player.media, this.active ? 'theatreModeOn' : 'theatreModeOff');
   };

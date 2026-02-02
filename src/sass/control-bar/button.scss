@@ -19,3 +19,42 @@
     opacity: 1;
   }
 }
+
+.fluid_button_tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 16px);
+  transform: translateX(-50%) translateY(6px);
+  padding: 4px 8px;
+  border-radius: 3px;
+  background-color: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease,
+    visibility 0.15s ease;
+  z-index: 3;
+}
+
+.fluid_button:hover .fluid_button_tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.fluid_button.cvp_rotate .fluid_button_tooltip {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-50%) translateY(6px);
+}
+
+.fluid_mobile .fluid_button_tooltip {
+  display: none !important;
+}

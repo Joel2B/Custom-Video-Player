@@ -65,9 +65,14 @@ class Volume {
     toggleClass(mute, 'fluid_button_volume', notMuted);
 
     cmMute.innerHTML = player.config.captions[notMuted ? 'mute' : 'unmute'];
+    if (controls.muteTooltip) {
+      controls.muteTooltip.textContent = player.config.captions[notMuted ? 'mute' : 'unmute'];
+    }
 
     scrubberVolumeContainer.style.width = player.volume * width + 'px';
     scrubberVolume.style.left = player.volume * width - scrubberVolume.clientWidth / 2 + 'px';
+
+    this.updateTooltip(player.volume);
   };
 
   waitRendering = () => {
@@ -100,6 +105,42 @@ class Volume {
     this.setVolume(newVolume);
   };
 
+  updateTooltip = (volume, positionX) => {
+    const { controls } = this.player;
+    if (!controls || !controls.volumeTooltip) {
+      return;
+    }
+
+    const width = controls.volume.clientWidth || controls.volumeContainer.clientWidth;
+    if (!width) {
+      return;
+    }
+    const percent = Math.round(volume * 100);
+    const clampedLeft = Math.min(Math.max(is.number(positionX) ? positionX : volume * width, 0), width);
+
+    controls.volumeTooltip.textContent = percent.toString();
+    controls.volumeTooltip.style.left = `${clampedLeft}px`;
+  };
+
+  showTooltip = (positionX) => {
+    const { controls } = this.player;
+    if (!controls || !controls.volumeTooltip) {
+      return;
+    }
+
+    this.updateTooltip(this.player.volume, positionX);
+    toggleClass(controls.volumeTooltip, 'fluid_volume_tooltip_visible', true);
+  };
+
+  hideTooltip = () => {
+    const { controls } = this.player;
+    if (!controls || !controls.volumeTooltip) {
+      return;
+    }
+
+    toggleClass(controls.volumeTooltip, 'fluid_volume_tooltip_visible', false);
+  };
+
   setVolume = (volume) => {
     this.player.volume = volume;
 
@@ -119,6 +160,7 @@ class Volume {
     const positionX = getEventOffsetX(this.player.controls.volumeContainer, event);
 
     this.updateVolume(positionX);
+    this.showTooltip(positionX);
   };
 
   end = (event) => {
@@ -129,11 +171,19 @@ class Volume {
       this.updateVolume(positionX);
     }
 
+    this.hideTooltip();
+
     off.call(player, document, 'mousemove touchmove', this.move);
     off.call(player, document, 'mouseup touchend mouseleave', this.end);
   };
 
-  start = () => {
+  start = (event) => {
+    const positionX = getEventOffsetX(this.player.controls.volumeContainer, event);
+    if (is.number(positionX)) {
+      this.updateVolume(positionX);
+      this.showTooltip(positionX);
+    }
+
     on.call(this.player, document, 'mousemove touchmove', this.move);
     on.call(this.player, document, 'mouseup touchend mouseleave', this.end);
   };

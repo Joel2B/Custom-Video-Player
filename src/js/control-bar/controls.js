@@ -109,6 +109,16 @@ class Controls {
     this.playPause = createElement('div', {
       class: 'fluid_button fluid_button_play fluid_control_playpause',
     });
+
+    this.playPauseTooltip = createElement(
+      'div',
+      {
+        class: 'fluid_button_tooltip',
+      },
+      this.player.config.captions.play,
+    );
+
+    this.playPause.appendChild(this.playPauseTooltip);
     this.leftContainer.appendChild(this.playPause);
 
     if (controlForwardRewind) {
@@ -129,6 +139,14 @@ class Controls {
     this.mute = createElement('div', {
       class: 'fluid_button fluid_button_volume fluid_control_mute',
     });
+    this.muteTooltip = createElement(
+      'div',
+      {
+        class: 'fluid_button_tooltip',
+      },
+      this.player.config.captions.mute,
+    );
+    this.mute.appendChild(this.muteTooltip);
     this.leftContainer.appendChild(this.mute);
 
     toggleClass(this.container, 'no_volume_bar', IS_IOS);
@@ -143,6 +161,15 @@ class Controls {
       class: 'fluid_control_volume',
     });
     this.volumeContainer.appendChild(this.volume);
+
+    this.volumeTooltip = createElement(
+      'div',
+      {
+        class: 'fluid_volume_tooltip',
+      },
+      '100',
+    );
+    this.volumeContainer.appendChild(this.volumeTooltip);
 
     // Scrubber container
     this.scrubberVolumeContainer = createElement('div', {
@@ -198,12 +225,28 @@ class Controls {
     this.theatre = createElement('div', {
       class: 'fluid_button fluid_control_theatre fluid_button_theatre',
     });
+    this.theatreTooltip = createElement(
+      'div',
+      {
+        class: 'fluid_button_tooltip',
+      },
+      this.player.config.captions.theatre,
+    );
+    this.theatre.appendChild(this.theatreTooltip);
     this.rightContainer.appendChild(this.theatre);
 
     // Fullscreen
     this.fullscreen = createElement('div', {
       class: 'fluid_button fluid_control_fullscreen fluid_button_fullscreen',
     });
+    this.fullscreenTooltip = createElement(
+      'div',
+      {
+        class: 'fluid_button_tooltip',
+      },
+      this.player.config.captions.fullscreen,
+    );
+    this.fullscreen.appendChild(this.fullscreenTooltip);
     this.rightContainer.appendChild(this.fullscreen);
   };
 }

@@ -41,6 +41,36 @@
   }
 }
 
+.fluid_control_volume_container .fluid_volume_tooltip {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 16px);
+  transform: translateX(-50%) translateY(6px);
+  padding: 4px 8px;
+  border-radius: 3px;
+  background-color: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+  z-index: 4;
+}
+
+.fluid_control_volume_container .fluid_volume_tooltip.fluid_volume_tooltip_visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.fluid_mobile .fluid_control_volume_container .fluid_volume_tooltip {
+  display: none !important;
+}
+
 .fluid_controls_container.no_volume_bar .fluid_control_volume_container {
   display: none;
 }

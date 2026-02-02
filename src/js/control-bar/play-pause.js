@@ -136,6 +136,10 @@ class PlayPause {
     toggleClass(logo.el, 'initial_controls_show', !paused);
 
     contextMenu.play.textContent = player.config.captions[paused ? 'pause' : 'play'];
+
+    if (controls.playPauseTooltip) {
+      controls.playPauseTooltip.textContent = player.config.captions[paused ? 'pause' : 'play'];
+    }
   };
 
   toggle = () => {

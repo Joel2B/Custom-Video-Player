@@ -139,6 +139,11 @@ class Fullscreen {
 
     player.contextMenu.fs.textContent = player.config.captions[this.active ? 'exitFullscreen' : 'fullscreen'];
 
+    if (player.controls.fullscreenTooltip) {
+      player.controls.fullscreenTooltip.textContent =
+        player.config.captions[this.active ? 'exitFullscreen' : 'fullscreen'];
+    }
+
     // Trigger an event
     triggerEvent.call(this.player, this.player.media, this.active ? 'enterfullscreen' : 'exitfullscreen', true);
   };

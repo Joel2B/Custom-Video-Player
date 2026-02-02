@@ -151,6 +151,15 @@ class Menu {
         class: 'fluid_button fluid_button_main_menu',
       });
 
+      this.menuTooltip = createElement(
+        'div',
+        {
+          class: 'fluid_button_tooltip',
+        },
+        this.player.config.captions.settings || 'Settings',
+      );
+
+      this.btn.appendChild(this.menuTooltip);
       this.player.controls.rightContainer.insertBefore(this.btn, this.player.controls.rightContainer.firstChild);
     }
 
