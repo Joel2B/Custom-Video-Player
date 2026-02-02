@@ -14,6 +14,7 @@ Mobile
 ## Difference with fluid player
 
 - Some errors fixed
+- No ads support (VAST/VPAID)
 - Smooth animations
 - Customized timeline
 - Customized thumbnails
@@ -58,7 +59,7 @@ Mobile
   </head>
   <body>
     <video id="player">
-      <source src="https://d3rlna7iyyu8wu.cloudfront.net/skip_armstrong/skip_armstrong_multi_language_subs.m3u8" type="application/x-mpegURL" />
+      <source src="https://d2zihajmogu5jn.cloudfront.net/bipbop-advanced/bipbop_16x9_variant.m3u8" type="application/x-mpegURL" />
     </video>
     <script src="https://player.tinyapps.download/v1/current/player.min.js"></script>
     <script>
@@ -117,4 +118,4 @@ Hls.js:
 
 ## Documentation
 
-Everything you can do in [fluidplayer](https://docs.fluidplayer.com/) you can do it here
+Some options and implementation details may still be documented on [fluidplayer](https://docs.fluidplayer.com/).
