@@ -1,3 +1,5 @@
+@use 'tooltip';
+
 .fluid_control_volume_container {
   height: 24px;
   width: 56px;
@@ -42,23 +44,9 @@
 }
 
 .fluid_control_volume_container .fluid_volume_tooltip {
-  position: absolute;
   left: 0;
   bottom: calc(100% + 16px);
-  transform: translateX(-50%) translateY(6px);
-  padding: 4px 8px;
-  border-radius: 3px;
-  background-color: rgba(0, 0, 0, 0.85);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1;
-  white-space: nowrap;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
-  z-index: 4;
+  @include tooltip.tooltip-base(4);
 }
 
 .fluid_control_volume_container .fluid_volume_tooltip.fluid_volume_tooltip_visible {
