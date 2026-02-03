@@ -52,7 +52,7 @@
 .fluid_control_volume_container .fluid_volume_tooltip.fluid_volume_tooltip_visible {
   opacity: 1;
   visibility: visible;
-  transform: translateX(-50%) translateY(0);
+  transform: translateX(calc(-50% + var(--tooltip-shift, 0px))) translateY(0);
 }
 
 .fluid_mobile .fluid_control_volume_container .fluid_volume_tooltip {

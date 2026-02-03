@@ -1,5 +1,7 @@
 import { IS_IOS } from '../utils/browser';
-import { createElement, createElementNS, insertAfter, toggleClass } from '../utils/dom';
+import { createElement, createElementNS, insertAfter, toggleClass, findPosition } from '../utils/dom';
+import computedStyle from '../utils/computed-style';
+import { on } from '../utils/events';
 
 class Controls {
   constructor(player) {
@@ -248,6 +250,30 @@ class Controls {
     );
     this.fullscreen.appendChild(this.fullscreenTooltip);
     this.rightContainer.appendChild(this.fullscreen);
+    this.setupTooltip(this.fullscreen, this.fullscreenTooltip);
+  };
+
+  setupTooltip = (button, tooltip) => {
+    if (!button || !tooltip) {
+      return;
+    }
+
+    const measure = () => {
+      const left = findPosition(tooltip, this.player.wrapper).left;
+      const width = this.player.wrapper.clientWidth;
+      const right = parseInt(computedStyle(this.player.controls.progressContainer, 'right').replace('px', ''));
+      const shift = width - (left + tooltip.clientWidth / 2) - right;
+
+      tooltip.style.setProperty('--tooltip-shift', `${shift}px`);
+    };
+
+    setTimeout(() => {
+      measure();
+    });
+
+    on.call(this.player, button, 'mouseenter mousemove', measure);
+    on.call(this.player, window, 'resize', measure);
+    on.call(this.player, this.player.media, 'enterfullscreen exitfullscreen', measure);
   };
 }
 

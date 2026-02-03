@@ -1,9 +1,9 @@
 @mixin tooltip-base($z-index: 3) {
   position: absolute;
-  transform: translateX(-50%) translateY(6px);
+  transform: translateX(calc(-50% + var(--tooltip-shift, 0px))) translateY(6px);
   padding: 4px 8px;
   border-radius: 3px;
-  background-color: rgba(0, 0, 0, 0.85);
+  background-color: rgba(28, 28, 28, 0.9);
   color: #fff;
   font-size: 12px;
   font-weight: 500;

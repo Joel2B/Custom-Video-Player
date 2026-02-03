@@ -31,13 +31,13 @@
 .fluid_button:hover .fluid_button_tooltip {
   opacity: 1;
   visibility: visible;
-  transform: translateX(-50%) translateY(0);
+  transform: translateX(calc(-50% + var(--tooltip-shift, 0px))) translateY(0);
 }
 
 .fluid_button.cvp_rotate .fluid_button_tooltip {
   opacity: 0;
   visibility: hidden;
-  transform: translateX(-50%) translateY(6px);
+  transform: translateX(calc(-50% + var(--tooltip-shift, 0px))) translateY(6px);
 }
 
 .fluid_mobile .fluid_button_tooltip {
