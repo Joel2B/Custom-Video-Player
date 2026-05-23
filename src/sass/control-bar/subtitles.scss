@@ -2,7 +2,8 @@
   color: #fff;
   font-size: 15px;
   text-align: center;
-  display: block;
+  display: flex;
+  justify-content: center;
   position: absolute;
   width: 100%;
   bottom: 0;
@@ -13,14 +14,33 @@
 
   .fluid_subtitles {
     display: inline-block;
-    background-color: rgba(8, 8, 8, 0.5);
     font-size: 1em;
     white-space: pre-line;
-    padding: 0.2em;
     border-radius: 4px;
 
     &:empty {
       display: none;
+    }
+  }
+
+  .fluid_subtitles_container_line {
+    display: flex;
+    justify-content: center;
+  }
+
+  .fluid_subtitles_block {
+    background: var(--background-subtitle);
+  }
+
+  .fluid_subtitles_line {
+    background: var(--background-subtitle);
+    display: flex;
+    justify-content: center;
+    display: inline;
+    padding: 1px;
+
+    &:first-child {
+      margin-top: 0;
     }
   }
 

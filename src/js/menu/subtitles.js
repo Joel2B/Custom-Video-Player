@@ -1,4 +1,4 @@
-import { createElement, emptyEl, insertAfter, toggleClass } from '../utils/dom';
+import { createElement, emptyEl, insertAfter, toggleClass, findPosition } from '../utils/dom';
 import { on, triggerEvent } from '../utils/events';
 import { selector } from './menu-item';
 import WebVTT from 'videojs-vtt.js/lib/vtt';
@@ -612,26 +612,139 @@ class Subtitles {
       // use vtt.js to process and display the cues
       WebVTT.processCues(window, activeCues, this.subtitles);
     } else {
-      // new subtitles
-      const content = activeCues.map((cue) => cue.text.trim()).join('\n');
-
-      // remove old subtitles
-      emptyEl(this.subtitles);
-
-      // create subtitle container
-      const subtitles = createElement('span', {
-        class: 'fluid_subtitles',
-      });
-
-      // add subtitles
-      subtitles.innerHTML = content;
-
-      // display subtitles
-      this.subtitles.appendChild(subtitles);
+      this.setCustomSubtitles(activeCues);
     }
 
     // trigger event
     triggerEvent.call(this, this.player.media, 'cuechange');
+  };
+
+  setCustomSubtitles = (activeCues) => {
+    const content = activeCues.map((cue) => cue.text.trim()).join('\n');
+    const normalized = content.replace(/<br\s*\/?>/gi, '\n');
+    const [textLineTop, textLineBottom] = normalized.split(/\r?\n/).filter((o) => o.trim() && !/></.test(o));
+
+    // remove old subtitles
+    emptyEl(this.subtitles);
+
+    // create subtitle container
+    const [containerTop, lineTop] = this.createLine(textLineTop);
+    const [containerBottom, lineBottom] = this.createLine(textLineBottom);
+
+    if (!containerTop) {
+      return;
+    }
+
+    const subtitles = createElement('span', {
+      class: 'fluid_subtitles',
+    });
+
+    subtitles.appendChild(containerTop);
+    this.subtitles.appendChild(subtitles);
+
+    const r = 5;
+    const rpx = `${r}px`;
+
+    if (!containerBottom) {
+      lineTop.style.borderRadius = rpx;
+      return;
+    }
+
+    subtitles.appendChild(containerBottom);
+
+    const getBorderRadius = () => {
+      let value = Math.abs(lineTop.clientWidth - lineBottom.clientWidth) / 2;
+      const warranty = 2;
+
+      return `${value < r ? r - value / 2 - warranty : r}px`;
+    };
+
+    const setBorderTop = () => {
+      lineTop.style.borderTopRightRadius = rpx;
+      lineTop.style.borderTopLeftRadius = rpx;
+    };
+
+    const setBorderBottom = () => {
+      lineBottom.style.borderBottomRightRadius = rpx;
+      lineBottom.style.borderBottomLeftRadius = rpx;
+    };
+
+    const setLineTop = () => {
+      containerTop.style.alignItems = 'end';
+      setBorderTop();
+      lineBottom.style.borderRadius = getBorderRadius();
+
+      if (lineTop.clientWidth + r * 2 < lineBottom.clientWidth) {
+        const top = this.createCorner('bottomRight', r);
+        const bottom = this.createCorner('bottomLeft', r);
+
+        containerTop.insertBefore(top, containerTop.firstChild);
+        containerTop.insertBefore(bottom, null);
+      }
+    };
+
+    const setLineBottom = () => {
+      lineTop.style.borderRadius = getBorderRadius();
+      setBorderBottom();
+
+      if (lineBottom.clientWidth + r * 2 < lineTop.clientWidth) {
+        const top = this.createCorner('topRight', r);
+        const bottom = this.createCorner('topLeft', r);
+
+        containerBottom.insertBefore(top, containerBottom.firstChild);
+        containerBottom.insertBefore(bottom, null);
+      }
+    };
+
+    const posTop = findPosition(lineTop, containerTop);
+    const posBottom = findPosition(lineBottom, containerBottom);
+
+    if (posTop.width < containerTop.clientWidth) {
+      setLineTop();
+    } else if (posBottom.width < containerBottom.clientWidth) {
+      setLineBottom();
+    } else {
+      setBorderTop();
+      setBorderBottom();
+    }
+  };
+
+  createLine = (line) => {
+    if (!line) return [];
+
+    const container = createElement('div', {
+      class: 'fluid_subtitles_container_line',
+    });
+
+    const el = createElement('span', {
+      class: 'fluid_subtitles_line',
+    });
+
+    el.innerHTML = line;
+    container.appendChild(el);
+
+    return [container, el];
+  };
+
+  createCorner = (corner, r) => {
+    const pos = {
+      topRight: '0% 100%',
+      topLeft: '100% 100%',
+      bottomRight: '0% 0%',
+      bottomLeft: '100% 0%',
+    }[corner];
+
+    const rpx = `${r}px`;
+
+    const el = createElement('span', {
+      class: 'fluid_subtitles_block',
+    });
+
+    el.style.height = rpx;
+    el.style.width = rpx;
+    el.style.mask = `radial-gradient(circle at ${pos}, transparent 0 ${rpx}, #000 calc(${rpx} + .5px))`;
+
+    return el;
   };
 }
 
