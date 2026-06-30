@@ -125,21 +125,21 @@ class PlayPause {
 
     const playPauseButton = controls.playPause;
     const controlsDisplay = controls.container;
+    const playing = !player.paused;
 
-    const paused = !player.paused;
+    toggleClass(playPauseButton, 'fluid_button_play', !playing);
+    toggleClass(playPauseButton, 'fluid_button_pause', playing);
 
-    toggleClass(playPauseButton, 'fluid_button_play', !paused);
-    toggleClass(playPauseButton, 'fluid_button_pause', paused);
+    const showControls = player.paused && !player.config.layoutControls.controlBar.hideWhenPaused;
 
-    toggleClass(controlsDisplay, 'initial_controls_show', !paused);
+    toggleClass(controlsDisplay, 'initial_controls_show', showControls);
+    toggleClass(title.el, 'initial_controls_show', showControls);
+    toggleClass(logo.el, 'initial_controls_show', showControls);
 
-    toggleClass(title.el, 'initial_controls_show', !paused);
-    toggleClass(logo.el, 'initial_controls_show', !paused);
-
-    contextMenu.play.textContent = player.config.captions[paused ? 'pause' : 'play'];
+    contextMenu.play.textContent = player.config.captions[playing ? 'pause' : 'play'];
 
     if (controls.playPauseTooltip) {
-      controls.playPauseTooltip.textContent = player.config.captions[paused ? 'pause' : 'play'];
+      controls.playPauseTooltip.textContent = player.config.captions[playing ? 'pause' : 'play'];
     }
   };
 

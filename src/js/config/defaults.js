@@ -68,6 +68,7 @@ const defaults = {
       autoHide: false,
       autoHideTimeout: 3,
       animated: true,
+      hideWhenPaused: false,
     },
     showTimeOnHover: true,
     timelinePreview: {

@@ -75,6 +75,7 @@ Mobile
             autoHide: true,
             autoHideTimeout: 3,
             animated: true,
+            hideWhenPaused: false,
           },
           menu: {
             audio: true,
@@ -108,6 +109,7 @@ New options:
 | :--- | :--- | :--- |
 | Debug | false | Display debugging information in the console
 | Storage | { enabled: true, key: 'cvp', expiration: 30, shared: true, } | `enabled`: enables local storage for saving settings. `key`: prefix to be used for each setting. `expiration`: days that settings will last. `shared`: share settings between all instances. |
+| ControlBar | { autoHide: false, autoHideTimeout: 3, animated: true, hideWhenPaused: false, } | `autoHide`: hide controls when the user is inactive. `autoHideTimeout`: seconds before controls hide. `animated`: animate visibility changes. `hideWhenPaused`: allow controls to hide on mouse leave while paused. |
 | Audio | { language: 'auto' } | `language`: sets the default language (if available)
 | Subtitles | { active: false, language: 'auto', native: false, useVttjs: false, timestampMap: true, allowHtml: false, } | `active`: always use subtitles. `native`: the browser will handle subtitles or not. `useVttjs`: use a library to display subtitles. `timestampMap`: use in case of out-of-sync between subtitles and video (can work or not). `language`: sets the default language (if available). `allowHtml`: render subtitle cue text as HTML for trusted VTT files. Keep it disabled for remote or user-generated subtitles.
 | HtmlOnPauseBlock | { html: null, height: null, width: null, } | `html`: trusted HTML shown while paused. Do not pass user-generated or remote HTML without sanitizing it first. `height` and `width`: block size in pixels.
