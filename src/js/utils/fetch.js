@@ -10,6 +10,7 @@ export default function fetch(url, responseType = 'text') {
 
       // Check for CORS support
       if (!('withCredentials' in request)) {
+        reject(new Error('XMLHttpRequest CORS not supported'));
         return;
       }
 
@@ -26,7 +27,7 @@ export default function fetch(url, responseType = 'text') {
       });
 
       request.addEventListener('error', () => {
-        throw new Error(request.status);
+        reject(new Error(String(request.status)));
       });
 
       request.open('GET', url, true);
