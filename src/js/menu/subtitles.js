@@ -436,6 +436,8 @@ class Subtitles {
   set = (index, force = false) => {
     const { player } = this;
 
+    index = index || '-1';
+
     let data = index.split('-');
 
     const type = data[0];
