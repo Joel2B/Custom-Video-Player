@@ -40,23 +40,9 @@ import { createElement, insertAfter, toggleClass, replaceElement } from './utils
 import { off, on, once, unbindListeners, triggerEvent } from './utils/events';
 import { IS_ANY_SAFARI, IS_IOS, IS_ANDROID, TOUCH_ENABLED } from './utils/browser';
 import { getMimetype } from './utils/mimetypes';
+import { clone as cloneObject } from './utils/object';
 import is from './utils/is';
 import delay from './utils/promise';
-
-const cloneConfig = (input) => {
-  if (is.array(input)) {
-    return input.map(cloneConfig);
-  }
-
-  if (is.object(input)) {
-    return Object.keys(input).reduce((acc, key) => {
-      acc[key] = cloneConfig(input[key]);
-      return acc;
-    }, {});
-  }
-
-  return input;
-};
 
 class CVP {
   constructor(target, options) {
@@ -80,7 +66,7 @@ class CVP {
     }
 
     // Set config
-    this.config = cloneConfig(defaults);
+    this.config = cloneObject(defaults);
 
     // Overwrite config
     this.overwrite(options, this.config);
