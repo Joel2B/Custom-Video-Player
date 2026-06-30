@@ -32,7 +32,7 @@
     "eslint.workingDirectories": [{ "mode": "auto" }],
     "eslint.validate": ["javascript"],
     "editor.codeActionsOnSave": {
-      "source.fixAll": true
+      "source.fixAll": "explicit"
     },
     "[xml]": {
       "editor.defaultFormatter": "DotJoshJohnson.xml"
