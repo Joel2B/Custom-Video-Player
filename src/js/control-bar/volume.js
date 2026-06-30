@@ -14,6 +14,8 @@ class Volume {
 
     this.defaultValue = 1;
     this.latestVolume = 1;
+    this.applyTimer = null;
+    this.renderTimer = null;
   }
 
   init = () => {
@@ -35,7 +37,7 @@ class Volume {
       player.toggleMute();
     }
 
-    setTimeout(() => {
+    this.applyTimer = setTimeout(() => {
       this.update();
     }, 0);
   };
@@ -81,7 +83,7 @@ class Volume {
     if (!is.nullOrUndefined(player.controls) && player.controls.volume.clientWidth) {
       this.update();
     } else {
-      setTimeout(this.waitRendering, 100);
+      this.renderTimer = setTimeout(this.waitRendering, 100);
     }
   };
 
@@ -186,6 +188,14 @@ class Volume {
 
     on.call(this.player, document, 'mousemove touchmove', this.move);
     on.call(this.player, document, 'mouseup touchend mouseleave', this.end);
+  };
+
+  destroy = () => {
+    clearTimeout(this.applyTimer);
+    clearTimeout(this.renderTimer);
+
+    off.call(this.player, document, 'mousemove touchmove', this.move);
+    off.call(this.player, document, 'mouseup touchend mouseleave', this.end);
   };
 }
 

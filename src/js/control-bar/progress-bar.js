@@ -7,6 +7,8 @@ class ProgressBar {
     this.player = player;
     this.positionX = 0;
     this.timer = null;
+    this.restoreAnimationTimer = null;
+    this.resizeTimer = null;
     this.initiallyPaused = false;
     this.playPauseAnimation = null;
 
@@ -110,7 +112,7 @@ class ProgressBar {
     }
 
     // restore animations
-    setTimeout(() => {
+    this.restoreAnimationTimer = setTimeout(() => {
       if (this.playPauseAnimation === null) {
         return;
       }
@@ -141,9 +143,23 @@ class ProgressBar {
   };
 
   resize = () => {
-    setTimeout(() => {
+    this.resizeTimer = setTimeout(() => {
       this.update();
     }, 100);
+  };
+
+  destroy = () => {
+    clearTimeout(this.timer);
+    clearTimeout(this.restoreAnimationTimer);
+    clearTimeout(this.resizeTimer);
+
+    if (this.playPauseAnimation !== null) {
+      this.player.config.layoutControls.playPauseAnimation = this.playPauseAnimation;
+      this.playPauseAnimation = null;
+    }
+
+    off.call(this.player, document, 'mousemove touchmove', this.move);
+    off.call(this.player, document, 'mouseup touchend mouseleave', this.end);
   };
 }
 

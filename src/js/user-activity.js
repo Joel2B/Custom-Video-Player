@@ -4,6 +4,7 @@ class UserActivity {
   constructor(player) {
     this.player = player;
     this.newActivity = null;
+    this.activityInterval = null;
     this.inactivityTimeout = null;
     this.active = false;
     this.isStillDown = false;
@@ -30,7 +31,7 @@ class UserActivity {
 
     this.newActivity = null;
 
-    setInterval(() => {
+    this.activityInterval = setInterval(() => {
       if (!this.newActivity) {
         return;
       }
@@ -57,6 +58,11 @@ class UserActivity {
         triggerEvent.call(player, player.media, 'userInactive');
       }, player.config.layoutControls.controlBar.autoHideTimeout * 1000);
     }, 300);
+  };
+
+  destroy = () => {
+    clearInterval(this.activityInterval);
+    clearTimeout(this.inactivityTimeout);
   };
 }
 

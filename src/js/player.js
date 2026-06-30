@@ -684,6 +684,20 @@ class CVP {
     // Reset overflow (incase destroyed while in fullscreen)
     document.body.style.overflow = '';
 
+    [
+      this.userActivity,
+      this.listeners,
+      this.volumeControl,
+      this.mobileControls,
+      this.playPause,
+      this.progressBar,
+      this.autoPlay,
+      this.menu,
+      this.fps,
+    ].forEach((module) => module?.destroy?.());
+
+    clearTimeout(this.promiseTimeout);
+
     unbindListeners.call(this);
 
     // destroy video
@@ -699,9 +713,6 @@ class CVP {
     replaceElement(this.original, this.wrapper);
 
     triggerEvent.call(this, this.original, 'destroyed', true);
-
-    // Stop checking fps
-    clearInterval(this.fps.interval);
 
     this.ready = false;
 

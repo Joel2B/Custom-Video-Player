@@ -6,6 +6,7 @@ import is from '../utils/is';
 class PlayPause {
   constructor(player) {
     this.player = player;
+    this.transformTimer = null;
     this.playButtonTimer = null;
 
     this.init();
@@ -105,7 +106,7 @@ class PlayPause {
     }
 
     toggleClass(initialPlay, 'transform-active', false);
-    setTimeout(() => {
+    this.transformTimer = setTimeout(() => {
       toggleClass(initialPlay, 'transform-active', true);
     }, 50);
 
@@ -185,6 +186,11 @@ class PlayPause {
       player.pause();
       player.HtmlOnPause.toggle(true);
     }
+  };
+
+  destroy = () => {
+    clearTimeout(this.transformTimer);
+    clearTimeout(this.playButtonTimer);
   };
 }
 export default PlayPause;

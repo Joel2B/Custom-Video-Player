@@ -300,6 +300,12 @@ class Mobile {
       player.controlBar.toggleMobile(true);
     });
   };
+
+  destroy = () => {
+    clearTimeout(this.showControlsTimer);
+    clearTimeout(this.touchTimer);
+    clearTimeout(this.forwardRewindTimer);
+  };
 }
 
 export default Mobile;

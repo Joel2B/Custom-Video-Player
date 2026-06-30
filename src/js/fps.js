@@ -81,6 +81,11 @@ class Fps {
       }
     }, this.update * 1000);
   };
+
+  destroy = () => {
+    clearInterval(this.interval);
+    this.interval = null;
+  };
 }
 
 export default Fps;

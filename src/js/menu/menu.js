@@ -27,6 +27,7 @@ class Menu {
     };
 
     this.ready = false;
+    this.restartTimer = null;
   }
 
   init = () => {
@@ -265,9 +266,13 @@ class Menu {
   };
 
   restartLater = () => {
-    setTimeout(() => {
+    this.restartTimer = setTimeout(() => {
       this.restart();
     }, 250);
+  };
+
+  destroy = () => {
+    clearTimeout(this.restartTimer);
   };
 
   isClosed = () => {

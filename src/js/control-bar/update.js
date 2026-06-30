@@ -44,6 +44,11 @@ class Update {
     }
   };
 
+  destroy = () => {
+    clearInterval(this.updateInterval);
+    this.updateInterval = null;
+  };
+
   buffer = () => {
     const buffer = this.player.controls.loadProgress;
     const duration = this.player.duration;

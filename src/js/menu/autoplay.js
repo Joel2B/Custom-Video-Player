@@ -11,8 +11,10 @@ class Autoplay {
     this.config = this.player.config.layoutControls[this.id];
 
     this.applied = false;
+    this.destroyed = false;
 
     this.tmpVideo = null;
+    this.waitInteractionTimer = null;
 
     this.init();
   }
@@ -129,14 +131,33 @@ class Autoplay {
 
     promise
       .then((_) => {
+        if (this.destroyed) {
+          return;
+        }
+
         this.player.toggleMute();
         this.tmpVideo.remove();
       })
       .catch((error) => {
+        if (this.destroyed) {
+          return;
+        }
+
         if (error.name === 'NotAllowedError') {
-          setTimeout(this.waitInteraction, 500);
+          this.waitInteractionTimer = setTimeout(this.waitInteraction, 500);
         }
       });
+  };
+
+  destroy = () => {
+    this.destroyed = true;
+
+    clearTimeout(this.waitInteractionTimer);
+
+    if (this.tmpVideo) {
+      this.tmpVideo.remove();
+      this.tmpVideo = null;
+    }
   };
 }
 
