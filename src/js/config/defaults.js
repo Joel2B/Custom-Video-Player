@@ -25,6 +25,7 @@ const defaults = {
       native: false,
       useVttjs: false,
       timestampMap: true,
+      allowHtml: false,
     },
     keyboardControl: true,
     allowDownload: false,

@@ -722,7 +722,12 @@ class Subtitles {
       class: 'fluid_subtitles_line',
     });
 
-    el.innerHTML = line;
+    if (this.config.allowHtml) {
+      el.innerHTML = line;
+    } else {
+      el.textContent = line;
+    }
+
     container.appendChild(el);
 
     return [container, el];
