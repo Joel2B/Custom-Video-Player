@@ -653,7 +653,7 @@ class Subtitles {
     subtitles.appendChild(containerBottom);
 
     const getBorderRadius = () => {
-      let value = Math.abs(lineTop.clientWidth - lineBottom.clientWidth) / 2;
+      const value = Math.abs(lineTop.clientWidth - lineBottom.clientWidth) / 2;
       const warranty = 2;
 
       return `${value < r ? r - value / 2 - warranty : r}px`;
