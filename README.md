@@ -110,6 +110,7 @@ New options:
 | Storage | { enabled: true, key: 'cvp', expiration: 30, shared: true, } | `enabled`: enables local storage for saving settings. `key`: prefix to be used for each setting. `expiration`: days that settings will last. `shared`: share settings between all instances. |
 | Audio | { language: 'auto' } | `language`: sets the default language (if available)
 | Subtitles | { active: false, language: 'auto', native: false, useVttjs: false, timestampMap: true, } | `active`: always use subtitles. `native`: the browser will handle subtitles or not. `useVttjs`: use a library to display subtitles. `timestampMap`: use in case of out-of-sync between subtitles and video (can work or not). `language`: sets the default language (if available)
+| HtmlOnPauseBlock | { html: null, height: null, width: null, } | `html`: trusted HTML shown while paused. Do not pass user-generated or remote HTML without sanitizing it first. `height` and `width`: block size in pixels.
 | Hls | { url: 'https<nolink>://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js', debug: false, overrideNative: false, config: (options) => { return options; }} | `url`: url of the hls.js library. `debug`: debug logs in console. `overrideNative`: use native hls or not. `config`: to configure it
 
 Hls.js:
