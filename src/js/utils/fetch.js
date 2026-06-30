@@ -15,6 +15,11 @@ export default function fetch(url, responseType = 'text') {
       }
 
       request.addEventListener('load', () => {
+        if (request.status >= 400) {
+          reject(new Error(String(request.status)));
+          return;
+        }
+
         if (responseType === 'text') {
           try {
             resolve(JSON.parse(request.responseText));
