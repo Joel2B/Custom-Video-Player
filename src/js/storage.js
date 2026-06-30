@@ -44,7 +44,14 @@ class Storage {
       return null;
     }
 
-    const data = JSON.parse(window.localStorage.getItem(this.key + key));
+    let data = null;
+
+    try {
+      data = JSON.parse(window.localStorage.getItem(this.key + key));
+    } catch (_) {
+      window.localStorage.removeItem(this.key + key);
+      return null;
+    }
 
     if (is.empty(data) || data.expire <= new Date().getTime() / 1000) {
       window.localStorage.removeItem(this.key + key);
