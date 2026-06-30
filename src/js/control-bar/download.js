@@ -31,7 +31,7 @@ class Download {
         event.stopImmediatePropagation();
       }
 
-      setInterval(() => {
+      setTimeout(() => {
         this.link.download = '';
         this.link.href = '';
       }, 100);
