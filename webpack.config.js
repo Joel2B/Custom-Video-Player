@@ -42,6 +42,7 @@ const loadEnv = () => {
 
 const envVars = loadEnv();
 const getEnv = (key) => process.env[key] || envVars[key];
+const getBuildDate = () => new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
 
 // Loading the current package.json - will be used to determine version etc.
 const packageJSON = JSON.parse(readFileSync(_resolve(__dirname, 'package.json'), 'utf8'));
@@ -89,6 +90,7 @@ export default (env, argv) => {
   const dist = typeof env.dist !== 'undefined' ? env.dist : 'development';
   const distOptions = getDistOptions(dist);
   const obf = !!env.obf;
+  const buildVersion = packageJSON.version + '-' + getBuildDate();
 
   if (dist !== 'development' && (mode !== 'production' || debug)) {
     throw new Error('Building a production distribution in development mode or with debug enabled is not allowed!');
@@ -97,7 +99,7 @@ export default (env, argv) => {
   const plugins = [
     // Define common variables for use in Fluid Player
     new DefinePlugin({
-      FP_BUILD_VERSION: JSON.stringify(packageJSON.version),
+      FP_BUILD_VERSION: JSON.stringify(buildVersion),
       FP_HOMEPAGE: JSON.stringify(packageJSON.homepage),
       FP_ENV: JSON.stringify(mode),
       FP_DEBUG: JSON.stringify(debug),
