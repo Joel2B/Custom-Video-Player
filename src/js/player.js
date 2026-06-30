@@ -43,6 +43,21 @@ import { getMimetype } from './utils/mimetypes';
 import is from './utils/is';
 import delay from './utils/promise';
 
+const cloneConfig = (input) => {
+  if (is.array(input)) {
+    return input.map(cloneConfig);
+  }
+
+  if (is.object(input)) {
+    return Object.keys(input).reduce((acc, key) => {
+      acc[key] = cloneConfig(input[key]);
+      return acc;
+    }, {});
+  }
+
+  return input;
+};
+
 class CVP {
   constructor(target, options) {
     this.version = FP_BUILD_VERSION;
@@ -65,7 +80,7 @@ class CVP {
     }
 
     // Set config
-    this.config = defaults;
+    this.config = cloneConfig(defaults);
 
     // Overwrite config
     this.overwrite(options, this.config);
