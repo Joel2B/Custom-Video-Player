@@ -40,7 +40,7 @@ import { createElement, insertAfter, toggleClass, replaceElement } from './utils
 import { off, on, once, unbindListeners, triggerEvent } from './utils/events';
 import { IS_ANY_SAFARI, IS_IOS, IS_ANDROID, TOUCH_ENABLED } from './utils/browser';
 import { getMimetype } from './utils/mimetypes';
-import { clone as cloneObject } from './utils/object';
+import { clone } from './utils/object';
 import is from './utils/is';
 import delay from './utils/promise';
 
@@ -66,7 +66,7 @@ class CVP {
     }
 
     // Set config
-    this.config = cloneObject(defaults);
+    this.config = clone(defaults);
 
     // Overwrite config
     this.overwrite(options, this.config);
@@ -89,9 +89,9 @@ class CVP {
     }
 
     // Cache original element state for .destroy()
-    const clone = this.media.cloneNode(true);
-    clone.autoplay = false;
-    this.original = clone;
+    const original = this.media.cloneNode(true);
+    original.autoplay = false;
+    this.original = original;
 
     // Store reference
     this.media.cvp = this;
