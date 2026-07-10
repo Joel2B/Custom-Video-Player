@@ -18,14 +18,16 @@ class HtmlOnPause {
   };
 
   setHtmlOnPauseBlock = (passedHtml) => {
-    if (typeof passedHtml !== 'object' || typeof passedHtml.html === 'undefined') {
+    if (!passedHtml || typeof passedHtml !== 'object' || typeof passedHtml.html === 'undefined') {
       return false;
     }
+
+    this.options = { ...this.options, ...passedHtml };
 
     // We create the HTML block from scratch if it doesn't already exist
     if (!this.htmlBlock) {
       this.createHtmlBlock();
-      return;
+      return true;
     }
 
     this.htmlBlock.innerHTML = passedHtml.html;
@@ -39,6 +41,7 @@ class HtmlOnPause {
     }
 
     this.loaded = true;
+    return true;
   };
 
   createHtmlBlock = () => {

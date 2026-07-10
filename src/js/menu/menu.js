@@ -266,6 +266,8 @@ class Menu {
   };
 
   restartLater = () => {
+    clearTimeout(this.restartTimer);
+
     this.restartTimer = setTimeout(() => {
       this.restart();
     }, 250);

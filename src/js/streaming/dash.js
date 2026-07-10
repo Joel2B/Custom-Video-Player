@@ -1,6 +1,6 @@
-import $script from 'scriptjs';
 import { formatTime } from '../utils/time';
 import is from '../utils/is';
+import loadScript from './load-script';
 
 class Dash {
   constructor(player) {
@@ -9,21 +9,28 @@ class Dash {
     this.liveThresholdSecs = 12;
   }
 
-  load = () => {
-    return new Promise((resolve) => {
-      if (!window.dashjs || !is.function(window.dashjs.MediaPlayer)) {
-        window.dashjs = {
-          skipAutoCreate: true,
-          isDefaultSubject: true,
-        };
+  load = async () => {
+    if (!window.dashjs || !is.function(window.dashjs.MediaPlayer)) {
+      window.dashjs = {
+        skipAutoCreate: true,
+        isDefaultSubject: true,
+      };
 
-        $script(this.player.config.dash.url, () => {
-          resolve();
-        });
-      } else {
-        resolve();
-      }
-    });
+      await loadScript(this.player.config.dash.url);
+    }
+
+    if (!window.dashjs || !is.function(window.dashjs.MediaPlayer)) {
+      throw new Error(`DASH.js unavailable after loading script: ${this.player.config.dash.url}`);
+    }
+  };
+
+  detach = () => {
+    if (!this.dash) {
+      return;
+    }
+
+    this.dash.reset();
+    this.dash = null;
   };
 
   init = () => {
@@ -32,8 +39,7 @@ class Dash {
 
     if (!dashjs.supportsMediaSource()) {
       player.debug.warn('Media type not supported by this browser using DASH.js. (application/dash+xml)');
-      player.nextSource();
-      return;
+      throw new Error('Media type not supported by this browser using DASH.js. (application/dash+xml)');
     }
 
     const autoPlay = player.autoPlay.apply(false);

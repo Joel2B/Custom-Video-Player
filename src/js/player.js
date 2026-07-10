@@ -78,16 +78,6 @@ class CVP {
     // Debugging
     this.debug = new Console(this.config.debug);
 
-    if (!(this.media instanceof HTMLVideoElement)) {
-      this.debug.error('Invalid initializer - player target must be HTMLVideoElement or ID');
-      return;
-    }
-
-    if (this.media.cvp) {
-      this.debug.warn('Target already setup');
-      return;
-    }
-
     // Cache original element state for .destroy()
     const original = this.media.cloneNode(true);
     original.autoplay = false;
@@ -143,31 +133,34 @@ class CVP {
     const play = this.media.play;
 
     this.media.play = () => {
-      const promise = play.apply(this.media, arguments);
+      const promise = play.call(this.media);
 
       if (!is.promise(promise)) {
         return null;
       }
 
-      this.promiseTimeout = setTimeout(() => {
+      const promiseTimeout = setTimeout(() => {
         if (!this.playing) {
           this.debug.error('Timeout error. Failed to play video?');
         }
       }, 5000);
 
-      promise
-        .then(() => {
-          clearTimeout(this.promiseTimeout);
-        })
-        .catch((error) => {
-          this.debug.error(error);
+      this.promiseTimeouts.add(promiseTimeout);
 
-          if (error.name === 'NotAllowedError') {
-            this.autoPlay.playMuted();
-          }
+      const clearPromiseTimeout = () => {
+        clearTimeout(promiseTimeout);
+        this.promiseTimeouts.delete(promiseTimeout);
+      };
 
-          clearTimeout(this.promiseTimeout);
-        });
+      promise.then(clearPromiseTimeout).catch((error) => {
+        this.debug.error(error);
+
+        if (error.name === 'NotAllowedError') {
+          this.autoPlay.playMuted();
+        }
+
+        clearPromiseTimeout();
+      });
 
       return promise;
     };
@@ -182,6 +175,7 @@ class CVP {
     this.isLoading = false;
 
     this.eventListeners = [];
+    this.promiseTimeouts = new Set();
 
     // for theater mode
     this.originalWidth = null;
@@ -563,6 +557,10 @@ class CVP {
   }
 
   set volume(volume) {
+    if (!Number.isFinite(volume) || volume < 0 || volume > 1) {
+      throw new RangeError('Volume must be a finite number between 0 and 1');
+    }
+
     this.media.volume = volume;
   }
 
@@ -602,11 +600,11 @@ class CVP {
   }
 
   set speed(input) {
-    setTimeout(() => {
-      if (this.media) {
-        this.media.playbackRate = input;
-      }
-    }, 0);
+    if (!Number.isFinite(input) || input <= 0) {
+      throw new RangeError('Playback speed must be a finite number greater than 0');
+    }
+
+    this.media.playbackRate = input;
   }
 
   get speed() {
@@ -681,9 +679,6 @@ class CVP {
       return;
     }
 
-    // Reset overflow (incase destroyed while in fullscreen)
-    document.body.style.overflow = '';
-
     [
       this.userActivity,
       this.listeners,
@@ -694,9 +689,12 @@ class CVP {
       this.autoPlay,
       this.menu,
       this.fps,
+      this.fullscreen,
+      this.theatre,
     ].forEach((module) => module?.destroy?.());
 
-    clearTimeout(this.promiseTimeout);
+    this.promiseTimeouts.forEach(clearTimeout);
+    this.promiseTimeouts.clear();
 
     unbindListeners.call(this);
 
@@ -736,7 +734,7 @@ class PlayerInterface {
   }
 
   src = (src) => {
-    this.instance.src(src);
+    return this.instance.src(src);
   };
 
   play = () => {
@@ -748,15 +746,15 @@ class PlayerInterface {
   };
 
   skipTo = (time) => {
-    this.instance.skipTo(time);
+    return this.instance.skipTo(time);
   };
 
   setPlaybackSpeed = (speed) => {
-    this.instance.speed = speed;
+    return (this.instance.speed = speed);
   };
 
   setVolume = (volume) => {
-    this.instance.volume = volume;
+    return (this.instance.volume = volume);
   };
 
   setHtmlOnPauseBlock = (options) => {
@@ -764,11 +762,11 @@ class PlayerInterface {
   };
 
   toggleControlBar = (state) => {
-    this.instance.controlBar.toggleControlBar(state);
+    return this.instance.controlBar.toggleControlBar(state);
   };
 
   toggleFullScreen = (state) => {
-    this.instance.fullscreen.toggle(state);
+    return this.instance.fullscreen.toggle(state);
   };
 
   destroy = async () => {
@@ -784,7 +782,15 @@ class PlayerInterface {
   };
 
   on = (event, callback) => {
-    this.instance.on(event, callback);
+    return this.instance.on(event, callback);
+  };
+
+  once = (event, callback) => {
+    return this.instance.once(event, callback);
+  };
+
+  off = (event, callback) => {
+    return this.instance.off(event, callback);
   };
 }
 
@@ -800,7 +806,17 @@ let playerInstances = 0;
  * @returns {playerInterface}
  */
 function playerInitializer(target, options = {}) {
-  const instance = new CVP(target, options);
+  const media = is.string(target) ? document.getElementById(target) : target;
+
+  if (!(media instanceof HTMLVideoElement)) {
+    throw new TypeError('Invalid initializer - player target must be HTMLVideoElement or ID');
+  }
+
+  if (media.cvp) {
+    throw new Error('Target already setup');
+  }
+
+  const instance = new CVP(media, options);
 
   const publicInstance = new PlayerInterface(instance);
 

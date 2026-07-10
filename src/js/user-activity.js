@@ -36,7 +36,7 @@ class UserActivity {
         return;
       }
 
-      if (!this.isStillDown && !this.isLoading) {
+      if (!this.isStillDown && !player.isLoading) {
         this.newActivity = false;
       }
 

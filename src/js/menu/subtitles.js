@@ -271,24 +271,24 @@ class Subtitles {
   };
 
   downloadTrack = (url) => {
-    return new Promise((resolve) => {
-      fetch(url).then((response) => {
-        const parser = new WebVTT.Parser(window, WebVTT.StringDecoder());
-        const cues = [];
+    return fetch(url).then(
+      (response) =>
+        new Promise((resolve) => {
+          const parser = new WebVTT.Parser(window, WebVTT.StringDecoder());
+          const cues = [];
 
-        parser.oncue = (cue) => {
-          cues.push(cue);
-        };
+          parser.oncue = (cue) => {
+            cues.push(cue);
+          };
 
-        parser.onflush = () => {
-          resolve(cues);
-        };
+          parser.onflush = () => {
+            resolve(cues);
+          };
 
-        parser.parse(response);
-
-        parser.flush();
-      });
-    });
+          parser.parse(response);
+          parser.flush();
+        }),
+    );
   };
 
   setupMenu = () => {
@@ -513,12 +513,24 @@ class Subtitles {
       const track = tracks[index];
 
       if (is.empty(track.cues)) {
-        this.downloadTrack(track.src).then((cues) => {
-          track.cues = cues;
-          track.activeCues = this.getActiveCues(cues);
+        const selectedTrack = this.currentTrack;
+        this.downloadTrack(track.src)
+          .then((cues) => {
+            track.cues = cues;
+            track.activeCues = this.getActiveCues(cues);
 
-          this.render();
-        });
+            if (this.currentTrack === selectedTrack) {
+              this.render();
+            }
+          })
+          .catch((error) => {
+            player.debug.error(`Failed to load subtitles: ${track.src}`, error);
+
+            if (this.currentTrack === selectedTrack) {
+              this.active = false;
+              toggleClass(this.subtitles, 'hide', true);
+            }
+          });
       }
     }
 

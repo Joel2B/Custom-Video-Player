@@ -1,8 +1,8 @@
-import $script from 'scriptjs';
 import { supportsHLS } from '../utils/media';
 import { formatTime } from '../utils/time';
 import { on } from '../utils/events';
 import is from '../utils/is';
+import loadScript from './load-script';
 
 class Hlsjs {
   constructor(player) {
@@ -15,16 +15,26 @@ class Hlsjs {
     }
   }
 
-  load = () => {
-    return new Promise((resolve) => {
-      if (!window.Hls) {
-        $script(this.url, () => {
-          resolve();
-        });
-      } else {
-        resolve();
-      }
-    });
+  load = async () => {
+    if (!window.Hls) {
+      await loadScript(this.url);
+    }
+
+    if (!window.Hls) {
+      throw new Error(`HLS.js unavailable after loading script: ${this.url}`);
+    }
+  };
+
+  detach = () => {
+    if (!this.hls) {
+      return;
+    }
+
+    this.hls.stopLoad();
+    this.hls.detachMedia();
+    this.hls.destroy();
+    clearInterval(this.hls.bufferTimer);
+    this.hls = null;
   };
 
   useNative = () => {
@@ -58,7 +68,7 @@ class Hlsjs {
       if (supportsHLS) {
         this.useNative();
       } else {
-        player.nextSource();
+        throw new Error('Media type not supported by this browser using HLS.js. (application/x-mpegURL)');
       }
       return;
     }

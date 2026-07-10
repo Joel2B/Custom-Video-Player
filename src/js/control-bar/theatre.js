@@ -1,5 +1,5 @@
 import { isInFrame, toggleClass } from '../utils/dom';
-import { on, triggerEvent } from '../utils/events';
+import { off, on, triggerEvent } from '../utils/events';
 import is from '../utils/is';
 
 class Theatre {
@@ -12,6 +12,9 @@ class Theatre {
 
     this.defaultValue = false;
     this.active = false;
+    this.theatreElement = null;
+    this.usingDefaultLayout = false;
+    this.destroyed = false;
 
     this.init();
   }
@@ -38,7 +41,7 @@ class Theatre {
   };
 
   toggle = () => {
-    if (isInFrame()) {
+    if (this.destroyed || isInFrame()) {
       return;
     }
 
@@ -54,18 +57,26 @@ class Theatre {
 
     // Advanced Theatre mode if specified
     if (this.config.advanced) {
-      const custom = document.getElementById(this.config.advanced.theatreElement);
+      const custom = this.theatreElement || document.getElementById(this.config.advanced.theatreElement);
       const customClass = this.config.advanced.classToApply;
-      if (is.element(custom)) {
+
+      if (this.active && this.usingDefaultLayout) {
+        this.defaultLayout();
+        this.usingDefaultLayout = false;
+      } else if (is.element(custom)) {
         toggleClass(custom, customClass, !this.active);
+        this.theatreElement = this.active ? null : custom;
+        this.usingDefaultLayout = false;
       } else {
         player.debug.log(`Theatre element not found: ${custom}`);
         // Default overlay behaviour
         this.defaultLayout();
+        this.usingDefaultLayout = !this.active;
       }
     } else {
       // Default overlay behaviour
       this.defaultLayout();
+      this.usingDefaultLayout = !this.active;
     }
 
     // Set correct variables
@@ -139,6 +150,25 @@ class Theatre {
         wrapper.style.left = defaultHorizontalMargin;
         break;
     }
+  };
+
+  destroy = () => {
+    if (this.destroyed) {
+      return;
+    }
+
+    this.destroyed = true;
+    off(this.player.controls.theatre, 'click', this.toggle);
+
+    if (this.theatreElement) {
+      toggleClass(this.theatreElement, this.config.advanced.classToApply, false);
+    } else if (this.active && this.usingDefaultLayout) {
+      this.defaultLayout();
+    }
+
+    this.theatreElement = null;
+    this.usingDefaultLayout = false;
+    this.active = false;
   };
 }
 

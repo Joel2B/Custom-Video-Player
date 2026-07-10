@@ -14,23 +14,19 @@ class PreviewThumbnails {
   }
 
   init = () => {
-    return new Promise((resolve) => {
-      const option = this.player.config.layoutControls.timelinePreview;
-      if (option.type === 'VTT' && is.string(option.file) && !is.empty(option.file)) {
-        this.getThumbnails(option.file).then(() => {
-          this.render();
-          resolve();
-        });
-        return;
-      }
+    const option = this.player.config.layoutControls.timelinePreview;
 
-      if (option.type === 'static' && is.array(option.frames)) {
-        this.data = option.frames;
-        option.spriteImage = true;
-        this.render();
-      }
-      resolve();
-    });
+    if (option.type === 'VTT' && is.string(option.file) && !is.empty(option.file)) {
+      return this.getThumbnails(option.file).then(() => this.render());
+    }
+
+    if (option.type === 'static' && is.array(option.frames)) {
+      this.data = option.frames;
+      option.spriteImage = true;
+      this.render();
+    }
+
+    return Promise.resolve();
   };
 
   parseVtt = (vttRawData) => {
@@ -84,21 +80,25 @@ class PreviewThumbnails {
   };
 
   getThumbnails = (url) => {
-    return new Promise((resolve) => {
-      fetch(url).then((response) => {
-        const parser = new WebVTT.Parser(window, WebVTT.StringDecoder());
-        const cues = [];
+    return fetch(url).then(
+      (response) =>
+        new Promise((resolve) => {
+          const parser = new WebVTT.Parser(window, WebVTT.StringDecoder());
+          const cues = [];
 
-        parser.oncue = (cue) => {
-          cues.push(cue);
-          resolve();
-        };
-        parser.parse(response);
-        parser.flush();
+          parser.oncue = (cue) => {
+            cues.push(cue);
+          };
 
-        this.data = this.parseVtt(cues);
-      });
-    });
+          parser.onflush = () => {
+            this.data = this.parseVtt(cues);
+            resolve();
+          };
+
+          parser.parse(response);
+          parser.flush();
+        }),
+    );
   };
 
   move = (event) => {

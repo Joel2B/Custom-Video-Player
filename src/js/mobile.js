@@ -229,9 +229,9 @@ class Mobile {
 
         const evt = is.nullOrUndefined(event.originalEvent) ? event : event.originalEvent;
         const touch = evt.touches[0] || evt.changedTouches[0];
-        const x = touch.pageX;
-
-        const width = player.wrapper.clientWidth;
+        const rect = player.wrapper.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const width = rect.width;
 
         const timeForward = player.config.layoutControls.controlForwardRewind.forward;
         const timeRewind = player.config.layoutControls.controlForwardRewind.rewind;

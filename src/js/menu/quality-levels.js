@@ -183,9 +183,9 @@ class Quality {
 
     if (player.streaming.hls && !player.multipleSourceTypes) {
       // reset the "auto" label, if a level is selected
-      const auto = event.target.parentNode.lastChild;
+      const auto = this.page.querySelector('[data-level="-1"]');
 
-      if (auto.textContent !== 'Auto' && this.current !== -1) {
+      if (auto && auto.textContent !== 'Auto' && this.current !== -1) {
         auto.textContent = 'Auto';
       }
     }

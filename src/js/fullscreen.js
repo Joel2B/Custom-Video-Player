@@ -6,7 +6,7 @@
 
 import { IS_IOS } from './utils/browser';
 import { hasClass, toggleClass, toggleHidden } from './utils/dom';
-import { on, triggerEvent } from './utils/events';
+import { off, on, triggerEvent } from './utils/events';
 import is from './utils/is';
 
 class Fullscreen {
@@ -20,32 +20,32 @@ class Fullscreen {
 
     // Scroll position
     this.scrollPosition = { x: 0, y: 0 };
+    this.bodyOverflow = null;
+    this.viewportState = null;
+    this.fallbackActive = false;
+    this.destroyed = false;
 
     // Force the use of 'full window/browser' rather than fullscreen
     this.forceFallback = player.config.layoutControls.fullscreen.fallback === 'force';
 
     // Register event listeners
     // Handle event (incase user presses escape etc)
-    on.call(
-      this.player,
-      document,
-      this.prefix === 'ms' ? 'MSFullscreenChange' : `${this.prefix}fullscreenchange`,
-      () => {
-        // TODO: Filter for target??
-        this.onChange();
-      },
-    );
+    this.fullscreenChangeEvent = this.prefix === 'ms' ? 'MSFullscreenChange' : `${this.prefix}fullscreenchange`;
+    this.nativeActive = this.nativeFullscreenActive;
+    on.call(this.player, document, this.fullscreenChangeEvent, this.onNativeChange);
 
     // Fullscreen toggle on double click
     if (this.player.config.layoutControls.doubleclickFullscreen && !this.player.touch) {
-      on.call(this.player, this.player.wrapper, 'dblclick', (event) => {
+      this.onDoubleClick = (event) => {
         // Ignore double click in controls
         if (this.player.controls.container.contains(event.target) || this.player.menu.menu.contains(event.target)) {
           return;
         }
 
         this.toggle();
-      });
+      };
+
+      on.call(this.player, this.player.wrapper, 'dblclick', this.onDoubleClick);
     }
 
     // Update the UI
@@ -109,8 +109,16 @@ class Fullscreen {
     }
 
     // Fallback using classname
-    if (!Fullscreen.native || this.forceFallback) {
+    if (this.fallbackActive || !Fullscreen.native || this.forceFallback) {
       return hasClass(this.target, 'fluid_fullscreen_fallback');
+    }
+
+    return this.nativeFullscreenActive;
+  }
+
+  get nativeFullscreenActive() {
+    if (!Fullscreen.native) {
+      return false;
     }
 
     const element = !this.prefix
@@ -125,7 +133,22 @@ class Fullscreen {
     return IS_IOS && this.player.config.layoutControls.fullscreen.iosNative ? this.player.media : this.player.wrapper;
   }
 
-  onChange = () => {
+  onNativeChange = () => {
+    if (this.destroyed || !this.enabled || !this.usingNative) {
+      return;
+    }
+
+    const active = this.nativeFullscreenActive;
+
+    if (active === this.nativeActive) {
+      return;
+    }
+
+    this.nativeActive = active;
+    this.onChange(active);
+  };
+
+  onChange = (active = this.active) => {
     if (!this.enabled) {
       return;
     }
@@ -134,67 +157,98 @@ class Fullscreen {
 
     const fs = player.controls.fullscreen;
 
-    toggleClass(fs, 'fluid_button_fullscreen', !this.active);
-    toggleClass(fs, 'fluid_button_fullscreen_exit', this.active);
+    toggleClass(fs, 'fluid_button_fullscreen', !active);
+    toggleClass(fs, 'fluid_button_fullscreen_exit', active);
 
-    player.contextMenu.fs.textContent = player.config.captions[this.active ? 'exitFullscreen' : 'fullscreen'];
+    player.contextMenu.fs.textContent = player.config.captions[active ? 'exitFullscreen' : 'fullscreen'];
 
     if (player.controls.fullscreenTooltip) {
-      player.controls.fullscreenTooltip.textContent =
-        player.config.captions[this.active ? 'exitFullscreen' : 'fullscreen'];
+      player.controls.fullscreenTooltip.textContent = player.config.captions[active ? 'exitFullscreen' : 'fullscreen'];
     }
 
     // Trigger an event
-    triggerEvent.call(this.player, this.player.media, this.active ? 'enterfullscreen' : 'exitfullscreen', true);
+    triggerEvent.call(this.player, this.player.media, active ? 'enterfullscreen' : 'exitfullscreen', true);
   };
 
-  toggleFallback = (toggle = false) => {
+  toggleFallback = (toggle = false, notify = true) => {
+    if (toggle === this.fallbackActive) {
+      return;
+    }
+
     // Store or restore scroll position
     if (toggle) {
       this.scrollPosition = {
         x: window.scrollX || 0,
         y: window.scrollY || 0,
       };
+
+      this.bodyOverflow = {
+        value: document.body.style.getPropertyValue('overflow'),
+        priority: document.body.style.getPropertyPriority('overflow'),
+      };
     } else {
       window.scrollTo(this.scrollPosition.x, this.scrollPosition.y);
     }
 
     // Toggle scroll
-    document.body.style.overflow = toggle ? 'hidden' : '';
+    if (toggle) {
+      document.body.style.setProperty('overflow', 'hidden');
+    } else if (this.bodyOverflow.value) {
+      document.body.style.setProperty('overflow', this.bodyOverflow.value, this.bodyOverflow.priority);
+    } else {
+      document.body.style.removeProperty('overflow');
+    }
 
     // Toggle class hook
     toggleClass(this.target, 'fluid_fullscreen_fallback', toggle);
+    this.fallbackActive = toggle;
 
     // Force full viewport on iPhone X+
     if (IS_IOS) {
       let viewport = document.head.querySelector('meta[name="viewport"]');
       const property = 'viewport-fit=cover';
+      const created = !viewport;
 
       // Inject the viewport meta if required
       if (!viewport) {
         viewport = document.createElement('meta');
         viewport.setAttribute('name', 'viewport');
+        document.head.appendChild(viewport);
       }
 
       // Check if the property already exists
       const hasProperty = is.string(viewport.content) && viewport.content.includes(property);
 
       if (toggle) {
-        this.cleanupViewport = !hasProperty;
+        this.viewportState = {
+          element: viewport,
+          created,
+          content: viewport.getAttribute('content'),
+          changed: !hasProperty,
+        };
 
         if (!hasProperty) {
-          viewport.content += `,${property}`;
+          viewport.content = viewport.content ? `${viewport.content},${property}` : property;
         }
-      } else if (this.cleanupViewport) {
-        viewport.content = viewport.content
-          .split(',')
-          .filter((part) => part.trim() !== property)
-          .join(',');
+      } else if (this.viewportState) {
+        const { element, created: viewportCreated, content, changed } = this.viewportState;
+
+        if (viewportCreated) {
+          element.remove();
+        } else if (changed && content === null) {
+          element.removeAttribute('content');
+        } else if (changed) {
+          element.setAttribute('content', content);
+        }
+
+        this.viewportState = null;
       }
     }
 
     // Toggle button and fire events
-    this.onChange();
+    if (notify) {
+      this.onChange(toggle);
+    }
   };
 
   // Update UI
@@ -263,7 +317,7 @@ class Fullscreen {
     if (IS_IOS && this.player.config.layoutControls.fullscreen.iosNative) {
       this.target.webkitExitFullscreen();
       this.player.play();
-    } else if (!Fullscreen.native || this.forceFallback) {
+    } else if (this.fallbackActive || !Fullscreen.native || this.forceFallback) {
       this.toggleFallback(false);
     } else if (!this.prefix) {
       (document.cancelFullScreen || document.exitFullscreen).call(document);
@@ -279,6 +333,34 @@ class Fullscreen {
       this.enter();
     } else {
       this.exit();
+    }
+  };
+
+  destroy = () => {
+    if (this.destroyed) {
+      return;
+    }
+
+    this.destroyed = true;
+    off(document, this.fullscreenChangeEvent, this.onNativeChange);
+
+    if (this.onDoubleClick) {
+      off(this.player.wrapper, 'dblclick', this.onDoubleClick);
+    }
+
+    if (this.fallbackActive) {
+      this.toggleFallback(false, false);
+    } else {
+      toggleClass(this.target, 'fluid_fullscreen_fallback', false);
+
+      if (this.nativeFullscreenActive) {
+        if (!this.prefix) {
+          (document.cancelFullScreen || document.exitFullscreen).call(document);
+        } else {
+          const action = this.prefix === 'moz' ? 'Cancel' : 'Exit';
+          document[`${this.prefix}${action}${this.property}`]();
+        }
+      }
     }
   };
 }

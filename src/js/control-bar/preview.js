@@ -11,11 +11,14 @@ class Preview {
     const { player } = this;
 
     this.current = new PreviewThumbnails(player);
-    this.current.init().then(() => {
-      if (!this.current.loaded) {
-        this.current = new PreviewTime(player);
-      }
-    });
+    this.current
+      .init()
+      .catch((error) => player.debug.error(error))
+      .finally(() => {
+        if (!this.current.loaded) {
+          this.current = new PreviewTime(player);
+        }
+      });
   };
 }
 
