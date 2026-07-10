@@ -12,7 +12,12 @@
     "lint": "eslint src --ext .js",
     "lint-fix": "eslint src --ext .js --fix",
     "serve": "webpack serve --open",
-    "deploy": "pwsh -ExecutionPolicy Bypass -File ./deploy.ps1"
+    "deploy": "pwsh -ExecutionPolicy Bypass -File ./deploy.ps1",
+    "test:unit": "node --test test/unit",
+    "test:smoke": "playwright test",
+    "test:integration": "playwright test --config=playwright.integration.config.js",
+    "test": "npm run test:unit && npm run test:smoke",
+    "check": "npm run lint && npm run test:unit && npm run build && npm run test:smoke"
   },
   "repository": {
     "type": "git",
@@ -41,6 +46,7 @@
     "@babel/core": "^7.29.0",
     "@babel/eslint-parser": "^7.28.6",
     "@babel/preset-env": "^7.29.0",
+    "@playwright/test": "^1.61.1",
     "babel-loader": "^10.0.0",
     "cheerio": "^1.2.0",
     "copy-webpack-plugin": "^14.0.0",

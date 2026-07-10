@@ -4,4 +4,5 @@ dist-cdn/
 .vscode/
 .env
 *.zip
-
+playwright-report/
+test-results/
