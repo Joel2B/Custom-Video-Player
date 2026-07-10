@@ -113,7 +113,7 @@ New options:
 | Audio | { language: 'auto' } | `language`: sets the default language (if available)
 | Subtitles | { active: false, language: 'auto', native: false, useVttjs: false, timestampMap: true, allowHtml: false, } | `active`: always use subtitles. `native`: the browser will handle subtitles or not. `useVttjs`: use a library to display subtitles. `timestampMap`: use in case of out-of-sync between subtitles and video (can work or not). `language`: sets the default language (if available). `allowHtml`: render subtitle cue text as HTML for trusted VTT files. Keep it disabled for remote or user-generated subtitles.
 | HtmlOnPauseBlock | { html: null, height: null, width: null, } | `html`: trusted HTML shown while paused. Do not pass user-generated or remote HTML without sanitizing it first. `height` and `width`: block size in pixels.
-| Hls | { url: 'https<nolink>://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js', debug: false, overrideNative: false, config: (options) => { return options; }} | `url`: url of the hls.js library. `debug`: debug logs in console. `overrideNative`: use native hls or not. `config`: to configure it
+| Hls | { url: 'https<nolink>://cdn.jsdelivr.net/npm/hls.js@1.6.13/dist/hls.min.js', debug: false, overrideNative: true, config: (options) => { return options; }} | `url`: url of the hls.js library. `debug`: debug logs in console. `overrideNative`: use native hls or not. `config`: to configure it
 
 Hls.js:
 

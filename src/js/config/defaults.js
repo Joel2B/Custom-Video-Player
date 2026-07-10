@@ -115,7 +115,7 @@ const defaults = {
   onBeforeXMLHttpRequestOpen: (request) => {},
   onBeforeXMLHttpRequest: (request) => {},
   hls: {
-    url: 'https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js',
+    url: 'https://cdn.jsdelivr.net/npm/hls.js@1.6.13/dist/hls.min.js',
     customUrl: '',
     debug: false,
     overrideNative: true,
@@ -126,7 +126,7 @@ const defaults = {
     onAfterInit: (hls) => {},
   },
   dash: {
-    url: 'https://cdn.dashjs.org/latest/dash.all.min.js',
+    url: 'https://cdn.dashjs.org/v5.0.3/dash.all.min.js',
     debug: false,
     config: (options) => {
       return options;
