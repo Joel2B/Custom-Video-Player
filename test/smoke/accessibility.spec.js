@@ -149,5 +149,24 @@ for (const viewportWidth of [1920, 1280, 768]) {
     expect(new Set(geometry.map(({ top }) => top)).size).toBe(1);
     expect(new Set(geometry.map(({ height }) => height))).toEqual(new Set([24]));
     expect(new Set(geometry.map(({ center }) => center)).size).toBe(1);
+
+    const iconGeometry = await page.locator('.fluid_controls .fluid_button').evaluateAll((buttons) =>
+      buttons
+        .filter((button) => getComputedStyle(button).display !== 'none')
+        .map((button) => {
+          const icon = getComputedStyle(button, '::before');
+          return { top: icon.top, left: icon.left, width: icon.width, height: icon.height };
+        }),
+    );
+
+    expect(iconGeometry).toEqual(
+      iconGeometry.map(() => ({ top: '0px', left: '0px', width: '24px', height: '24px' })),
+    );
+
+    const badge = await page.locator('.fluid_button_main_menu').evaluate((button) => {
+      const style = getComputedStyle(button, '::after');
+      return { top: style.top, right: style.right, width: style.width, height: style.height };
+    });
+    expect(badge).toEqual({ top: '0px', right: '-6px', width: '13px', height: '9px' });
   });
 }
