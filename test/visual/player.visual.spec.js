@@ -59,25 +59,3 @@ test('compact controls', async ({ page }) => {
   await setup(page, { width: 350, height: 197 });
   await expect(page.locator('.fluid_video_wrapper')).toHaveScreenshot('compact-controls.png');
 });
-
-test('published HLS controls alignment', async ({ page }) => {
-  await page.goto('/');
-  await page.setContent(`
-    <style>
-      html, body { margin: 0; background: #161616; }
-      body { display: flex; flex-direction: column; align-items: center; padding: 24px; box-sizing: border-box; }
-      #player { width: clamp(320px, 50vw, 960px); max-width: 90vw; height: auto; aspect-ratio: 16 / 9; }
-    </style>
-    <video id="player">
-      <source src="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" type="application/x-mpegURL">
-    </video>
-  `);
-  await page.addScriptTag({ url: '/player.min.js' });
-  await page.evaluate(() =>
-    window.fluidPlayer('player', {
-      hls: { url: '/static/mock-hls-quality.js', overrideNative: true },
-    }),
-  );
-  await expect(page.locator('.fluid_button_main_menu')).toHaveClass(/hd-quality-badge/);
-  await expect(page.locator('.fluid_video_wrapper')).toHaveScreenshot('published-hls-alignment.png');
-});

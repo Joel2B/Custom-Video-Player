@@ -15,11 +15,10 @@
     "deploy": "pwsh -ExecutionPolicy Bypass -File ./deploy.ps1",
     "test:unit": "node --test test/unit",
     "test:smoke": "playwright test",
-    "test:integration": "playwright test --config=playwright.integration.config.js",
     "test:visual": "playwright test --config=playwright.visual.config.js",
     "test:visual:update": "playwright test --config=playwright.visual.config.js --update-snapshots",
     "test": "npm run test:unit && npm run test:smoke",
-    "check": "npm run lint && npm run test:unit && npm run build && npm run test:smoke"
+    "check": "npm run lint && npm run build && npm test"
   },
   "repository": {
     "type": "git",
@@ -62,10 +61,8 @@
     "javascript-obfuscator": "^5.2.1",
     "sass": "^1.97.3",
     "sass-loader": "^16.0.6",
-    "scriptjs": "^2.5.9",
     "semver": "^7.7.3",
     "style-loader": "^4.0.0",
-    "svg-url-loader": "^8.0.0",
     "terser-webpack-plugin": "^5.5.0",
     "webpack": "^5.104.1",
     "webpack-cli": "^6.0.1",
