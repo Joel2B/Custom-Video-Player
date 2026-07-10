@@ -5,7 +5,7 @@ WEBVTT
 <v Proog>Auf der linken Seite sehen wir...</v>
 
 2
-00:00:18.750 --> 00:00:20.333 align:middle
+00:00:18.750 --> 00:00:20.333 align:center
 <v Proog>Auf der rechten Seite sehen wir die...</v>
 
 3
@@ -21,7 +21,7 @@ WEBVTT
 <v Proog>Emo?</v>
 
 6
-00:00:28.875 --> 00:00:30.250 line:6% size:110%
+00:00:28.875 --> 00:00:30.250 line:6% size:100%
 <v Proog>Pass auf!</v>
 
 7

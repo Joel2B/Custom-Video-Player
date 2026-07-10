@@ -38,7 +38,11 @@
     <%= htmlWebpackPlugin.tags.bodyTags %>
 
     <script>
-      const instance = fluidPlayer('fluid-player-e2e-case');
+      const instance = fluidPlayer('fluid-player-e2e-case', {
+        hls: {
+          overrideNative: false,
+        },
+      });
     </script>
   </body>
 </html>

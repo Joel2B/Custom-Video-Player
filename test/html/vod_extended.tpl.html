@@ -36,10 +36,10 @@
         src="https://cdn.fluidplayer.com/videos/valerian-1080p.mkv"
         data-fluid-hd
         title="1080p"
-        type="video/mp4"
+        type="video/x-matroska"
       />
-      <source src="https://cdn.fluidplayer.com/videos/valerian-720p.mkv" data-fluid-hd title="720p" type="video/mp4" />
-      <source src="https://cdn.fluidplayer.com/videos/valerian-480p.mkv" title="480p" type="video/mp4" />
+      <source src="https://cdn.fluidplayer.com/videos/valerian-720p.mkv" data-fluid-hd title="720p" type="video/x-matroska" />
+      <source src="https://cdn.fluidplayer.com/videos/valerian-480p.mkv" title="480p" type="video/x-matroska" />
     </video>
 
     <%= htmlWebpackPlugin.tags.bodyTags %>
@@ -48,9 +48,6 @@
       const instance = fluidPlayer('fluid-player-e2e-case', {
         layoutControls: {
           primaryColor: '#dd2e44',
-          menu: {
-            playbackRate: true,
-          },
           timelinePreview: {
             file: 'static/thumbnails.vtt',
             type: 'VTT',
@@ -59,17 +56,11 @@
             imageUrl: 'static/logo.png',
             position: 'top right',
             clickUrl: 'https://fluidplayer.com',
-            opacity: 1,
-            mouseOverImageUrl: null,
-            imageMargin: '2px',
             hideWithControls: true,
           },
           fillToContainer: true,
           posterImage: 'static/video-thumbnail.jpg',
           allowDownload: true,
-          autoPlay: false,
-          playButtonShowing: true,
-          playPauseAnimation: true,
           htmlOnPauseBlock: {
             html: '<button>hello world</button>',
             height: 100,

@@ -53,6 +53,9 @@
     }
 
     stopLoad() {}
+    startLoad() {
+      this.startLoadCalled = true;
+    }
     detachMedia() {}
     destroy() {}
   }
