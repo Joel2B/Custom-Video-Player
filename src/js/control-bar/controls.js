@@ -54,6 +54,13 @@ class Controls {
     // Progress container
     this.progressContainer = createElement('div', {
       class: 'fluid_controls_progress_container fluid_slider',
+      role: 'slider',
+      tabindex: 0,
+      'aria-label': 'Seek',
+      'aria-valuemin': 0,
+      'aria-valuemax': 0,
+      'aria-valuenow': 0,
+      'aria-valuetext': '00:00',
     });
     this.container.appendChild(this.progressContainer);
 
@@ -108,8 +115,10 @@ class Controls {
     controls.appendChild(this.leftContainer);
 
     // Play/Pause
-    this.playPause = createElement('div', {
+    this.playPause = createElement('button', {
+      type: 'button',
       class: 'fluid_button fluid_button_play fluid_control_playpause',
+      'aria-label': this.player.config.captions.play,
     });
 
     this.playPauseTooltip = createElement(
@@ -125,21 +134,28 @@ class Controls {
 
     if (controlForwardRewind) {
       // Skip backwards
-      this.skipBack = createElement('div', {
+      this.skipBack = createElement('button', {
+        type: 'button',
         class: 'fluid_button fluid_button_skip_back',
+        'aria-label': `Rewind ${layout.controlForwardRewind.rewind} seconds`,
       });
       this.leftContainer.appendChild(this.skipBack);
 
       // Skip forward
-      this.skipForward = createElement('div', {
+      this.skipForward = createElement('button', {
+        type: 'button',
         class: 'fluid_button fluid_button_skip_forward',
+        'aria-label': `Forward ${layout.controlForwardRewind.forward} seconds`,
       });
       this.leftContainer.appendChild(this.skipForward);
     }
 
     // Mute
-    this.mute = createElement('div', {
+    this.mute = createElement('button', {
+      type: 'button',
       class: 'fluid_button fluid_button_volume fluid_control_mute',
+      'aria-label': this.player.config.captions.mute,
+      'aria-pressed': false,
     });
     this.muteTooltip = createElement(
       'div',
@@ -156,6 +172,13 @@ class Controls {
     // Volume container
     this.volumeContainer = createElement('div', {
       class: 'fluid_control_volume_container fluid_slider',
+      role: 'slider',
+      tabindex: 0,
+      'aria-label': 'Volume',
+      'aria-valuemin': 0,
+      'aria-valuemax': 100,
+      'aria-valuenow': 100,
+      'aria-valuetext': '100%',
     });
 
     // Volume
@@ -189,6 +212,7 @@ class Controls {
     // Time display
     const timeDisplay = createElement('div', {
       class: 'fluid_control_duration fluid_fluid_control_time_display',
+      'aria-live': 'off',
     });
 
     this.currentTime = createElement('span', null, '00:00');
@@ -218,14 +242,19 @@ class Controls {
     controls.appendChild(this.rightContainer);
 
     // Download
-    this.download = createElement('div', {
+    this.download = createElement('button', {
+      type: 'button',
       class: 'fluid_button fluid_button_download',
+      'aria-label': 'Download video',
     });
     this.rightContainer.appendChild(this.download);
 
     // Theatre
-    this.theatre = createElement('div', {
+    this.theatre = createElement('button', {
+      type: 'button',
       class: 'fluid_button fluid_control_theatre fluid_button_theatre',
+      'aria-label': this.player.config.captions.theatre,
+      'aria-pressed': false,
     });
     this.theatreTooltip = createElement(
       'div',
@@ -238,8 +267,11 @@ class Controls {
     this.rightContainer.appendChild(this.theatre);
 
     // Fullscreen
-    this.fullscreen = createElement('div', {
+    this.fullscreen = createElement('button', {
+      type: 'button',
       class: 'fluid_button fluid_control_fullscreen fluid_button_fullscreen',
+      'aria-label': this.player.config.captions.fullscreen,
+      'aria-pressed': false,
     });
     this.fullscreenTooltip = createElement(
       'div',

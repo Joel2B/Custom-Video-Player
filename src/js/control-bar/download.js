@@ -17,32 +17,18 @@ class Download {
 
     player.controls.download.style.display = 'inline-block';
 
-    this.link = createElement('a');
-    player.controls.download.appendChild(this.link);
-
     this.listeners();
   };
 
   listeners = () => {
     const { player } = this;
 
-    on.call(player, this.link, 'click', (event) => {
-      if (typeof event.stopImmediatePropagation === 'function') {
-        event.stopImmediatePropagation();
-      }
-
-      setTimeout(() => {
-        this.link.download = '';
-        this.link.href = '';
-      }, 100);
-    });
-
-    on.call(player, player.controls.download, 'click', (event) => {
-      this.link.download = player.currentSource.src;
-      this.link.href = player.currentSource.src;
-      this.link.target = '_blank';
-
-      this.link.click();
+    on.call(player, player.controls.download, 'click', () => {
+      const link = createElement('a');
+      link.download = player.currentSource.src;
+      link.href = player.currentSource.src;
+      link.target = '_blank';
+      link.click();
     });
   };
 }

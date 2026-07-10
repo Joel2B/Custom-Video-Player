@@ -1,0 +1,55 @@
+.fluid_video_wrapper {
+  button,
+  a.fluid_button {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    color: inherit;
+    font: inherit;
+    background: transparent;
+    text-decoration: none;
+    appearance: none;
+  }
+
+  button,
+  a,
+  [role='button'],
+  [role='switch'],
+  [role='slider'],
+  [role='option'],
+  [role='menuitem'] {
+    touch-action: manipulation;
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  [role='button']:focus-visible,
+  [role='switch']:focus-visible,
+  [role='slider']:focus-visible,
+  [role='option']:focus-visible,
+  [role='menuitem']:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+
+  .fluid_button:focus-visible::before {
+    opacity: 1;
+  }
+
+  .fluid_button:focus-visible .fluid_button_tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(calc(-50% + var(--tooltip-shift, 0px))) translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fluid_video_wrapper *,
+  .fluid_video_wrapper *::before,
+  .fluid_video_wrapper *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

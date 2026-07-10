@@ -102,6 +102,10 @@ class Keyboard {
 
     player.shortcuts.close();
 
+    if (event.target.closest('button, a, [role="button"], [role="switch"], [role="slider"], [role="option"]')) {
+      return;
+    }
+
     const code = event.keyCode ? event.keyCode : event.which;
 
     // Bail if a modifier key is set

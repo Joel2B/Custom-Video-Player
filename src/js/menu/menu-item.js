@@ -4,6 +4,11 @@ export function selector(item) {
   const id = item.id;
   const element = createElement('div', {
     class: `cvp_selector cvp_${id}`,
+    role: 'button',
+    tabindex: 0,
+    'aria-haspopup': 'listbox',
+    'aria-expanded': false,
+    'aria-label': item.title,
   });
 
   element.appendChild(
@@ -31,6 +36,10 @@ export function switcher(item) {
   const id = item.id;
   const element = createElement('div', {
     class: `cvp_switch cvp_${id} ${item.enabled ? 'cvp_enabled' : ''}`,
+    role: 'switch',
+    tabindex: 0,
+    'aria-checked': item.enabled,
+    'aria-label': item.title,
   });
 
   element.appendChild(

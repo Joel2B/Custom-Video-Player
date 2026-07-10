@@ -167,6 +167,7 @@ class Listeners extends Update {
 
     // Volume control
     on.call(player, player.controls.volumeContainer, 'mousedown touchstart', player.volumeControl.start);
+    on.call(player, player.controls.volumeContainer, 'keydown', player.volumeControl.keydown, false);
   };
 }
 

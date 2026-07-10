@@ -159,8 +159,12 @@ class Fullscreen {
 
     toggleClass(fs, 'fluid_button_fullscreen', !active);
     toggleClass(fs, 'fluid_button_fullscreen_exit', active);
+    fs.setAttribute('aria-pressed', String(active));
+    fs.setAttribute('aria-label', player.config.captions[active ? 'exitFullscreen' : 'fullscreen']);
 
-    player.contextMenu.fs.textContent = player.config.captions[active ? 'exitFullscreen' : 'fullscreen'];
+    if (player.contextMenu.fs) {
+      player.contextMenu.fs.textContent = player.config.captions[active ? 'exitFullscreen' : 'fullscreen'];
+    }
 
     if (player.controls.fullscreenTooltip) {
       player.controls.fullscreenTooltip.textContent = player.config.captions[active ? 'exitFullscreen' : 'fullscreen'];

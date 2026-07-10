@@ -14,8 +14,10 @@ class Shortcuts {
       class: 'cvp_keyboard_shortcuts',
     });
 
-    const close = createElement('div', {
+    const close = createElement('button', {
+      type: 'button',
       class: 'cvp_hide_shortcuts',
+      'aria-label': 'Close keyboard shortcuts',
     });
     on.call(this.player, close, 'click', () => this.close());
 

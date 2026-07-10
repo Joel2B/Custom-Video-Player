@@ -115,7 +115,8 @@
   transition: opacity 0.5s ease, transform 0.5s ease;
   box-sizing: border-box;
 
-  div {
+  div,
+  button {
     margin: 0;
     padding: 0;
     border: 0;

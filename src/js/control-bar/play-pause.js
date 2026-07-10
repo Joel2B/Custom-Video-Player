@@ -26,9 +26,11 @@ class PlayPause {
       class: 'fluid_initial_play_container',
     });
 
-    this.initialPlay = createElement('div', {
+    this.initialPlay = createElement('button', {
+      type: 'button',
       class: `fluid_initial_play ${!primaryColor && !player.mobile ? 'fluid_initial_play_color' : ''}`,
       style: `background-color: ${backgroundColor}`,
+      'aria-label': player.config.captions.play,
     });
 
     this.playButton = createElement('div', {
@@ -45,7 +47,7 @@ class PlayPause {
       toggleClass(player.wrapper, 'fluid_paused', true);
     }
 
-    on.call(player, container, player.mobile ? 'touchend' : 'click', () => {
+    on.call(player, this.initialPlay, player.mobile ? 'touchend' : 'click', () => {
       if (player.mobile && hasClass(player.wrapper, 'fluid_hide_controls')) {
         player.controlBar.toggleMobile();
         return;
@@ -129,6 +131,8 @@ class PlayPause {
 
     toggleClass(playPauseButton, 'fluid_button_play', !playing);
     toggleClass(playPauseButton, 'fluid_button_pause', playing);
+    playPauseButton.setAttribute('aria-label', player.config.captions[playing ? 'pause' : 'play']);
+    this.initialPlay.setAttribute('aria-label', player.config.captions[playing ? 'pause' : 'play']);
 
     const showControls = player.paused && !player.config.layoutControls.controlBar.hideWhenPaused;
 
@@ -136,7 +140,9 @@ class PlayPause {
     toggleClass(title.el, 'initial_controls_show', showControls);
     toggleClass(logo.el, 'initial_controls_show', showControls);
 
-    contextMenu.play.textContent = player.config.captions[playing ? 'pause' : 'play'];
+    if (contextMenu.play) {
+      contextMenu.play.textContent = player.config.captions[playing ? 'pause' : 'play'];
+    }
 
     if (controls.playPauseTooltip) {
       controls.playPauseTooltip.textContent = player.config.captions[playing ? 'pause' : 'play'];

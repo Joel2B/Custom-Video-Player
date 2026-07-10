@@ -52,6 +52,7 @@ class Loop {
       }
 
       toggleClass(item, 'cvp_enabled', active);
+      item.setAttribute('aria-checked', String(active));
 
       this.set(active);
 

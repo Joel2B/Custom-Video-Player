@@ -20,11 +20,11 @@ class ContextMenu {
       class: 'fluid_context_menu',
     });
 
-    this.list = createElement('ul');
+    this.list = createElement('ul', { role: 'menu' });
 
     if (!is.empty(links)) {
       for (const link of links) {
-        const li = createElement('li', null, link.label);
+        const li = createElement('li', { role: 'menuitem', tabindex: 0 }, link.label);
         on.call(player, li, 'click', () => window.open(link.href, '_blank'));
         this.list.appendChild(li);
       }
@@ -32,11 +32,20 @@ class ContextMenu {
 
     this.defaultOptions();
 
-    this.version = createElement('li', null, 'CVP ' + player.version);
+    this.version = createElement('li', { role: 'menuitem', tabindex: 0 }, 'CVP ' + player.version);
     on.call(player, this.version, 'click', () => window.open(player.homepage, '_blank'));
     this.list.appendChild(this.version);
 
     this.menu.appendChild(this.list);
+
+    on.call(player, this.list, 'keydown', (event) => {
+      if (event.target.getAttribute('role') !== 'menuitem' || (event.key !== 'Enter' && event.key !== ' ')) {
+        return;
+      }
+
+      event.preventDefault();
+      event.target.click();
+    });
 
     insertAfter(this.menu, player.media);
 
@@ -75,19 +84,19 @@ class ContextMenu {
       return;
     }
 
-    this.play = createElement('li', null, config.captions.play);
+    this.play = createElement('li', { role: 'menuitem', tabindex: 0 }, config.captions.play);
     on.call(player, this.play, 'click', player.playPause.toggle);
     this.list.appendChild(this.play);
 
-    this.mute = createElement('li', null, config.captions.mute);
+    this.mute = createElement('li', { role: 'menuitem', tabindex: 0 }, config.captions.mute);
     on.call(player, this.mute, 'click', player.toggleMute);
     this.list.appendChild(this.mute);
 
-    this.shortcuts = createElement('li', null, config.captions.shortcutsInfo);
+    this.shortcuts = createElement('li', { role: 'menuitem', tabindex: 0 }, config.captions.shortcutsInfo);
     on.call(player, this.shortcuts, 'click', player.shortcuts.open);
     this.list.appendChild(this.shortcuts);
 
-    this.fs = createElement('li', null, config.captions.fullscreen);
+    this.fs = createElement('li', { role: 'menuitem', tabindex: 0 }, config.captions.fullscreen);
     on.call(player, this.fs, 'click', player.fullscreen.toggle);
     this.list.appendChild(this.fs);
   };

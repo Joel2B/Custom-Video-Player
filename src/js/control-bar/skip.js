@@ -18,8 +18,9 @@ class Skip {
   listeners = () => {
     const { player } = this;
 
-    on.call(player, player.controls.skipBack, 'click', () => this.skip(-10));
-    on.call(player, player.controls.skipForward, 'click', () => this.skip(10));
+    const config = player.config.layoutControls.controlForwardRewind;
+    on.call(player, player.controls.skipBack, 'click', () => this.skip(-config.rewind));
+    on.call(player, player.controls.skipForward, 'click', () => this.skip(config.forward));
   };
 }
 

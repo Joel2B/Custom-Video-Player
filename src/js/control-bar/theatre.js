@@ -81,6 +81,11 @@ class Theatre {
 
     // Set correct variables
     this.active = !this.active;
+    player.controls.theatre.setAttribute('aria-pressed', String(this.active));
+    player.controls.theatre.setAttribute(
+      'aria-label',
+      player.config.captions[this.active ? 'exitTheatre' : 'theatre'],
+    );
     player.storage.set('theatre', this.active);
 
     if (player.controls.theatreTooltip) {
@@ -169,6 +174,7 @@ class Theatre {
     this.theatreElement = null;
     this.usingDefaultLayout = false;
     this.active = false;
+    this.player.controls.theatre.setAttribute('aria-pressed', 'false');
   };
 }
 

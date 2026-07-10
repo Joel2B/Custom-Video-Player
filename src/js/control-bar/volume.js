@@ -66,9 +66,17 @@ class Volume {
     toggleClass(mute, 'fluid_button_mute', !notMuted);
     toggleClass(mute, 'fluid_button_volume', notMuted);
 
-    cmMute.innerHTML = player.config.captions[notMuted ? 'mute' : 'unmute'];
+    const label = player.config.captions[notMuted ? 'mute' : 'unmute'];
+    mute.setAttribute('aria-label', label);
+    mute.setAttribute('aria-pressed', String(!notMuted));
+    controls.volumeContainer.setAttribute('aria-valuenow', String(Math.round(player.volume * 100)));
+    controls.volumeContainer.setAttribute('aria-valuetext', `${Math.round(player.volume * 100)}%`);
+
+    if (cmMute) {
+      cmMute.innerHTML = label;
+    }
     if (controls.muteTooltip) {
-      controls.muteTooltip.textContent = player.config.captions[notMuted ? 'mute' : 'unmute'];
+      controls.muteTooltip.textContent = label;
     }
 
     scrubberVolumeContainer.style.width = player.volume * width + 'px';
@@ -188,6 +196,34 @@ class Volume {
 
     on.call(this.player, document, 'mousemove touchmove', this.move);
     on.call(this.player, document, 'mouseup touchend mouseleave', this.end);
+  };
+
+  keydown = (event) => {
+    let volume = this.player.volume;
+
+    switch (event.key) {
+      case 'ArrowUp':
+      case 'ArrowRight':
+        volume += 0.05;
+        break;
+      case 'ArrowDown':
+      case 'ArrowLeft':
+        volume -= 0.05;
+        break;
+      case 'Home':
+        volume = 0;
+        break;
+      case 'End':
+        volume = 1;
+        break;
+      default:
+        return;
+    }
+
+    event.preventDefault();
+    this.setVolume(Math.min(Math.max(volume, 0), 1));
+    this.player.muted = false;
+    this.update();
   };
 
   destroy = () => {

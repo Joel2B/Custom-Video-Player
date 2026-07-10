@@ -30,6 +30,9 @@ class ProgressBar {
 
     playProgress.style.transform = `scaleX(${scaleX})`;
     scrubberProgressContainer.style.transform = `translateX(${translateX}px)`;
+    progressContainer.setAttribute('aria-valuemax', String(Math.round(player.duration)));
+    progressContainer.setAttribute('aria-valuenow', String(Math.round(player.currentTime)));
+    progressContainer.setAttribute('aria-valuetext', `${Math.round(player.currentTime)} seconds`);
   };
 
   start = (event) => {
@@ -134,12 +137,40 @@ class ProgressBar {
     hoverProgress.style.transform = `scaleX(${scaleX})`;
   };
 
+  keydown = (event) => {
+    let time = this.player.currentTime;
+
+    switch (event.key) {
+      case 'ArrowRight':
+      case 'ArrowUp':
+        time += 5;
+        break;
+      case 'ArrowLeft':
+      case 'ArrowDown':
+        time -= 5;
+        break;
+      case 'Home':
+        time = 0;
+        break;
+      case 'End':
+        time = this.player.duration;
+        break;
+      default:
+        return;
+    }
+
+    event.preventDefault();
+    this.player.currentTime = Math.min(Math.max(time, 0), this.player.duration);
+    this.update();
+  };
+
   listeners = () => {
     const { player } = this;
     const { progressContainer } = player.controls;
 
     on.call(player, progressContainer, 'mousedown touchstart', this.start);
     on.call(player, progressContainer, 'mousemove', this.hover);
+    on.call(player, progressContainer, 'keydown', this.keydown, false);
   };
 
   resize = () => {

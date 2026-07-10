@@ -63,6 +63,7 @@ class Autoplay {
       }
 
       toggleClass(item, 'cvp_enabled', active);
+      item.setAttribute('aria-checked', String(active));
 
       player.storage.set(this.id, active);
 

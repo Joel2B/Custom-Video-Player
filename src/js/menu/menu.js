@@ -47,6 +47,7 @@ class Menu {
     // Right container -> Menu
     this.menu = createElement('div', {
       class: 'cvp_options_menu',
+      'aria-hidden': true,
     });
 
     // Right container -> Menu -> background
@@ -100,6 +101,9 @@ class Menu {
     // Right container -> Menu -> background -> subpages -> header
     this.header = createElement('div', {
       class: 'cvp_header',
+      role: 'button',
+      tabindex: 0,
+      'aria-label': 'Back to settings',
     });
 
     // Right container -> Menu -> background -> subpages -> content
@@ -127,8 +131,11 @@ class Menu {
         class: 'fluid_options',
       });
 
-      this.optionsBtn = createElement('div', {
+      this.optionsBtn = createElement('button', {
+        type: 'button',
         class: 'fluid_options_btn',
+        'aria-label': this.player.config.captions.settings || 'Settings',
+        'aria-expanded': false,
       });
 
       this.openBtn = createElement('div', {
@@ -148,8 +155,11 @@ class Menu {
       this.player.wrapper.appendChild(this.options);
     } else {
       // Right container -> Main menu button
-      this.btn = createElement('div', {
+      this.btn = createElement('button', {
+        type: 'button',
         class: 'fluid_button fluid_button_main_menu',
+        'aria-label': this.player.config.captions.settings || 'Settings',
+        'aria-expanded': false,
       });
 
       this.menuTooltip = createElement(
@@ -209,6 +219,17 @@ class Menu {
     if (module.field === 'selector') {
       this.content.appendChild(module.content);
     }
+
+    if (module.item.matches('[role="button"], [role="switch"]')) {
+      on.call(this.player, module.item, 'keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') {
+          return;
+        }
+
+        event.preventDefault();
+        module.item.click();
+      });
+    }
   };
 
   remove = (module) => {
@@ -245,6 +266,14 @@ class Menu {
     this.header.textContent = option.firstChild.nextSibling.textContent;
 
     this.inSubpage = true;
+    option.setAttribute('aria-expanded', 'true');
+    subPage.setAttribute('role', 'listbox');
+
+    for (const item of subPage.querySelectorAll('li')) {
+      item.setAttribute('role', 'option');
+      item.setAttribute('tabindex', '0');
+      item.setAttribute('aria-selected', String(hasClass(item, 'cvp_active')));
+    }
   };
 
   restart = () => {
@@ -262,6 +291,7 @@ class Menu {
       }
 
       toggleClass(module.content, 'hide', true);
+      module.item.setAttribute('aria-expanded', 'false');
     }
   };
 
@@ -287,6 +317,8 @@ class Menu {
     }
 
     toggleClass(this.menu, 'cvp_visible', false);
+    this.menu.setAttribute('aria-hidden', 'true');
+    this.btn.setAttribute('aria-expanded', 'false');
 
     if (this.player.mobile) {
       this.player.controlBar.toggleMobile(this.player.paused);
@@ -306,6 +338,8 @@ class Menu {
     on.call(this.player, this.btn, event, () => {
       if (this.isClosed()) {
         toggleClass(this.menu, 'cvp_visible', true);
+        this.menu.setAttribute('aria-hidden', 'false');
+        this.btn.setAttribute('aria-expanded', 'true');
 
         if (this.player.mobile) {
           this.player.controlBar.toggleMobile();
@@ -322,6 +356,47 @@ class Menu {
       this.inSubpage = false;
 
       this.restart();
+    });
+
+    on.call(this.player, this.header, 'keydown', (keyboardEvent) => {
+      if (keyboardEvent.key !== 'Enter' && keyboardEvent.key !== ' ') {
+        return;
+      }
+
+      keyboardEvent.preventDefault();
+      this.header.click();
+    });
+
+    on.call(this.player, this.content, 'click', (clickEvent) => {
+      if (clickEvent.target.tagName !== 'LI') {
+        return;
+      }
+
+      for (const item of clickEvent.target.parentNode.querySelectorAll('li')) {
+        item.setAttribute('aria-selected', String(hasClass(item, 'cvp_active')));
+      }
+    });
+
+    on.call(this.player, this.content, 'keydown', (keyboardEvent) => {
+      const item = keyboardEvent.target;
+      if (item.tagName !== 'LI') {
+        return;
+      }
+
+      if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
+        keyboardEvent.preventDefault();
+        item.click();
+        return;
+      }
+
+      if (keyboardEvent.key !== 'ArrowDown' && keyboardEvent.key !== 'ArrowUp') {
+        return;
+      }
+
+      keyboardEvent.preventDefault();
+      const items = Array.from(item.parentNode.querySelectorAll('li'));
+      const offset = keyboardEvent.key === 'ArrowDown' ? 1 : -1;
+      items[(items.indexOf(item) + offset + items.length) % items.length].focus();
     });
   };
 }
