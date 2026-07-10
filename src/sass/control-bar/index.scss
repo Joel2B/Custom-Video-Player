@@ -41,17 +41,27 @@
 
   .fluid_controls_left {
     display: flex;
+    align-items: center;
     flex: 1;
+    min-width: 0;
     margin-left: 20px;
   }
 
   .fluid_controls_right {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    height: 24px;
     margin-right: 20px;
 
     .fluid_button:not(:last-child) {
       margin-right: 5px;
     }
   }
+}
+
+.fluid_desktop .fluid_controls .fluid_button {
+  flex: 0 0 24px;
 }
 
 .fluid_button_play:before {

@@ -116,3 +116,38 @@ test('disabled context controls do not break state updates', async ({ page }) =>
   await expect(page.locator('button.fluid_control_mute')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('button.fluid_control_fullscreen')).toHaveAttribute('aria-pressed', 'true');
 });
+
+for (const viewportWidth of [1920, 1280, 768]) {
+  test(`published HLS layout stays aligned at ${viewportWidth}px`, async ({ page }) => {
+    await page.setViewportSize({ width: viewportWidth, height: 900 });
+    await loadPlayer(
+      page,
+      `<style>
+        body { margin: 0; display: flex; flex-direction: column; align-items: center; padding: 24px; box-sizing: border-box; }
+        #player { width: clamp(320px, 50vw, 960px); max-width: 90vw; height: auto; aspect-ratio: 16 / 9; }
+      </style>
+      <video id="player">
+        <source src="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" type="application/x-mpegURL">
+      </video>`,
+    );
+    await page.evaluate(() =>
+      window.fluidPlayer('player', {
+        hls: { url: '/static/mock-hls-quality.js', overrideNative: true },
+      }),
+    );
+    await expect(page.locator('.fluid_button_main_menu')).toHaveClass(/hd-quality-badge/);
+
+    const geometry = await page.locator('.fluid_controls_left > *, .fluid_controls_right > *').evaluateAll((controls) =>
+      controls
+        .filter((control) => getComputedStyle(control).display !== 'none')
+        .map((control) => {
+          const rect = control.getBoundingClientRect();
+          return { top: rect.top, height: rect.height, center: rect.top + rect.height / 2 };
+        }),
+    );
+
+    expect(new Set(geometry.map(({ top }) => top)).size).toBe(1);
+    expect(new Set(geometry.map(({ height }) => height))).toEqual(new Set([24]));
+    expect(new Set(geometry.map(({ center }) => center)).size).toBe(1);
+  });
+}
