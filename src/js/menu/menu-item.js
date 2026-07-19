@@ -53,8 +53,8 @@ export function switcher(item) {
   const span = createElement('span');
 
   if (item.instance.mobile) {
-    span.appendChild(document.createTextNode('Off'));
-    span.appendChild(createElement('div', null, 'On'));
+    span.appendChild(document.createTextNode(item.instance.config.captions.off));
+    span.appendChild(createElement('div', null, item.instance.config.captions.on));
   } else {
     span.appendChild(createElement());
   }

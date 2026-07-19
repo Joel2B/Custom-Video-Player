@@ -10,6 +10,7 @@ class Shortcuts {
   }
 
   create = () => {
+    const shortcuts = this.player.config.captions.shortcuts;
     this.content = createElement('div', {
       class: 'cvp_keyboard_shortcuts',
     });
@@ -17,7 +18,7 @@ class Shortcuts {
     const close = createElement('button', {
       type: 'button',
       class: 'cvp_hide_shortcuts',
-      'aria-label': 'Close keyboard shortcuts',
+      'aria-label': shortcuts.close,
     });
     on.call(this.player, close, 'click', () => this.close());
 
@@ -63,14 +64,15 @@ class Shortcuts {
   };
 
   setShortcuts = () => {
+    const shortcuts = this.player.config.captions.shortcuts;
     this.shortcuts = [
       [
         {
           class: 'cvp_long_btn',
-          text: 'Space',
+          text: shortcuts.space,
         },
         {
-          text: 'Reproducir / Pausa',
+          text: shortcuts.playPause,
         },
       ],
       [
@@ -83,16 +85,16 @@ class Shortcuts {
           text: '→',
         },
         {
-          text: 'Salto 5 segundos',
+          text: shortcuts.skip,
         },
       ],
       [
         {
           class: 'cvp_short_btn',
-          text: 'Inicio',
+          text: shortcuts.home,
         },
         {
-          text: 'Ir al comienzo del video',
+          text: shortcuts.start,
         },
       ],
       [
@@ -105,16 +107,16 @@ class Shortcuts {
           text: '9',
         },
         {
-          text: 'Ir del 0% al 90% de la duración del video',
+          text: shortcuts.percent,
         },
       ],
       [
         {
           class: 'cvp_short_btn',
-          text: 'Fin',
+          text: shortcuts.end,
         },
         {
-          text: 'Ir al final del video',
+          text: shortcuts.finish,
         },
       ],
       [
@@ -123,7 +125,7 @@ class Shortcuts {
           text: 'F',
         },
         {
-          text: 'Alternar pantalla completa',
+          text: shortcuts.fullscreen,
         },
       ],
       [
@@ -136,7 +138,7 @@ class Shortcuts {
           text: '.',
         },
         {
-          text: '-1 / +1 fotograma',
+          text: shortcuts.frame,
         },
       ],
       [
@@ -145,7 +147,7 @@ class Shortcuts {
           text: 'M',
         },
         {
-          text: 'Silencio / Desactivar Silencio',
+          text: shortcuts.mute,
         },
       ],
       [
@@ -158,7 +160,7 @@ class Shortcuts {
           text: '↓',
         },
         {
-          text: 'Volumen arriba / abajo',
+          text: shortcuts.volume,
         },
       ],
       [
@@ -167,7 +169,7 @@ class Shortcuts {
           text: 'T',
         },
         {
-          text: 'Alternar modo teatro',
+          text: shortcuts.theatre,
         },
       ],
     ];

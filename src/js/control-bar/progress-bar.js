@@ -32,7 +32,7 @@ class ProgressBar {
     scrubberProgressContainer.style.transform = `translateX(${translateX}px)`;
     progressContainer.setAttribute('aria-valuemax', String(Math.round(player.duration)));
     progressContainer.setAttribute('aria-valuenow', String(Math.round(player.currentTime)));
-    progressContainer.setAttribute('aria-valuetext', `${Math.round(player.currentTime)} seconds`);
+    progressContainer.setAttribute('aria-valuetext', player.config.captions.seconds(Math.round(player.currentTime)));
   };
 
   start = (event) => {

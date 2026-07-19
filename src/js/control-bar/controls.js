@@ -21,6 +21,7 @@ class Controls {
 
   init = () => {
     const layout = this.player.config.layoutControls;
+    const captions = this.player.config.captions;
     const primaryColor = layout.primaryColor || '#f00';
     const controlForwardRewind = layout.controlForwardRewind.show;
 
@@ -64,7 +65,7 @@ class Controls {
       class: 'fluid_controls_progress_container fluid_slider',
       role: 'slider',
       tabindex: 0,
-      'aria-label': 'Seek',
+      'aria-label': captions.seek,
       'aria-valuemin': 0,
       'aria-valuemax': 0,
       'aria-valuenow': 0,
@@ -145,7 +146,7 @@ class Controls {
       this.skipBack = createElement('button', {
         type: 'button',
         class: 'fluid_button fluid_button_skip_back',
-        'aria-label': `Rewind ${layout.controlForwardRewind.rewind} seconds`,
+        'aria-label': captions.rewindSeconds(layout.controlForwardRewind.rewind),
       });
       this.leftContainer.appendChild(this.skipBack);
 
@@ -153,7 +154,7 @@ class Controls {
       this.skipForward = createElement('button', {
         type: 'button',
         class: 'fluid_button fluid_button_skip_forward',
-        'aria-label': `Forward ${layout.controlForwardRewind.forward} seconds`,
+        'aria-label': captions.forwardSeconds(layout.controlForwardRewind.forward),
       });
       this.leftContainer.appendChild(this.skipForward);
     }
@@ -182,7 +183,7 @@ class Controls {
       class: 'fluid_control_volume_container fluid_slider',
       role: 'slider',
       tabindex: 0,
-      'aria-label': 'Volume',
+      'aria-label': captions.volume,
       'aria-valuemin': 0,
       'aria-valuemax': 100,
       'aria-valuenow': 100,
@@ -239,7 +240,7 @@ class Controls {
       {
         class: 'fluid_live_badge',
       },
-      'live',
+      captions.live,
     );
     this.leftContainer.appendChild(this.live);
 
@@ -253,7 +254,7 @@ class Controls {
     this.download = createElement('button', {
       type: 'button',
       class: 'fluid_button fluid_button_download',
-      'aria-label': 'Download video',
+      'aria-label': captions.downloadVideo,
     });
     this.rightContainer.appendChild(this.download);
 

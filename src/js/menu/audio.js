@@ -114,8 +114,8 @@ class Audio {
 
     this.item = selector({
       id: this.id,
-      title: 'Audio',
-      value: 'n/a',
+      title: player.config.captions.audio,
+      value: player.config.captions.notAvailable,
     });
 
     this.page = createElement('ul', {

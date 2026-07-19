@@ -41,8 +41,8 @@ class Quality {
   setupMenu = () => {
     this.item = selector({
       id: this.id,
-      title: 'Quality',
-      value: 'Auto',
+      title: this.player.config.captions.quality,
+      value: this.player.config.captions.auto,
     });
 
     this.page = createElement('ul', {
@@ -101,7 +101,7 @@ class Quality {
       } else if (level.height) {
         title = level.height + 'p';
       } else {
-        title = `Level ${index}`;
+        title = player.config.captions.level(index);
       }
 
       const li = createElement(
@@ -155,7 +155,7 @@ class Quality {
           class: 'cvp_active',
           'data-level': -1,
         },
-        'Auto',
+        player.config.captions.auto,
       );
 
       levels.push(auto);
@@ -185,8 +185,8 @@ class Quality {
       // reset the "auto" label, if a level is selected
       const auto = this.page.querySelector('[data-level="-1"]');
 
-      if (auto && auto.textContent !== 'Auto' && this.current !== -1) {
-        auto.textContent = 'Auto';
+      if (auto && auto.textContent !== player.config.captions.auto && this.current !== -1) {
+        auto.textContent = player.config.captions.auto;
       }
     }
 
@@ -216,7 +216,7 @@ class Quality {
 
     // add the name to the "Auto" option, Ex. "Auto (1080p)"
     if (player.streaming.hls && this.auto && !player.multipleSourceTypes) {
-      qualityLabel = `Auto (${qualityLabel})`;
+      qualityLabel = player.config.captions.autoQuality(qualityLabel);
 
       current = this.page.querySelector('[data-level="-1"]');
       current.textContent = qualityLabel;

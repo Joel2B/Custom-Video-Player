@@ -108,6 +108,7 @@ New options:
 | Option | Default | Description |
 | :--- | :--- | :--- |
 | Debug | false | Display debugging information in the console
+| Locale | 'en' | Player interface language: `en`, `es`, or `auto`. `auto` uses the browser language and falls back to English. Locale is resolved only during initialization. |
 | Storage | { enabled: true, key: 'cvp', expiration: 30, shared: true, } | `enabled`: enables local storage for saving settings. `key`: prefix to be used for each setting. `expiration`: days that settings will last. `shared`: share settings between all instances. |
 | ControlBar | { autoHide: false, autoHideTimeout: 3, animated: true, hideWhenPaused: false, } | `autoHide`: hide controls when the user is inactive. `autoHideTimeout`: seconds before controls hide. `animated`: animate visibility changes. `hideWhenPaused`: allow controls to hide on mouse leave while paused. |
 | Audio | { language: 'auto' } | `language`: sets the default language (if available)

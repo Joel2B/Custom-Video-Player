@@ -33,7 +33,7 @@ class Loop {
 
     const item = switcher({
       id: this.id,
-      title: 'Loop',
+      title: player.config.captions.loop,
       enabled: player.storage.get(this.id),
       instance: player,
     });

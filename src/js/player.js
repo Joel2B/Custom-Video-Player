@@ -43,6 +43,7 @@ import { getMimetype } from './utils/mimetypes';
 import { clone } from './utils/object';
 import is from './utils/is';
 import delay from './utils/promise';
+import { resolveLocale } from './locales';
 
 class CVP {
   constructor(target, options) {
@@ -67,9 +68,12 @@ class CVP {
 
     // Set config
     this.config = clone(defaults);
+    const locale = resolveLocale(options.locale);
+    this.overwrite(locale, this.config);
 
     // Overwrite config
     this.overwrite(options, this.config);
+    this.config.locale = locale.locale;
 
     if (FP_ENV === 'development') {
       this.config.debug = true;
@@ -203,6 +207,7 @@ class CVP {
   setupWrapper = () => {
     this.wrapper = createElement('div', {
       class: 'fluid_video_wrapper',
+      lang: this.config.locale,
     });
 
     toggleClass(this.wrapper, 'fluid_player_layout_' + this.config.layoutControls.layout, true);

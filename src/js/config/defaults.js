@@ -1,4 +1,7 @@
+import en from '../locales/en';
+
 const defaults = {
+  locale: 'en',
   layoutControls: {
     primaryColor: false,
     posterImage: false,
@@ -99,24 +102,7 @@ const defaults = {
       links: [],
     },
   },
-  captions: {
-    play: 'Play',
-    pause: 'Pause',
-    mute: 'Mute',
-    unmute: 'Unmute',
-    settings: 'Settings',
-    theatre: 'Theatre',
-    exitTheatre: 'Exit Theatre',
-    subtitles: 'Subtitles',
-    fullscreen: 'Fullscreen',
-    exitFullscreen: 'Exit Fullscreen',
-    shortcutsInfo: 'Keyboard Shortcuts',
-    mediaErrorAborted: 'Video loading was aborted.',
-    mediaErrorNetwork: 'A network error prevented the video from loading.',
-    mediaErrorDecode: 'The video could not be decoded.',
-    mediaErrorUnsupported: 'This video format is not supported.',
-    mediaErrorUnknown: 'The video could not be played.',
-  },
+  captions: en,
   onBeforeXMLHttpRequestOpen: (request) => {},
   onBeforeXMLHttpRequest: (request) => {},
   hls: {

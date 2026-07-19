@@ -44,6 +44,7 @@ class Mobile {
   };
 
   controls = () => {
+    const captions = this.player.config.captions;
     this.container = createElement('div', {
       class: 'fluid_mobile_controls',
     });
@@ -107,7 +108,7 @@ class Mobile {
       {
         class: 'fluid_forward_rewind_info_text',
       },
-      'Double tap left or right to skip 10 seconds',
+      captions.doubleTap(this.player.config.layoutControls.controlForwardRewind.forward),
     );
     forwardRewindInfo.appendChild(forwardRewindInfoText);
 
@@ -254,7 +255,9 @@ class Mobile {
             player.currentTime += timeForward;
           }
 
-          this.forwardText.textContent = `${this.totalForward + this.currentTimeForward} seconds`;
+          this.forwardText.textContent = player.config.captions.seconds(
+            this.totalForward + this.currentTimeForward,
+          );
 
           toggleClass(this.fastForward, 'fluid_run_animation', true);
         } else {
@@ -275,7 +278,9 @@ class Mobile {
             player.currentTime -= timeRewind;
           }
 
-          this.rewindText.textContent = `-${this.totalRewind + this.currentTimeRewind} seconds`;
+          this.rewindText.textContent = `-${player.config.captions.seconds(
+            this.totalRewind + this.currentTimeRewind,
+          )}`;
 
           toggleClass(this.fastRewind, 'fluid_run_animation', true);
         }

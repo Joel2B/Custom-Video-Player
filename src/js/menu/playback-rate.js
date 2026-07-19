@@ -40,8 +40,8 @@ class Speed {
 
     this.item = selector({
       id: this.id,
-      title: 'Speed',
-      value: 'n/a',
+      title: player.config.captions.speed,
+      value: player.config.captions.notAvailable,
     });
 
     this.page = createElement('ul', {
@@ -63,7 +63,7 @@ class Speed {
         {
           'data-speed': value,
         },
-        value === 1 ? 'Normal' : value.toString(),
+        value === 1 ? player.config.captions.normal : value.toString(),
       );
 
       items.appendChild(option);

@@ -38,7 +38,7 @@ class Autoplay {
 
     const item = switcher({
       id: this.id,
-      title: 'Autoplay',
+      title: player.config.captions.autoplay,
       enabled: player.storage.get(this.id),
       instance: player,
     });

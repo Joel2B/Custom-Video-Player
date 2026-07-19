@@ -73,7 +73,7 @@ class Menu {
         {
           class: 'cvp_header',
         },
-        'Settings',
+        this.player.config.captions.settings,
       ),
     );
 
@@ -103,7 +103,7 @@ class Menu {
       class: 'cvp_header',
       role: 'button',
       tabindex: 0,
-      'aria-label': 'Back to settings',
+      'aria-label': this.player.config.captions.backToSettings,
     });
 
     // Right container -> Menu -> background -> subpages -> content
@@ -134,7 +134,7 @@ class Menu {
       this.optionsBtn = createElement('button', {
         type: 'button',
         class: 'fluid_options_btn',
-        'aria-label': this.player.config.captions.settings || 'Settings',
+        'aria-label': this.player.config.captions.settings,
         'aria-expanded': false,
       });
 
@@ -158,7 +158,7 @@ class Menu {
       this.btn = createElement('button', {
         type: 'button',
         class: 'fluid_button fluid_button_main_menu',
-        'aria-label': this.player.config.captions.settings || 'Settings',
+        'aria-label': this.player.config.captions.settings,
         'aria-expanded': false,
       });
 
@@ -167,7 +167,7 @@ class Menu {
         {
           class: 'fluid_button_tooltip',
         },
-        this.player.config.captions.settings || 'Settings',
+        this.player.config.captions.settings,
       );
 
       this.btn.appendChild(this.menuTooltip);

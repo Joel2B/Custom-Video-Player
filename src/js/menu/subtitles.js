@@ -296,8 +296,8 @@ class Subtitles {
 
     this.item = selector({
       id: this.id,
-      title: 'Subtitles',
-      value: 'Off',
+      title: player.config.captions.subtitles,
+      value: player.config.captions.off,
     });
 
     // expand the main menu
@@ -386,7 +386,7 @@ class Subtitles {
           class: 'cvp_active',
           'data-track': -1,
         },
-        'Off',
+        player.config.captions.off,
       ),
     );
 

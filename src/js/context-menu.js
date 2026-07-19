@@ -92,7 +92,7 @@ class ContextMenu {
     on.call(player, this.mute, 'click', player.toggleMute);
     this.list.appendChild(this.mute);
 
-    this.shortcuts = createElement('li', { role: 'menuitem', tabindex: 0 }, config.captions.shortcutsInfo);
+    this.shortcuts = createElement('li', { role: 'menuitem', tabindex: 0 }, config.captions.shortcuts.title);
     on.call(player, this.shortcuts, 'click', player.shortcuts.open);
     this.list.appendChild(this.shortcuts);
 
