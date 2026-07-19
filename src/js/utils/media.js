@@ -16,6 +16,10 @@ export function isMp4(url) {
   return url.includes('.mp4');
 }
 
+export function isWebM(url) {
+  return url.includes('.webm');
+}
+
 export function isSource(url) {
-  return isHLS(url) || isDASH(url) || isMKV(url) || isMp4(url);
+  return isHLS(url) || isDASH(url) || isMKV(url) || isMp4(url) || isWebM(url);
 }

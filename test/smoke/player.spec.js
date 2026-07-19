@@ -1,4 +1,31 @@
 const { expect, test } = require('@playwright/test');
+const { loadPlayer } = require('./helpers');
+
+test('plays native WebM sources with explicit and inferred MIME types', async ({ page }) => {
+  await loadPlayer(
+    page,
+    `<video id="typed" muted width="320" height="180">
+      <source src="/static/sample.webm" type="video/webm">
+    </video>
+    <video id="inferred" muted width="320" height="180">
+      <source src="/static/sample.webm">
+    </video>`,
+  );
+
+  await page.evaluate(async () => {
+    const typed = window.fluidPlayer('typed');
+    const inferred = window.fluidPlayer('inferred');
+    await Promise.all([typed.play(), inferred.play()]);
+  });
+
+  await expect
+    .poll(() => page.evaluate(() => [...document.querySelectorAll('video')].every((video) => video.currentTime > 0)))
+    .toBe(true);
+
+  expect(
+    await page.evaluate(() => window.fluidPlayerDebug.slice(-2).map(({ internals }) => internals.currentSource.type)),
+  ).toEqual(['video/webm', 'video/webm']);
+});
 
 test('browser bundle initializes, emits events, destroys, and reinitializes', async ({ page }) => {
   await page.goto('/');
