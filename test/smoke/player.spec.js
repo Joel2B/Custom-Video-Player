@@ -27,6 +27,76 @@ test('plays native WebM sources with explicit and inferred MIME types', async ({
   ).toEqual(['video/webm', 'video/webm']);
 });
 
+for (const [code, name] of [
+  [2, 'network'],
+  [3, 'decode'],
+  [4, 'unsupported format'],
+]) {
+  test(`${name} errors fall back without showing a final error`, async ({ page }) => {
+    await loadPlayer(
+      page,
+      `<video id="player" muted width="320" height="180">
+        <source src="/static/sample.webm?broken" type="video/webm">
+        <source src="/static/sample.webm" type="video/webm">
+      </video>`,
+    );
+
+    await page.evaluate((errorCode) => {
+      window.fluidPlayer('player');
+      const media = document.getElementById('player');
+      Object.defineProperty(media, 'error', { configurable: true, value: { code: errorCode } });
+      media.dispatchEvent(new Event('error'));
+    }, code);
+
+    await expect
+      .poll(() =>
+        page.evaluate(() => window.fluidPlayerDebug.at(-1).internals.currentSource.src.endsWith('/static/sample.webm')),
+      )
+      .toBe(true);
+    await expect(page.locator('.fluid_video_error')).toBeHidden();
+  });
+}
+
+test('rejected source extension shows unsupported format error', async ({ page }) => {
+  await loadPlayer(
+    page,
+    `<video id="player" width="320" height="180">
+      <source src="/video.avi" type="video/x-msvideo">
+    </video>`,
+  );
+  await page.evaluate(() => window.fluidPlayer('player'));
+
+  await expect(page.locator('.fluid_video_error')).toHaveText('This video format is not supported.');
+  await expect(page.locator('.fluid_video_error')).toBeVisible();
+});
+
+test('final media error shows its configurable reason and clears on new source', async ({ page }) => {
+  await loadPlayer(
+    page,
+    `<video id="player" muted width="320" height="180">
+      <source src="/static/sample.webm?broken" type="video/webm">
+    </video>`,
+  );
+
+  await page.evaluate(() => {
+    window.playerApi = window.fluidPlayer('player', {
+      captions: { mediaErrorUnsupported: 'Custom unsupported format message.' },
+    });
+    const media = document.getElementById('player');
+    Object.defineProperty(media, 'error', { configurable: true, value: { code: 4 } });
+    media.dispatchEvent(new Event('error'));
+  });
+
+  const error = page.locator('.fluid_video_error');
+  await expect(error).toBeVisible();
+  await expect(error).toHaveAttribute('role', 'alert');
+  await expect(error).toHaveAttribute('aria-live', 'assertive');
+  await expect(error).toHaveText('Custom unsupported format message.');
+
+  await page.evaluate(() => window.playerApi.src({ src: '/static/sample.webm', type: 'video/webm' }));
+  await expect(error).toBeHidden();
+});
+
 test('browser bundle initializes, emits events, destroys, and reinitializes', async ({ page }) => {
   await page.goto('/');
   await page.setContent('<video id="player" controls width="640" height="360"></video>');

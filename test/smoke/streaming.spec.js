@@ -86,6 +86,22 @@ test('failed streaming script falls back to next source', async ({ page }) => {
     .toBe('https://example.test/fallback.mp4');
 });
 
+test('failed streaming script without fallback shows final error', async ({ page }) => {
+  await page.route('**/missing-hls.js', (route) => route.fulfill({ status: 404, body: '' }));
+  await loadPlayer(page, video('https://example.test/video.m3u8', 'application/x-mpegURL'));
+
+  await page.evaluate(() =>
+    window.fluidPlayer('player', {
+      hls: { url: '/missing-hls.js' },
+    }),
+  );
+
+  await expect(page.locator('.fluid_video_error')).toHaveText(
+    'A network error prevented the video from loading.',
+  );
+  await expect(page.locator('.fluid_video_error')).toBeVisible();
+});
+
 test('failed DASH script falls back to next source', async ({ page }) => {
   await page.route('**/missing-dash.js', (route) => route.fulfill({ status: 404, body: '' }));
 

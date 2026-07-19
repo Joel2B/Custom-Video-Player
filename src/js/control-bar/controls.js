@@ -12,6 +12,7 @@ class Controls {
 
   setup = () => {
     insertAfter(this.loader, this.player.media);
+    insertAfter(this.error, this.loader);
 
     if (!this.player.mobile) {
       insertAfter(this.container, this.player.media);
@@ -45,6 +46,13 @@ class Controls {
       }),
     );
     this.loader.appendChild(loaderSvg);
+
+    this.error = createElement('div', {
+      class: 'fluid_video_error',
+      role: 'alert',
+      'aria-live': 'assertive',
+      hidden: '',
+    });
 
     // Container of the controls
     this.container = createElement('div', {

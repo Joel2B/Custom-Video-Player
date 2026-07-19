@@ -280,6 +280,7 @@ class Hlsjs {
         default:
           // cannot recover
           this.hls.destroy();
+          player.failSource(player.config.captions.mediaErrorUnknown);
           break;
       }
     });

@@ -56,6 +56,7 @@ class Listeners extends Update {
 
     // Display duration
     on.call(player, player.media, 'durationchange loadeddata loadedmetadata', (event) => {
+      player.isSwitchingSource = false;
       this.duration();
 
       // Make progress smoother in videos with short duration
@@ -106,12 +107,21 @@ class Listeners extends Update {
     });
 
     on.call(player, player.media, 'error', () => {
-      player.debug.warn(player.media.error);
+      const error = player.media.error;
+      player.debug.warn(error);
 
-      // Fallback sources are mixed with the sources of different quality
-      if (player.media.error.code === 4) {
-        player.nextSource();
+      if (!error || (error.code === 1 && player.isSwitchingSource)) {
+        return;
       }
+
+      const messages = {
+        1: player.config.captions.mediaErrorAborted,
+        2: player.config.captions.mediaErrorNetwork,
+        3: player.config.captions.mediaErrorDecode,
+        4: player.config.captions.mediaErrorUnsupported,
+      };
+
+      player.failSource(messages[error.code]);
     });
   };
 

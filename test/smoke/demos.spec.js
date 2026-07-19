@@ -20,6 +20,7 @@ const demos = [
   'vod_basic_vtt.html',
   'vod_basic_vtt_static.html',
   'vod_extended.html',
+  'vod_error.html',
   'vod_responsive.html',
 ];
 
@@ -46,6 +47,13 @@ for (const demo of demos) {
       await expect.poll(() => page.evaluate(() => Boolean(window.fluidPlayerDebug.at(-1).internals.streaming.hls))).toBe(true);
       await page.locator('#start-loading').click();
       expect(await page.evaluate(() => window.fluidPlayerDebug.at(-1).internals.streaming.hls.startLoadCalled)).toBe(true);
+    }
+
+    if (demo === 'vod_error.html') {
+      const error = page.locator('.fluid_video_error');
+      await expect(error).toBeVisible();
+      await expect(error).toHaveAttribute('role', 'alert');
+      await expect(error).toHaveText('This video format is not supported.');
     }
 
     expect(errors).toEqual([]);

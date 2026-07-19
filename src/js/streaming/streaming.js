@@ -41,7 +41,10 @@ class Streaming {
 
           if (generation === this.generation && player.ready) {
             controller.detach();
-            player.nextSource();
+            const message = /not supported/i.test(error.message)
+              ? player.config.captions.mediaErrorUnsupported
+              : player.config.captions.mediaErrorNetwork;
+            player.failSource(message);
           }
         });
     };

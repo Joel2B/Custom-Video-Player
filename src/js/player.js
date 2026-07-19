@@ -351,6 +351,7 @@ class CVP {
       return;
     }
 
+    const hasSources = sources.length > 0;
     this.sources = [];
 
     for (const source of sources) {
@@ -383,6 +384,10 @@ class CVP {
     }
 
     if (this.sources.length === 0) {
+      if (hasSources) {
+        this.failSource(this.config.captions.mediaErrorUnsupported);
+      }
+
       return;
     }
 
@@ -439,12 +444,13 @@ class CVP {
     const src = source.src;
 
     this.debug.log('Set source: ', src);
+    this.showError();
 
-    this.currentSource = source;
-
-    if (this.firstPlayLaunched) {
+    if (this.currentSource.src) {
       this.isSwitchingSource = true;
     }
+
+    this.currentSource = source;
 
     this.streaming.detach();
 
@@ -490,7 +496,7 @@ class CVP {
       if (this.sources[i].src === this.currentSource.src && this.sources[i - 1].src) {
         this.source = this.sources[i - 1];
 
-        if (!isHLS(this.source) && !isDASH(this.source)) {
+        if (!isHLS(this.currentSource.src) && !isDASH(this.currentSource.src)) {
           on.call(this, this.media, 'canplay', () => {
             if (this.autoPlay.applied) {
               this.autoPlay.applied = false;
@@ -501,9 +507,29 @@ class CVP {
           this.media.load();
         }
 
-        return;
+        return true;
       }
     }
+
+    return false;
+  };
+
+  showError = (message = '') => {
+    if (!this.controls?.error) {
+      return;
+    }
+
+    this.controls.error.textContent = message;
+    this.controls.error.hidden = !message;
+  };
+
+  failSource = (message) => {
+    if (this.nextSource()) {
+      return;
+    }
+
+    this.toggleLoader(false);
+    this.showError(message || this.config.captions.mediaErrorUnknown);
   };
 
   // "API" Functions
