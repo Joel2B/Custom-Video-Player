@@ -9,7 +9,7 @@ const video = (source, type, fallback = '') => `
 `;
 
 test('HLS initializes local adapter and detaches cleanly', async ({ page }) => {
-  await loadPlayer(page, video('https://example.test/video.m3u8', 'application/x-mpegURL'));
+  await loadPlayer(page, video('https://example.test/media/hls', 'application/x-mpegURL'));
 
   await page.evaluate(() =>
     window.fluidPlayer('player', {
@@ -30,14 +30,14 @@ test('HLS initializes local adapter and detaches cleanly', async ({ page }) => {
     };
   });
 
-  expect(state).toEqual({ source: 'https://example.test/video.m3u8', sameInstance: true });
+  expect(state).toEqual({ source: 'https://example.test/media/hls', sameInstance: true });
 
   await page.evaluate(() => window.fluidPlayerDebug.at(-1).instance.destroy());
   expect(await page.evaluate(() => window.mockHlsInstances[0].destroyed)).toBe(true);
 });
 
 test('DASH initializes local adapter and detaches cleanly', async ({ page }) => {
-  await loadPlayer(page, video('https://example.test/video.mpd', 'application/dash+xml'));
+  await loadPlayer(page, video('https://example.test/media/dash', 'application/dash+xml'));
 
   await page.evaluate(() =>
     window.fluidPlayer('player', {
@@ -57,7 +57,7 @@ test('DASH initializes local adapter and detaches cleanly', async ({ page }) => 
     };
   });
 
-  expect(state).toEqual({ source: 'https://example.test/video.mpd', sameInstance: true });
+  expect(state).toEqual({ source: 'https://example.test/media/dash', sameInstance: true });
 
   await page.evaluate(() => window.fluidPlayerDebug.at(-1).instance.destroy());
   expect(await page.evaluate(() => window.mockDashInstances[0].resetCalled)).toBe(true);

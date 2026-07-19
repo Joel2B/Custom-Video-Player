@@ -158,7 +158,7 @@ class PlayPause {
     }
 
     if (!player.allowPlayStream) {
-      if (isHLS(player.currentSource.src)) {
+      if (isHLS(player.currentSource.src, player.currentSource.type)) {
         player.playStream = true;
         return;
       }

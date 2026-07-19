@@ -2,6 +2,9 @@ const { expect, test } = require('@playwright/test');
 const { loadPlayer } = require('./helpers');
 
 test('plays native WebM sources with explicit and inferred MIME types', async ({ page }) => {
+  await page.route('**/media/typed', (route) =>
+    route.fulfill({ contentType: 'video/webm', path: require.resolve('../static/sample.webm') }),
+  );
   await loadPlayer(
     page,
     `<video id="typed" muted width="320" height="180">
@@ -9,13 +12,17 @@ test('plays native WebM sources with explicit and inferred MIME types', async ({
     </video>
     <video id="inferred" muted width="320" height="180">
       <source src="/static/sample.webm">
+    </video>
+    <video id="opaque" muted width="320" height="180">
+      <source src="/media/typed" type='video/webm; codecs="vp9, opus"'>
     </video>`,
   );
 
   await page.evaluate(async () => {
     const typed = window.fluidPlayer('typed');
     const inferred = window.fluidPlayer('inferred');
-    await Promise.all([typed.play(), inferred.play()]);
+    const opaque = window.fluidPlayer('opaque');
+    await Promise.all([typed.play(), inferred.play(), opaque.play()]);
   });
 
   await expect
@@ -23,8 +30,8 @@ test('plays native WebM sources with explicit and inferred MIME types', async ({
     .toBe(true);
 
   expect(
-    await page.evaluate(() => window.fluidPlayerDebug.slice(-2).map(({ internals }) => internals.currentSource.type)),
-  ).toEqual(['video/webm', 'video/webm']);
+    await page.evaluate(() => window.fluidPlayerDebug.slice(-3).map(({ internals }) => internals.currentSource.type)),
+  ).toEqual(['video/webm', 'video/webm', 'video/webm']);
 });
 
 for (const [code, name] of [
@@ -68,6 +75,13 @@ test('rejected source extension shows unsupported format error', async ({ page }
 
   await expect(page.locator('.fluid_video_error')).toHaveText('This video format is not supported.');
   await expect(page.locator('.fluid_video_error')).toBeVisible();
+});
+
+test('source without extension or type shows unsupported format error', async ({ page }) => {
+  await loadPlayer(page, '<video id="player"><source src="/media/unknown"></video>');
+  await page.evaluate(() => window.fluidPlayer('player'));
+
+  await expect(page.locator('.fluid_video_error')).toHaveText('This video format is not supported.');
 });
 
 test('final media error shows its configurable reason and clears on new source', async ({ page }) => {

@@ -355,13 +355,13 @@ class CVP {
     this.sources = [];
 
     for (const source of sources) {
-      if (!source.src || !isSource(source.src)) {
+      if (!source.src) {
         continue;
       }
 
-      const type = (source.type || '').toLowerCase() || getMimetype(source.src);
+      const type = getMimetype(source.src) || (source.type || '').toLowerCase().split(';')[0].trim();
 
-      if (!type) {
+      if (!type || !isSource(source.src, type)) {
         continue;
       }
 
@@ -399,8 +399,13 @@ class CVP {
 
     this.sources.reverse();
 
-    if (!isHLS(this.currentSource.src) && !isDASH(this.currentSource.src)) {
-      this.multipleSourceTypes = this.sources.some((source) => isHLS(source.src) || isDASH(source.src));
+    if (
+      !isHLS(this.currentSource.src, this.currentSource.type) &&
+      !isDASH(this.currentSource.src, this.currentSource.type)
+    ) {
+      this.multipleSourceTypes = this.sources.some(
+        (source) => isHLS(source.src, source.type) || isDASH(source.src, source.type),
+      );
 
       this.quality.add(this.sources);
 
@@ -454,7 +459,7 @@ class CVP {
 
     this.streaming.detach();
 
-    if (isHLS(src) || isDASH(src)) {
+    if (isHLS(src, source.type) || isDASH(src, source.type)) {
       this.streaming.init();
     } else {
       this.media.src = src;
@@ -496,7 +501,10 @@ class CVP {
       if (this.sources[i].src === this.currentSource.src && this.sources[i - 1].src) {
         this.source = this.sources[i - 1];
 
-        if (!isHLS(this.currentSource.src) && !isDASH(this.currentSource.src)) {
+        if (
+          !isHLS(this.currentSource.src, this.currentSource.type) &&
+          !isDASH(this.currentSource.src, this.currentSource.type)
+        ) {
           on.call(this, this.media, 'canplay', () => {
             if (this.autoPlay.applied) {
               this.autoPlay.applied = false;
