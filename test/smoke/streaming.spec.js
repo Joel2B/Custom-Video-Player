@@ -96,9 +96,7 @@ test('failed streaming script without fallback shows final error', async ({ page
     }),
   );
 
-  await expect(page.locator('.fluid_video_error')).toHaveText(
-    'A network error prevented the video from loading.',
-  );
+  await expect(page.locator('.fluid_video_error')).toHaveText('A network error prevented the video from loading.');
   await expect(page.locator('.fluid_video_error')).toBeVisible();
 });
 
