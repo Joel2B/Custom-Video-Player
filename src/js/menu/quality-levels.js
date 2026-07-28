@@ -80,6 +80,15 @@ class Quality {
     this.isMenuReady = true;
   };
 
+  reset = () => {
+    this.player.menu.remove(this.id);
+    this.page?.remove();
+    this.isMenuReady = false;
+    this.current = null;
+    this.auto = false;
+    this.sources = [];
+  };
+
   add = (sources) => {
     const { player } = this;
 

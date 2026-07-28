@@ -56,6 +56,10 @@ class Update {
 
     emptyEl(buffer);
 
+    if (duration <= 0) {
+      return;
+    }
+
     for (let i = 0; i < buffered.length; i++) {
       const start = buffered.start(i);
       const end = buffered.end(i);

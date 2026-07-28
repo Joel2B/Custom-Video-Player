@@ -16,7 +16,7 @@ class PreviewTime {
     const width = progress.clientWidth;
     let offsetX = getEventOffsetX(progress, event);
 
-    if (offsetX < 0 || offsetX > width) {
+    if (width <= 0 || !Number.isFinite(offsetX) || offsetX < 0 || offsetX > width) {
       return;
     }
 

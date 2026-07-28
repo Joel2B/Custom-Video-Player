@@ -34,6 +34,223 @@ test('plays native WebM sources with explicit and inferred MIME types', async ({
   ).toEqual(['video/webm', 'video/webm', 'video/webm']);
 });
 
+test('accepts native MIME types supported by the media element', async ({ page }) => {
+  await loadPlayer(page, '<video id="player" width="320" height="180"></video>');
+
+  const state = await page.evaluate(() => {
+    const media = document.getElementById('player');
+    media.canPlayType = (type) => (type === 'video/ogg' ? 'maybe' : '');
+    const api = window.fluidPlayer('player');
+    api.src([
+      { src: '/video.ogv', type: 'video/ogg' },
+      { src: '/video.avi', type: 'video/x-msvideo' },
+    ]);
+    const player = window.fluidPlayerDebug.at(-1).internals;
+    return { sources: player.sources, currentSource: player.currentSource };
+  });
+
+  expect(state.sources).toHaveLength(1);
+  expect(state.currentSource).toMatchObject({ src: '/video.ogv', type: 'video/ogg' });
+});
+
+test('uses declared codecs when checking native source support', async ({ page }) => {
+  await loadPlayer(page, '<video id="player" width="320" height="180"></video>');
+
+  const state = await page.evaluate(() => {
+    const media = document.getElementById('player');
+    const checked = [];
+    media.canPlayType = (type) => {
+      checked.push(type);
+      return type.includes('unsupported') ? '' : 'maybe';
+    };
+    const api = window.fluidPlayer('player');
+    api.src([
+      { src: '/unsupported.mp4', type: 'video/mp4; codecs="unsupported"' },
+      { src: '/supported.mp4', type: 'video/mp4; codecs="avc1.42E01E"' },
+    ]);
+    return {
+      checked,
+      sources: window.fluidPlayerDebug.at(-1).internals.sources,
+    };
+  });
+
+  expect(state.checked).toEqual(['video/mp4; codecs="unsupported"', 'video/mp4; codecs="avc1.42E01E"']);
+  expect(state.sources).toHaveLength(1);
+  expect(state.sources[0].src).toBe('/supported.mp4');
+});
+
+test('infers source MIME type when URL contains query and fragment', async ({ page }) => {
+  await loadPlayer(page, '<video id="player" width="320" height="180"></video>');
+
+  const source = await page.evaluate(() => {
+    const api = window.fluidPlayer('player');
+    api.src({ src: '/static/sample.webm?token=test#t=5' });
+    return window.fluidPlayerDebug.at(-1).internals.currentSource;
+  });
+
+  expect(source).toMatchObject({
+    src: '/static/sample.webm?token=test#t=5',
+    type: 'video/webm',
+  });
+});
+
+test('query and fragment extensions do not override native source type', async ({ page }) => {
+  await loadPlayer(page, '<video id="player" width="320" height="180"></video>');
+
+  const source = await page.evaluate(() => {
+    const api = window.fluidPlayer('player');
+    api.src({ src: '/movie.mp4?redirect=/manifest.mpd#note=.m3u8', type: 'video/mp4' });
+    const player = window.fluidPlayerDebug.at(-1).internals;
+    return {
+      source: player.currentSource,
+      hlsController: Boolean(player.streaming.hlsController),
+      dashController: Boolean(player.streaming.dashController),
+    };
+  });
+
+  expect(source).toEqual({
+    source: { src: '/movie.mp4?redirect=/manifest.mpd#note=.m3u8', type: 'video/mp4', hd: undefined },
+    hlsController: false,
+    dashController: false,
+  });
+});
+
+test('initial source is not treated as a source switch', async ({ page }) => {
+  await loadPlayer(page, '<video id="player"><source src="/static/sample.webm" type="video/webm"></video>');
+
+  expect(
+    await page.evaluate(() => {
+      window.fluidPlayer('player');
+      return window.fluidPlayerDebug.at(-1).internals.isSwitchingSource;
+    }),
+  ).toBe(false);
+});
+
+test('empty source list clears playback and accepts a replacement source', async ({ page }) => {
+  await loadPlayer(page, '<video id="player"><source src="/static/sample.webm" type="video/webm"></video>');
+
+  const cleared = await page.evaluate(() => {
+    const api = window.fluidPlayer('player');
+    const player = window.fluidPlayerDebug.at(-1).internals;
+    let pauseCalls = 0;
+    let loadCalls = 0;
+    player.media.pause = () => pauseCalls++;
+    player.media.load = () => loadCalls++;
+    Object.defineProperty(player.media, 'paused', { configurable: true, value: false });
+
+    api.src([]);
+
+    return {
+      pauseCalls,
+      loadCalls,
+      sourceAttribute: player.media.getAttribute('src'),
+      sources: player.sources,
+      currentSource: player.currentSource,
+      streamReady: player.streamReady,
+    };
+  });
+
+  expect(cleared).toEqual({
+    pauseCalls: 1,
+    loadCalls: 1,
+    sourceAttribute: null,
+    sources: [],
+    currentSource: { src: '', type: '', title: '', hd: false },
+    streamReady: false,
+  });
+
+  const replacement = await page.evaluate(() => {
+    window.playerApi = window.fluidPlayerDebug.at(-1).instance;
+    window.playerApi.src({ src: '/static/sample.webm', type: 'video/webm' });
+    return window.fluidPlayerDebug.at(-1).internals.currentSource;
+  });
+  expect(replacement).toMatchObject({ src: '/static/sample.webm', type: 'video/webm' });
+});
+
+test('empty source list clears controls and rebuilds native quality menu', async ({ page }) => {
+  await loadPlayer(
+    page,
+    `<video id="player">
+      <source src="/first.webm" type="video/webm" title="First">
+      <source src="/second.webm" type="video/webm" title="Second">
+    </video>`,
+  );
+
+  const state = await page.evaluate(() => {
+    const api = window.fluidPlayer('player');
+    const player = window.fluidPlayerDebug.at(-1).internals;
+    player.controls.playProgress.style.transform = 'scaleX(0.5)';
+    player.controls.scrubberProgressContainer.style.transform = 'translateX(50px)';
+
+    const source = document.createElement('source');
+    source.src = '/residual.webm';
+    player.media.appendChild(source);
+    api.src([]);
+    api.src([
+      { src: '/third.webm', type: 'video/webm', title: 'Third' },
+      { src: '/fourth.webm', type: 'video/webm', title: 'Fourth' },
+    ]);
+
+    return {
+      sourceElements: player.media.querySelectorAll('source').length,
+      qualityItems: player.wrapper.querySelectorAll('.cvp_quality li').length,
+      qualityButtons: player.wrapper.querySelectorAll('.cvp_qualityLevels').length,
+      play: player.controls.playProgress.style.transform,
+      scrubber: player.controls.scrubberProgressContainer.style.transform,
+    };
+  });
+
+  expect(state).toEqual({
+    sourceElements: 0,
+    qualityItems: 2,
+    qualityButtons: 1,
+    play: 'scaleX(0)',
+    scrubber: 'translateX(0px)',
+  });
+});
+
+test('progress calculations stay finite without duration or width', async ({ page }) => {
+  await loadPlayer(page, '<video id="player" width="320" height="180"></video>');
+  await page.evaluate(() => window.fluidPlayer('player'));
+
+  await expect
+    .poll(() => page.evaluate(() => window.fluidPlayerDebug?.at(-1)?.internals.preview.current.constructor.name))
+    .toBe('PreviewTime');
+
+  const state = await page.evaluate(() => {
+    const player = window.fluidPlayerDebug.at(-1).internals;
+    Object.defineProperty(player.media, 'duration', { configurable: true, value: 0 });
+    Object.defineProperty(player.media, 'currentTime', { configurable: true, value: 0 });
+    Object.defineProperty(player.controls.progressContainer, 'clientWidth', { configurable: true, value: 0 });
+    Object.defineProperty(player.media, 'buffered', {
+      configurable: true,
+      value: { length: 1, start: () => 0, end: () => 1 },
+    });
+
+    player.progressBar.positionX = 1;
+    player.progressBar.update(true);
+    player.progressBar.hover({ clientX: 1 });
+    player.listeners.buffer();
+    player.preview.current.move({ clientX: 1 });
+
+    return {
+      play: player.controls.playProgress.style.transform,
+      scrubber: player.controls.scrubberProgressContainer.style.transform,
+      hover: player.controls.hoverProgress.style.transform,
+      buffer: player.controls.loadProgress.innerHTML,
+      previewLeft: player.preview.current.preview.style.left,
+      ariaMax: player.controls.progressContainer.getAttribute('aria-valuemax'),
+      ariaNow: player.controls.progressContainer.getAttribute('aria-valuenow'),
+    };
+  });
+
+  expect(JSON.stringify(state)).not.toMatch(/NaN|Infinity/);
+  expect(state).toMatchObject({ play: 'scaleX(0)', scrubber: 'translateX(0px)', hover: 'scaleX(0)' });
+  expect(state.buffer).toBe('');
+  expect(state.ariaMax).toBe('0');
+  expect(state.ariaNow).toBe('0');
+});
+
 for (const [code, name] of [
   [2, 'network'],
   [3, 'decode'],

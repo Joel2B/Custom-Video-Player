@@ -381,16 +381,41 @@ class CVP {
     }
 
     const hasSources = sources.length > 0;
+    const hadSource = Boolean(this.currentSource.src || this.media.currentSrc || this.media.getAttribute('src'));
     this.sources = [];
+
+    if (!hasSources) {
+      if (hadSource) {
+        this.pause();
+        this.streaming.detach();
+        this.media.removeAttribute('src');
+        this.media.load();
+      }
+      this.media.querySelectorAll('source').forEach((source) => source.remove());
+      this.currentSource = { src: '', type: '', title: '', hd: false };
+      this.multipleSourceTypes = false;
+      this.streamReady = false;
+      this.sourceFailed = false;
+      this.isSwitchingSource = false;
+      this.autoPlay.applied = false;
+      this.quality.reset();
+      this.progressBar.update();
+      this.listeners.time();
+      this.listeners.duration();
+      this.listeners.buffer();
+      this.showError();
+      return;
+    }
 
     for (const source of sources) {
       if (!source.src) {
         continue;
       }
 
-      const type = getMimetype(source.src) || (source.type || '').toLowerCase().split(';')[0].trim();
+      const capabilityType = (source.type || '').trim();
+      const type = getMimetype(source.src) || capabilityType.toLowerCase().split(';')[0].trim();
 
-      if (!type || !isSource(source.src, type)) {
+      if (!type || !isSource(source.src, type, this.media, capabilityType || type)) {
         continue;
       }
 
@@ -422,9 +447,7 @@ class CVP {
 
     this.multipleSourceTypes = false;
 
-    this.currentSource = this.sources[0];
-
-    this.source = this.currentSource;
+    this.source = this.sources[0];
 
     this.sources.reverse();
 
@@ -543,7 +566,7 @@ class CVP {
   // This is called when a media type is unsupported
   // We'll find the current source and try set the next source if it exists
   nextSource = () => {
-    this.menu.remove('qualityLevels');
+    this.quality.reset();
 
     for (let i = this.sources.length - 1; i > 0; i--) {
       if (this.sources[i].src === this.currentSource.src && this.sources[i - 1].src) {

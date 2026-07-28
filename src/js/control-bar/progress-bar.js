@@ -19,20 +19,22 @@ class ProgressBar {
     const { player } = this;
     const { progressContainer, playProgress, scrubberProgressContainer } = player.controls;
     const width = progressContainer.clientWidth;
+    const duration = player.duration;
 
-    if (seeking) {
+    if (seeking && width > 0 && duration > 0) {
       this.positionX = Math.max(Math.min(this.positionX, width), 0);
-      player.currentTime = (player.duration * this.positionX) / width;
+      player.currentTime = (duration * this.positionX) / width;
     }
 
-    const scaleX = Math.min(player.currentTime / player.duration, 1);
+    const currentTime = Number.isFinite(player.currentTime) ? player.currentTime : 0;
+    const scaleX = duration > 0 ? Math.min(Math.max(currentTime / duration, 0), 1) : 0;
     const translateX = scaleX * width;
 
     playProgress.style.transform = `scaleX(${scaleX})`;
     scrubberProgressContainer.style.transform = `translateX(${translateX}px)`;
-    progressContainer.setAttribute('aria-valuemax', String(Math.round(player.duration)));
-    progressContainer.setAttribute('aria-valuenow', String(Math.round(player.currentTime)));
-    progressContainer.setAttribute('aria-valuetext', player.config.captions.seconds(Math.round(player.currentTime)));
+    progressContainer.setAttribute('aria-valuemax', String(Math.round(duration)));
+    progressContainer.setAttribute('aria-valuenow', String(Math.round(currentTime)));
+    progressContainer.setAttribute('aria-valuetext', player.config.captions.seconds(Math.round(currentTime)));
   };
 
   start = (event) => {
@@ -132,7 +134,7 @@ class ProgressBar {
     const { progressContainer, hoverProgress } = this.player.controls;
     const width = progressContainer.clientWidth;
     const positionX = getEventOffsetX(progressContainer, event);
-    const scaleX = positionX / width;
+    const scaleX = width > 0 && Number.isFinite(positionX) ? Math.min(Math.max(positionX / width, 0), 1) : 0;
 
     hoverProgress.style.transform = `scaleX(${scaleX})`;
   };
