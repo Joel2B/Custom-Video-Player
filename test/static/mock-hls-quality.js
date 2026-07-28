@@ -17,34 +17,49 @@
       LEVEL_SWITCHED: 'levelSwitched',
       MANIFEST_PARSED: 'manifestParsed',
       LEVEL_LOADED: 'levelLoaded',
+      FRAG_LOADED: 'fragLoaded',
+      FRAG_BUFFERED: 'fragBuffered',
       ERROR: 'error',
     };
 
     static ErrorTypes = { NETWORK_ERROR: 'networkError', MEDIA_ERROR: 'mediaError' };
     static isSupported = () => true;
 
-    constructor() {
+    constructor(settings = {}) {
       this.handlers = {};
       this.autoLevelEnabled = true;
       this.currentLevel = -1;
-      this.userConfig = {};
+      this.userConfig = settings;
+      window.mockHlsInstances = window.mockHlsInstances || [];
+      window.mockHlsInstances.push(this);
     }
 
     on(event, callback) {
-      this.handlers[event] = callback;
+      this.handlers[event] = this.handlers[event] || [];
+      this.handlers[event].push(callback);
     }
 
     once(event, callback) {
-      this.on(event, callback);
+      const onceCallback = (...args) => {
+        this.handlers[event] = this.handlers[event].filter((handler) => handler !== onceCallback);
+        callback(...args);
+      };
+      this.on(event, onceCallback);
+    }
+
+    emit(event, data = {}) {
+      for (const callback of [...(this.handlers[event] || [])]) {
+        callback(event, data);
+      }
     }
 
     attachMedia(media) {
       this.media = media;
       setTimeout(() => {
-        this.handlers[Hls.Events.MEDIA_ATTACHED]?.(Hls.Events.MEDIA_ATTACHED, {});
-        this.handlers[Hls.Events.MANIFEST_PARSED]?.(Hls.Events.MANIFEST_PARSED, { levels });
-        this.handlers[Hls.Events.LEVEL_SWITCHED]?.(Hls.Events.LEVEL_SWITCHED, { level: 0 });
-        this.handlers[Hls.Events.LEVEL_LOADED]?.(Hls.Events.LEVEL_LOADED, { details: { live: false } });
+        this.emit(Hls.Events.MEDIA_ATTACHED);
+        this.emit(Hls.Events.MANIFEST_PARSED, { levels });
+        this.emit(Hls.Events.LEVEL_SWITCHED, { level: 0 });
+        this.emit(Hls.Events.LEVEL_LOADED, { details: { live: false } });
       });
     }
 
@@ -56,6 +71,8 @@
     startLoad() {
       this.startLoadCalled = true;
     }
+    recoverMediaError() {}
+    swapAudioCodec() {}
     detachMedia() {}
     destroy() {}
   }

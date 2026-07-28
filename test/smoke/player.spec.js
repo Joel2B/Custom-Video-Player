@@ -175,6 +175,336 @@ test('browser bundle initializes, emits events, destroys, and reinitializes', as
   expect(reinitialized).toEqual({ ready: true, wrapped: true });
 });
 
+test('configuration merge ignores prototype pollution keys', async ({ page }) => {
+  await loadPlayer(page, '<video id="player" width="640" height="360"></video><video id="second"></video>');
+
+  const state = await page.evaluate(() => {
+    const options = JSON.parse(`{
+      "__proto__":{"polluted":"root"},
+      "layoutControls":{
+        "constructor":{"prototype":{"polluted":"constructor"}},
+        "menu":{"prototype":{"polluted":"menu"}}
+      }
+    }`);
+    const nested = Object.create(null);
+    nested.__proto__ = { polluted: 'null-prototype' };
+    options.layoutControls.contextMenu = nested;
+
+    window.fluidPlayer('player', options);
+    window.fluidPlayer('second');
+    const players = window.fluidPlayerDebug.slice(-2).map((entry) => entry.internals);
+
+    return {
+      object: Object.prototype.polluted,
+      function: Function.prototype.polluted,
+      array: Array.prototype.polluted,
+      ownConstructor: Object.hasOwn(players[0].config.layoutControls, 'constructor'),
+      ownPrototype: Object.hasOwn(players[0].config.layoutControls.menu, 'prototype'),
+      firstMenu: players[0].config.layoutControls.menu.autoPlay,
+      secondMenu: players[1].config.layoutControls.menu.autoPlay,
+    };
+  });
+
+  expect(state).toEqual({
+    object: undefined,
+    function: undefined,
+    array: undefined,
+    ownConstructor: false,
+    ownPrototype: false,
+    firstMenu: true,
+    secondMenu: true,
+  });
+});
+
+test('pause stops media while it is buffering', async ({ page }) => {
+  await loadPlayer(page, '<video id="player" width="640" height="360"></video>');
+
+  const pauseCalls = await page.evaluate(() => {
+    const media = document.getElementById('player');
+    Object.defineProperty(media, 'paused', { configurable: true, value: false });
+    Object.defineProperty(media, 'readyState', { configurable: true, value: 1 });
+    media.pause = () => window.pauseCalls++;
+    window.pauseCalls = 0;
+
+    window.fluidPlayer('player').pause();
+    return window.pauseCalls;
+  });
+
+  expect(pauseCalls).toBe(1);
+});
+
+test('rejected manual play does not enable muted autoplay fallback', async ({ page }) => {
+  await page.goto('/');
+  await page.setContent('<video id="player" width="640" height="360"></video>');
+  await page.evaluate(() => {
+    HTMLMediaElement.prototype.play = () => Promise.reject(new DOMException('Blocked', 'NotAllowedError'));
+  });
+  await page.addScriptTag({ url: '/player.min.js' });
+
+  const state = await page.evaluate(async () => {
+    const media = document.getElementById('player');
+    const api = window.fluidPlayer('player');
+
+    media.volume = 0.7;
+    media.muted = false;
+
+    await api.play().catch(() => {});
+    await Promise.resolve();
+
+    return { muted: media.muted, volume: media.volume };
+  });
+
+  expect(state).toEqual({ muted: false, volume: 0.7 });
+});
+
+test('rejected autoplay retries muted', async ({ page }) => {
+  await page.goto('/');
+  await page.setContent(`
+    <video id="player" width="640" height="360">
+      <source src="/static/sample.webm" type="video/webm">
+    </video>
+  `);
+  await page.evaluate(() => {
+    localStorage.clear();
+    window.playCalls = 0;
+    HTMLMediaElement.prototype.play = () => {
+      window.playCalls++;
+      return window.playCalls === 1
+        ? Promise.reject(new DOMException('Blocked', 'NotAllowedError'))
+        : Promise.resolve();
+    };
+  });
+  await page.addScriptTag({ url: '/player.min.js' });
+
+  const state = await page.evaluate(async () => {
+    const media = document.getElementById('player');
+    window.fluidPlayer('player', {
+      layoutControls: { autoPlay: { active: true } },
+    });
+    await new Promise((resolve) => setTimeout(resolve));
+
+    return { muted: media.muted, volume: media.volume, playCalls: window.playCalls };
+  });
+
+  expect(state).toEqual({ muted: true, volume: 0, playCalls: 2 });
+});
+
+test('rejected muted autoplay does not retry indefinitely', async ({ page }) => {
+  await page.goto('/');
+  await page.setContent(`
+    <video id="player" width="640" height="360">
+      <source src="/static/sample.webm" type="video/webm">
+    </video>
+  `);
+  await page.evaluate(() => {
+    localStorage.clear();
+    window.playCalls = 0;
+    HTMLMediaElement.prototype.play = () => {
+      window.playCalls++;
+      return Promise.reject(new DOMException('Blocked', 'NotAllowedError'));
+    };
+  });
+  await page.addScriptTag({ url: '/player.min.js' });
+
+  const state = await page.evaluate(async () => {
+    const media = document.getElementById('player');
+    window.fluidPlayer('player', {
+      layoutControls: { autoPlay: { active: true } },
+    });
+    await new Promise((resolve) => setTimeout(resolve));
+
+    return { muted: media.muted, playCalls: window.playCalls };
+  });
+
+  expect(state).toEqual({ muted: true, playCalls: 2 });
+});
+
+test('autoplay does not run without a valid source', async ({ page }) => {
+  await page.goto('/');
+  await page.setContent('<video id="player" width="640" height="360"></video>');
+  await page.evaluate(() => {
+    window.playCalls = 0;
+    HTMLMediaElement.prototype.play = () => {
+      window.playCalls++;
+      return Promise.resolve();
+    };
+  });
+  await page.addScriptTag({ url: '/player.min.js' });
+
+  const playCalls = await page.evaluate(() => {
+    window.fluidPlayer('player', {
+      layoutControls: { autoPlay: { active: true } },
+      storage: { key: 'no-source-autoplay' },
+    });
+    return window.playCalls;
+  });
+
+  expect(playCalls).toBe(0);
+});
+
+test('late autoplay rejection cannot mute a replacement source', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/');
+  await page.setContent(`
+    <video id="player" width="640" height="360">
+      <source src="/static/sample.webm" type="video/webm">
+    </video>
+  `);
+  await page.evaluate(() => {
+    window.playCalls = 0;
+    HTMLMediaElement.prototype.play = () => {
+      window.playCalls++;
+      return new Promise((resolve, reject) => {
+        window.rejectOldPlay = reject;
+      });
+    };
+  });
+  await page.addScriptTag({ url: '/player.min.js' });
+
+  const state = await page.evaluate(async () => {
+    const media = document.getElementById('player');
+    const api = window.fluidPlayer('player', {
+      layoutControls: { autoPlay: { active: true } },
+      storage: { key: 'late-source-rejection' },
+    });
+    media.volume = 0.7;
+    api.src({ src: '/replacement.webm', type: 'video/webm' });
+    window.rejectOldPlay(new DOMException('Blocked', 'NotAllowedError'));
+    await Promise.resolve();
+    await Promise.resolve();
+
+    return { muted: media.muted, volume: media.volume, playCalls: window.playCalls };
+  });
+
+  expect(state).toEqual({ muted: false, volume: 0.7, playCalls: 1 });
+  expect(errors).toEqual([]);
+});
+
+test('late autoplay rejection is inert after destroy', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/');
+  await page.setContent(`
+    <video id="player" width="640" height="360">
+      <source src="/static/sample.webm" type="video/webm">
+    </video>
+  `);
+  await page.evaluate(() => {
+    window.playCalls = 0;
+    HTMLMediaElement.prototype.play = () => {
+      window.playCalls++;
+      return new Promise((resolve, reject) => {
+        window.rejectDestroyedPlay = reject;
+      });
+    };
+  });
+  await page.addScriptTag({ url: '/player.min.js' });
+
+  const playCalls = await page.evaluate(async () => {
+    const api = window.fluidPlayer('player', {
+      layoutControls: { autoPlay: { active: true } },
+      storage: { key: 'late-destroy-rejection' },
+    });
+    await api.destroy();
+    window.rejectDestroyedPlay(new DOMException('Blocked', 'NotAllowedError'));
+    await Promise.resolve();
+    await Promise.resolve();
+    return window.playCalls;
+  });
+
+  expect(playCalls).toBe(1);
+  expect(errors).toEqual([]);
+});
+
+test('pause cancels waitInteraction retry timer', async ({ page }) => {
+  await page.goto('/');
+  await page.setContent(`
+    <video id="player" width="640" height="360">
+      <source src="/static/sample.webm" type="video/webm">
+    </video>
+  `);
+  await page.evaluate(() => {
+    localStorage.clear();
+    window.mediaPlayCalls = 0;
+    window.waitPlayCalls = 0;
+    HTMLMediaElement.prototype.play = function () {
+      if (this.id === 'player') {
+        window.mediaPlayCalls++;
+        return window.mediaPlayCalls === 1
+          ? Promise.reject(new DOMException('Blocked', 'NotAllowedError'))
+          : Promise.resolve();
+      }
+      window.waitPlayCalls++;
+      return Promise.reject(new DOMException('Blocked', 'NotAllowedError'));
+    };
+  });
+  await page.addScriptTag({ url: '/player.min.js' });
+
+  await page.evaluate(() => {
+    window.playerApi = window.fluidPlayer('player', {
+      layoutControls: { autoPlay: { active: true, waitInteraction: true } },
+      storage: { key: 'wait-interaction-pause' },
+    });
+  });
+  await expect.poll(() => page.evaluate(() => window.waitPlayCalls)).toBe(1);
+
+  const state = await page.evaluate(async () => {
+    const beforePause = window.waitPlayCalls;
+    window.playerApi.pause();
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    return { beforePause, afterPause: window.waitPlayCalls };
+  });
+
+  expect(state).toEqual({ beforePause: 1, afterPause: 1 });
+});
+
+test('source change invalidates pending waitInteraction promise', async ({ page }) => {
+  await page.goto('/');
+  await page.setContent(`
+    <video id="player" width="640" height="360">
+      <source src="/static/sample.webm" type="video/webm">
+    </video>
+  `);
+  await page.evaluate(() => {
+    localStorage.clear();
+    window.mediaPlayCalls = 0;
+    window.resolveWaitInteraction = null;
+    HTMLMediaElement.prototype.play = function () {
+      if (this.id === 'player') {
+        window.mediaPlayCalls++;
+        return window.mediaPlayCalls === 1
+          ? Promise.reject(new DOMException('Blocked', 'NotAllowedError'))
+          : Promise.resolve();
+      }
+      return new Promise((resolve) => {
+        window.resolveWaitInteraction = resolve;
+      });
+    };
+  });
+  await page.addScriptTag({ url: '/player.min.js' });
+
+  await page.evaluate(() => {
+    window.playerApi = window.fluidPlayer('player', {
+      layoutControls: { autoPlay: { active: true, waitInteraction: true } },
+      storage: { key: 'wait-interaction-source' },
+    });
+  });
+  await expect.poll(() => page.evaluate(() => typeof window.resolveWaitInteraction)).toBe('function');
+
+  const toggleCalls = await page.evaluate(async () => {
+    const player = window.fluidPlayerDebug.at(-1).internals;
+    let calls = 0;
+    player.toggleMute = () => calls++;
+    window.playerApi.src({ src: '/replacement.webm', type: 'video/webm' });
+    window.resolveWaitInteraction();
+    await Promise.resolve();
+    return calls;
+  });
+
+  expect(toggleCalls).toBe(0);
+});
+
 test('destroy cancels pending streaming and restores global layout', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));

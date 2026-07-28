@@ -15,6 +15,7 @@ class Autoplay {
 
     this.tmpVideo = null;
     this.waitInteractionTimer = null;
+    this.waitInteractionGeneration = 0;
 
     this.init();
   }
@@ -76,15 +77,16 @@ class Autoplay {
   apply = (force = true) => {
     const { player } = this;
 
-    if (!player.menu.isEnabled(this.id) || !player.storage.get(this.id) || this.applied) {
+    if (!player.ready || !player.menu.isEnabled(this.id) || !player.storage.get(this.id) || this.applied) {
       return false;
     }
 
+    this.cancelWaitInteraction();
     player.controlBar.toggle(false);
 
     if (force) {
       this.applied = true;
-      player.playPause.toggle();
+      player.playPause.toggle('autoplay');
     }
 
     return true;
@@ -93,12 +95,15 @@ class Autoplay {
   playMuted = () => {
     const { player } = this;
 
+    this.cancelWaitInteraction();
     player.muted = true;
     player.volume = 0;
 
     this.applied = false;
 
-    if (!player.streaming.dash) {
+    if (player.streaming.dashController?.dash) {
+      player.streaming.dashController.play('autoplay');
+    } else {
       this.apply();
     }
 
@@ -106,10 +111,18 @@ class Autoplay {
     this.waitInteraction();
   };
 
-  waitInteraction = () => {
-    if (!this.config.waitInteraction || IS_IOS || IS_SAFARI) {
+  waitInteraction = (generation = ++this.waitInteractionGeneration) => {
+    if (
+      this.destroyed ||
+      generation !== this.waitInteractionGeneration ||
+      !this.config.waitInteraction ||
+      IS_IOS ||
+      IS_SAFARI
+    ) {
       return;
     }
+
+    const source = this.player.currentSource.src;
 
     if (IS_FIREFOX && this.tmpVideo !== null) {
       this.tmpVideo.remove();
@@ -132,33 +145,53 @@ class Autoplay {
 
     promise
       .then((_) => {
-        if (this.destroyed) {
+        if (
+          this.destroyed ||
+          generation !== this.waitInteractionGeneration ||
+          !this.player.ready ||
+          source !== this.player.currentSource.src
+        ) {
           return;
         }
 
         this.player.toggleMute();
         this.tmpVideo.remove();
+        this.tmpVideo = null;
       })
       .catch((error) => {
-        if (this.destroyed) {
+        if (
+          this.destroyed ||
+          generation !== this.waitInteractionGeneration ||
+          !this.player.ready ||
+          source !== this.player.currentSource.src
+        ) {
           return;
         }
 
         if (error.name === 'NotAllowedError') {
-          this.waitInteractionTimer = setTimeout(this.waitInteraction, 500);
+          clearTimeout(this.waitInteractionTimer);
+          this.waitInteractionTimer = setTimeout(() => {
+            this.waitInteractionTimer = null;
+            this.waitInteraction(generation);
+          }, 500);
         }
       });
   };
 
-  destroy = () => {
-    this.destroyed = true;
-
+  cancelWaitInteraction = () => {
+    this.waitInteractionGeneration++;
     clearTimeout(this.waitInteractionTimer);
+    this.waitInteractionTimer = null;
 
     if (this.tmpVideo) {
       this.tmpVideo.remove();
       this.tmpVideo = null;
     }
+  };
+
+  destroy = () => {
+    this.destroyed = true;
+    this.cancelWaitInteraction();
   };
 }
 

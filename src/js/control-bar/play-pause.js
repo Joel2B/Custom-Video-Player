@@ -1,7 +1,5 @@
 import { on } from '../utils/events';
 import { createElement, hasClass, toggleClass } from '../utils/dom';
-import { isHLS } from '../utils/media';
-import is from '../utils/is';
 
 class PlayPause {
   constructor(player) {
@@ -149,19 +147,12 @@ class PlayPause {
     }
   };
 
-  toggle = () => {
+  toggle = (origin = 'manual') => {
     const { player } = this;
     const isFirstStart = !player.firstPlayLaunched;
 
     if (!player.ready) {
       return;
-    }
-
-    if (!player.allowPlayStream) {
-      if (isHLS(player.currentSource.src, player.currentSource.type)) {
-        player.playStream = true;
-        return;
-      }
     }
 
     if (isFirstStart) {
@@ -176,16 +167,14 @@ class PlayPause {
       }
     }
 
-    if (player.paused) {
-      if (player.streaming.dash && is.function(player.streaming.dash.play)) {
-        player.streaming.dash.play();
-      } else {
-        if (player.streaming.hls && !player.streaming.hls.userConfig.autoStartLoad) {
-          player.streaming.hls.startLoad();
-        }
+    if (player.pendingStreamPlay) {
+      player.pause();
+      player.HtmlOnPause.toggle(true);
+      return;
+    }
 
-        player.play();
-      }
+    if (player.paused) {
+      player.play(origin === 'autoplay');
 
       player.HtmlOnPause.toggle(false);
     } else {

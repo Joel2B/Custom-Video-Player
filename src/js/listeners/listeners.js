@@ -114,6 +114,10 @@ class Listeners extends Update {
         return;
       }
 
+      if (player.streaming.dashController) {
+        return;
+      }
+
       const messages = {
         1: player.config.captions.mediaErrorAborted,
         2: player.config.captions.mediaErrorNetwork,

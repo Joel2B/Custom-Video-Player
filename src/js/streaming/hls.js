@@ -1,12 +1,18 @@
 import { supportsHLS } from '../utils/media';
 import { formatTime } from '../utils/time';
-import { on } from '../utils/events';
+import { once } from '../utils/events';
 import is from '../utils/is';
 import loadScript from './load-script';
+
+const MAX_FATAL_RECOVERIES = 2;
 
 class Hlsjs {
   constructor(player) {
     this.player = player;
+    this.source = player.currentSource.src;
+    this.loadStarted = false;
+    this.networkErrorRetries = 0;
+    this.mediaErrorRetries = 0;
 
     this.url = player.config.hls.url;
 
@@ -26,29 +32,61 @@ class Hlsjs {
   };
 
   detach = () => {
-    if (!this.hls) {
+    const hls = this.hls;
+    this.hls = null;
+
+    if (!hls) {
       return;
     }
 
-    this.hls.stopLoad();
-    this.hls.detachMedia();
-    this.hls.destroy();
-    clearInterval(this.hls.bufferTimer);
-    this.hls = null;
+    hls.stopLoad();
+    hls.detachMedia();
+    hls.destroy();
+    clearInterval(hls.bufferTimer);
   };
 
   useNative = () => {
     const { player } = this;
+    const source = this.source;
+    this.native = true;
 
-    player.media.src = player.currentSource.src;
+    player.media.src = source;
 
-    on.call(player, player.media, 'canplay', () => {
-      player.allowPlayStream = true;
+    once.call(player, player.media, 'canplay', () => {
+      if (player.streaming.hlsController !== this || player.currentSource.src !== source) {
+        return;
+      }
 
-      player.autoPlay.apply();
+      player.streamReady = true;
+      player.resumePendingStreamPlay();
     });
 
     player.media.load();
+  };
+
+  startLoad = () => {
+    if (this.hls && this.hls.userConfig.autoStartLoad === false && !this.loadStarted) {
+      this.loadStarted = true;
+      this.hls.startLoad();
+    }
+  };
+
+  isCurrent = (hls) =>
+    this.player.streaming.hlsController === this && this.hls === hls && this.player.currentSource.src === this.source;
+
+  listen = (event, callback, once = false) => {
+    const hls = this.hls;
+    hls[once ? 'once' : 'on'](event, (...args) => {
+      if (this.isCurrent(hls)) {
+        callback(hls, ...args);
+      }
+    });
+  };
+
+  fail = (hls, message) => {
+    this.hls = null;
+    hls.destroy();
+    this.player.failSource(message);
   };
 
   init = () => {
@@ -92,9 +130,9 @@ class Hlsjs {
 
     config.hls.onBeforeInit(this.hls);
 
-    this.hls.attachMedia(player.media);
-
     this.listeners();
+
+    this.hls.attachMedia(player.media);
 
     config.hls.onAfterInit(this.hls);
 
@@ -104,23 +142,16 @@ class Hlsjs {
   listeners = () => {
     const { player } = this;
 
-    this.hls.on(Hls.Events.MEDIA_ATTACHED, (e, data) => {
+    this.listen(Hls.Events.MEDIA_ATTACHED, (hls, e, data) => {
       player.debug.log(e, data);
 
-      this.hls.loadSource(player.currentSource.src);
-
-      player.speedMenu.lock = false;
-
-      player.allowPlayStream = true;
-
-      if (player.playStream) {
-        player.playPause.toggle();
-      } else {
-        player.autoPlay.apply();
+      hls.loadSource(this.source);
+      if (player.pendingStreamPlay) {
+        this.startLoad();
       }
     });
 
-    this.hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, (e, data) => {
+    this.listen(Hls.Events.AUDIO_TRACKS_UPDATED, (hls, e, data) => {
       if (!player.audio.enabled) {
         return;
       }
@@ -134,7 +165,7 @@ class Hlsjs {
       player.audio.update();
     });
 
-    this.hls.on(Hls.Events.AUDIO_TRACK_SWITCHED, (e, data) => {
+    this.listen(Hls.Events.AUDIO_TRACK_SWITCHED, (hls, e, data) => {
       if (!player.audio.enabled) {
         return;
       }
@@ -144,7 +175,7 @@ class Hlsjs {
       player.audio.checkTrack(data.id);
     });
 
-    this.hls.on(Hls.Events.NON_NATIVE_TEXT_TRACKS_FOUND, (e, data) => {
+    this.listen(Hls.Events.NON_NATIVE_TEXT_TRACKS_FOUND, (hls, e, data) => {
       if (!player.subtitles.enabled) {
         return;
       }
@@ -152,7 +183,7 @@ class Hlsjs {
       player.debug.log(e, data);
 
       // ocultar subtitulos de hls
-      this.hls.subtitleDisplay = false;
+      hls.subtitleDisplay = false;
 
       for (const rawTrack of data.tracks) {
         let id = rawTrack._id;
@@ -184,7 +215,7 @@ class Hlsjs {
       player.subtitles.emulateTextTracks('external');
     });
 
-    this.hls.on(Hls.Events.CUES_PARSED, (e, data) => {
+    this.listen(Hls.Events.CUES_PARSED, (hls, e, data) => {
       if (!player.subtitles.enabled) {
         return;
       }
@@ -209,7 +240,7 @@ class Hlsjs {
       }
     });
 
-    this.hls.on(Hls.Events.SUBTITLE_TRACK_SWITCH, (e, data) => {
+    this.listen(Hls.Events.SUBTITLE_TRACK_SWITCH, (hls, e, data) => {
       if (!player.subtitles.enabled) {
         return;
       }
@@ -219,19 +250,19 @@ class Hlsjs {
       player.subtitles.checkTrack(data.id);
     });
 
-    this.hls.on(Hls.Events.LEVEL_SWITCHING, (e, data) => {
+    this.listen(Hls.Events.LEVEL_SWITCHING, (hls, e, data) => {
       player.debug.log(e, data);
 
-      if (!this.hls.autoLevelEnabled && !player.multipleSourceTypes) {
+      if (!hls.autoLevelEnabled && !player.multipleSourceTypes) {
         player.toggleLoader(true);
         player.listeners.waiting = true;
       }
     });
 
-    this.hls.on(Hls.Events.LEVEL_SWITCHED, (e, data) => {
+    this.listen(Hls.Events.LEVEL_SWITCHED, (hls, e, data) => {
       player.debug.log(e, data);
 
-      if (!this.hls.autoLevelEnabled || player.multipleSourceTypes) {
+      if (!hls.autoLevelEnabled || player.multipleSourceTypes) {
         if (!player.multipleSourceTypes) {
           player.toggleLoader(false);
           player.listeners.waiting = false;
@@ -244,8 +275,13 @@ class Hlsjs {
       player.quality.update();
     });
 
-    this.hls.on(Hls.Events.MANIFEST_PARSED, (e, data) => {
+    this.listen(Hls.Events.MANIFEST_PARSED, (hls, e, data) => {
       player.debug.log(e, data);
+
+      this.networkErrorRetries = 0;
+      player.speedMenu.lock = false;
+      player.streamReady = true;
+      player.resumePendingStreamPlay();
 
       if (player.multipleSourceTypes) {
         return;
@@ -254,56 +290,75 @@ class Hlsjs {
       player.quality.add(data.levels);
     });
 
-    this.hls.once(Hls.Events.LEVEL_LOADED, (e, data) => {
+    this.listen(Hls.Events.FRAG_LOADED, () => {
+      this.networkErrorRetries = 0;
+    });
+
+    this.listen(Hls.Events.FRAG_BUFFERED, () => {
+      this.mediaErrorRetries = 0;
+    });
+
+    this.listen(Hls.Events.LEVEL_LOADED, (hls, e, data) => {
       player.debug.log(e, data);
 
       if (data.details.live) {
-        this.setupLive();
+        this.setupLive(hls);
       }
-    });
+    }, true);
 
-    this.hls.on(Hls.Events.ERROR, (e, data) => {
+    this.listen(Hls.Events.ERROR, (hls, e, data) => {
       if (!data.fatal) {
         return;
       }
 
       switch (data.type) {
         case Hls.ErrorTypes.NETWORK_ERROR:
-          // try to recover network error
-          player.debug.log('fatal network error encountered, try to recover');
-          this.hls.startLoad();
-          break;
+          if (this.networkErrorRetries++ < MAX_FATAL_RECOVERIES) {
+            player.debug.log('fatal network error encountered, try to recover');
+            hls.startLoad();
+            return;
+          }
+
+          this.fail(hls, player.config.captions.mediaErrorNetwork);
+          return;
         case Hls.ErrorTypes.MEDIA_ERROR:
-          player.debug.log('fatal media error encountered, try to recover');
-          this.hls.recoverMediaError();
-          break;
+          if (this.mediaErrorRetries++ < MAX_FATAL_RECOVERIES) {
+            player.debug.log('fatal media error encountered, try to recover');
+
+            if (this.mediaErrorRetries === MAX_FATAL_RECOVERIES) {
+              hls.swapAudioCodec();
+            }
+
+            hls.recoverMediaError();
+            return;
+          }
+
+          this.fail(hls, player.config.captions.mediaErrorDecode);
+          return;
         default:
-          // cannot recover
-          this.hls.destroy();
-          player.failSource(player.config.captions.mediaErrorUnknown);
-          break;
+          this.fail(hls, player.config.captions.mediaErrorUnknown);
       }
     });
   };
 
-  setupLive = () => {
+  setupLive = (hls) => {
     const { player } = this;
     const live = player.streaming.live;
 
-    this.hls.on(Hls.Events.LEVEL_LOADED, () => {
+    this.listen(Hls.Events.LEVEL_LOADED, () => {
       player.listeners.time();
       player.listeners.duration();
       player.listeners.progress();
     });
 
     live.init().onClick(() => {
-      player.currentTime = this.hls.liveSyncPosition;
+      player.currentTime = hls.liveSyncPosition;
     });
 
     live.timeDisplay = () => {
       const liveDelay = player.duration - player.currentTime;
 
-      live.toggleStatus(liveDelay < this.hls.targetLatency);
+      live.toggleStatus(liveDelay < hls.targetLatency);
 
       return `- ${formatTime(liveDelay)}`;
     };

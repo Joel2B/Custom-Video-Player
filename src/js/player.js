@@ -136,7 +136,9 @@ class CVP {
 
     const play = this.media.play;
 
-    this.media.play = () => {
+    this.media.play = (autoplayAttempt = false) => {
+      const generation = ++this.playAttemptGeneration;
+      const source = this.currentSource.src;
       const promise = play.call(this.media);
 
       if (!is.promise(promise)) {
@@ -159,7 +161,15 @@ class CVP {
       promise.then(clearPromiseTimeout).catch((error) => {
         this.debug.error(error);
 
-        if (error.name === 'NotAllowedError') {
+        if (
+          this.ready &&
+          this.media &&
+          generation === this.playAttemptGeneration &&
+          source === this.currentSource.src &&
+          autoplayAttempt &&
+          !this.muted &&
+          error.name === 'NotAllowedError'
+        ) {
           this.autoPlay.playMuted();
         }
 
@@ -170,6 +180,9 @@ class CVP {
     };
 
     this.ready = true;
+    if (this.currentSource.src && !isDASH(this.currentSource.src, this.currentSource.type)) {
+      this.autoPlay.apply();
+    }
   }
 
   defineVariables = () => {
@@ -200,8 +213,10 @@ class CVP {
     this.multipleSourceTypes = false;
 
     // to avoid using play before loading the stream
-    this.allowPlayStream = false;
-    this.playStream = false;
+    this.streamReady = false;
+    this.pendingStreamPlay = null;
+    this.playAttemptGeneration = 0;
+    this.sourceFailed = false;
   };
 
   setupWrapper = () => {
@@ -300,14 +315,23 @@ class CVP {
   };
 
   overwrite = (from, to) => {
-    for (const key in from) {
-      if (is.object(from[key])) {
+    for (const key of Object.keys(from)) {
+      if (['__proto__', 'prototype', 'constructor'].includes(key)) {
+        continue;
+      }
+
+      const value = from[key];
+      const prototype = value !== null && typeof value === 'object' ? Object.getPrototypeOf(value) : null;
+      const plainObject =
+        value !== null && typeof value === 'object' && (prototype === Object.prototype || prototype === null);
+
+      if (plainObject) {
         if (!is.object(to[key])) {
           to[key] = {};
         }
-        this.overwrite(from[key], to[key]);
+        this.overwrite(value, to[key]);
       } else {
-        to[key] = from[key];
+        to[key] = value;
       }
     }
   };
@@ -414,7 +438,9 @@ class CVP {
 
       this.quality.add(this.sources);
 
-      this.autoPlay.apply();
+      if (this.ready) {
+        this.autoPlay.apply();
+      }
     }
   };
 
@@ -452,6 +478,19 @@ class CVP {
 
   set source(source) {
     const src = source.src;
+    const pendingStreamPlay =
+      isHLS(src, source.type) && this.pendingStreamPlay?.autoplayAttempt ? this.pendingStreamPlay : null;
+
+    this.autoPlay.cancelWaitInteraction();
+    this.playAttemptGeneration++;
+
+    if (this.pendingStreamPlay?.autoplayAttempt && !pendingStreamPlay) {
+      this.autoPlay.applied = false;
+    }
+
+    if (!pendingStreamPlay) {
+      this.cancelPendingStreamPlay();
+    }
 
     this.debug.log('Set source: ', src);
     this.showError();
@@ -461,6 +500,10 @@ class CVP {
     }
 
     this.currentSource = source;
+    this.sourceFailed = false;
+
+    this.streamReady = false;
+    this.pendingStreamPlay = pendingStreamPlay;
 
     this.streaming.detach();
 
@@ -504,15 +547,18 @@ class CVP {
 
     for (let i = this.sources.length - 1; i > 0; i--) {
       if (this.sources[i].src === this.currentSource.src && this.sources[i - 1].src) {
+        const resumeAutoplay = this.autoPlay.applied || this.pendingStreamPlay?.autoplayAttempt;
+        if (resumeAutoplay) {
+          this.autoPlay.applied = false;
+        }
         this.source = this.sources[i - 1];
 
         if (
           !isHLS(this.currentSource.src, this.currentSource.type) &&
           !isDASH(this.currentSource.src, this.currentSource.type)
         ) {
-          on.call(this, this.media, 'canplay', () => {
-            if (this.autoPlay.applied) {
-              this.autoPlay.applied = false;
+          once.call(this, this.media, 'canplay', () => {
+            if (resumeAutoplay) {
               this.autoPlay.apply();
             }
           });
@@ -541,25 +587,98 @@ class CVP {
       return;
     }
 
+    this.cancelPendingStreamPlay();
+    this.autoPlay.applied = false;
+    this.sourceFailed = true;
     this.toggleLoader(false);
     this.showError(message || this.config.captions.mediaErrorUnknown);
   };
 
   // "API" Functions
-  play = () => {
+  play = (autoplayAttempt = false) => {
+    if (this.sourceFailed) {
+      const error = new Error('The media source failed.');
+      error.name = 'NotSupportedError';
+      const promise = Promise.reject(error);
+      promise.catch(() => {});
+      return promise;
+    }
+
+    if (this.streaming.dashController?.dash) {
+      return this.streaming.dashController.play(autoplayAttempt ? 'autoplay' : 'manual');
+    }
+
     if (!is.function(this.media.play)) {
       return null;
     }
 
-    return this.media.play();
+    if (
+      (isHLS(this.currentSource.src, this.currentSource.type) && !this.streamReady) ||
+      (isDASH(this.currentSource.src, this.currentSource.type) && this.streaming.dashController)
+    ) {
+      return this.queueStreamPlay(autoplayAttempt);
+    }
+
+    return this.media.play(autoplayAttempt);
   };
 
   pause = () => {
-    if (!this.playing || !is.function(this.media.pause)) {
+    this.autoPlay.cancelWaitInteraction();
+    this.playAttemptGeneration++;
+    this.cancelPendingStreamPlay();
+
+    if (this.streaming.dashController) {
+      return this.streaming.dashController.pause();
+    }
+
+    if (this.paused || !is.function(this.media.pause)) {
       return null;
     }
 
     return this.media.pause();
+  };
+
+  queueStreamPlay = (autoplayAttempt) => {
+    if (this.pendingStreamPlay) {
+      return this.pendingStreamPlay.promise;
+    }
+
+    let resolve;
+    let reject;
+    const promise = new Promise((_resolve, _reject) => {
+      resolve = _resolve;
+      reject = _reject;
+    });
+
+    // UI-triggered play requests do not consume the returned Promise.
+    promise.catch(() => {});
+    this.pendingStreamPlay = { autoplayAttempt, promise, resolve, reject };
+    this.streaming.hlsController?.startLoad?.();
+
+    return promise;
+  };
+
+  resumePendingStreamPlay = () => {
+    const request = this.pendingStreamPlay;
+    this.pendingStreamPlay = null;
+
+    if (!request) {
+      this.autoPlay.apply();
+      return;
+    }
+
+    Promise.resolve(this.play(request.autoplayAttempt)).then(request.resolve, request.reject);
+  };
+
+  cancelPendingStreamPlay = () => {
+    const request = this.pendingStreamPlay;
+    this.pendingStreamPlay = null;
+
+    if (request) {
+      const error = new Error('The play request was interrupted.');
+      error.name = 'AbortError';
+      request.reject(error);
+    }
   };
 
   set currentTime(input) {
@@ -705,6 +824,8 @@ class CVP {
     if (!this.ready) {
       return;
     }
+
+    this.playAttemptGeneration++;
 
     const wrapper = this.wrapper;
 
