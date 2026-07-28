@@ -31,29 +31,41 @@ class Logo {
     // The logo itself
     this.img = createElement('img', {
       src: config.imageUrl,
+      alt: config.alt || (!is.empty(config.clickUrl) ? this.player.config.captions.logo : ''),
     });
   };
 
   setup = () => {
     const { player, config, img } = this;
 
+    if (!is.empty(config.clickUrl)) {
+      this.link = createElement('a', {
+        href: config.clickUrl,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+      });
+    }
+
+    const positionedElement = this.link || img;
+
     img.style.width = config.width;
     img.style.height = config.height;
-    img.style.position = 'absolute';
-    img.style.margin = config.imageMargin;
+    img.style.display = 'block';
+    positionedElement.style.position = 'absolute';
+    positionedElement.style.margin = config.imageMargin;
 
     const position = config.position.toLowerCase();
 
     if (position.indexOf('bottom') !== -1) {
-      img.style.bottom = 0;
+      positionedElement.style.bottom = 0;
     } else {
-      img.style.top = 0;
+      positionedElement.style.top = 0;
     }
 
     if (position.indexOf('right') !== -1) {
-      img.style.right = 0;
+      positionedElement.style.right = 0;
     } else {
-      img.style.left = 0;
+      positionedElement.style.left = 0;
     }
 
     if (config.opacity) {
@@ -62,10 +74,6 @@ class Logo {
 
     if (!is.empty(config.clickUrl)) {
       img.style.cursor = 'pointer';
-
-      on.call(player, img, 'click', () => {
-        window.open(config.clickUrl, '_blank').focus();
-      });
     }
 
     // If a mouseOverImage is provided then we must set up the listeners for it
@@ -78,7 +86,12 @@ class Logo {
       });
     }
 
-    this.el.appendChild(img);
+    if (this.link) {
+      this.link.appendChild(img);
+      this.el.appendChild(this.link);
+    } else {
+      this.el.appendChild(img);
+    }
     player.wrapper.appendChild(this.el);
   };
 }

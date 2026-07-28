@@ -13,17 +13,21 @@ class Shortcuts {
     const shortcuts = this.player.config.captions.shortcuts;
     this.content = createElement('div', {
       class: 'cvp_keyboard_shortcuts',
+      role: 'dialog',
+      'aria-modal': true,
+      'aria-label': shortcuts.title,
+      'aria-hidden': true,
     });
 
-    const close = createElement('button', {
+    this.closeButton = createElement('button', {
       type: 'button',
       class: 'cvp_hide_shortcuts',
       'aria-label': shortcuts.close,
     });
-    on.call(this.player, close, 'click', () => this.close());
+    on.call(this.player, this.closeButton, 'click', () => this.close(true));
 
-    close.appendChild(createElement('span', null, '×'));
-    this.content.appendChild(close);
+    this.closeButton.appendChild(createElement('span', null, '×'));
+    this.content.appendChild(this.closeButton);
 
     const container = createElement('div', {
       class: 'cvp_shortcut_info',
@@ -52,15 +56,74 @@ class Shortcuts {
     }
     this.content.appendChild(container);
 
+    on.call(
+      this.player,
+      this.content,
+      'keydown',
+      (event) => {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          event.stopPropagation();
+          this.close(true);
+          return;
+        }
+
+        if (event.key !== 'Tab') {
+          return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        this.closeButton.focus();
+      },
+      false,
+    );
+
     insertAfter(this.content, this.player.media);
   };
 
-  open = () => {
+  open = (invoker) => {
+    this.invoker = invoker || document.activeElement;
+    this.setBackgroundInteractive(false);
     toggleClass(this.content, 'cvp_active', true);
+    this.content.setAttribute('aria-hidden', 'false');
+    this.closeButton.focus();
   };
 
-  close = () => {
+  close = (restoreFocus = false) => {
+    if (!this.content.classList.contains('cvp_active')) {
+      return;
+    }
+
     toggleClass(this.content, 'cvp_active', false);
+    this.content.setAttribute('aria-hidden', 'true');
+    this.setBackgroundInteractive(true);
+
+    if (restoreFocus) {
+      const invoker =
+        this.invoker?.isConnected && this.invoker.offsetParent !== null ? this.invoker : this.player.controls.playPause;
+      invoker.focus();
+    }
+
+    this.invoker = null;
+  };
+
+  setBackgroundInteractive = (interactive) => {
+    for (const element of this.player.wrapper.children) {
+      if (element === this.content) {
+        continue;
+      }
+
+      if (interactive) {
+        if (element.dataset.shortcutsInert !== 'true') {
+          element.removeAttribute('inert');
+        }
+        delete element.dataset.shortcutsInert;
+      } else {
+        element.dataset.shortcutsInert = String(element.hasAttribute('inert'));
+        element.setAttribute('inert', '');
+      }
+    }
   };
 
   setShortcuts = () => {

@@ -100,11 +100,25 @@ class Keyboard {
   captureKey = (event) => {
     const { player } = this;
 
-    player.shortcuts.close();
-
-    if (event.target.closest('button, a, [role="button"], [role="switch"], [role="slider"], [role="option"]')) {
+    if (
+      event.target.closest(
+        'input, textarea, select, [contenteditable]:not([contenteditable="false"]), ' +
+          '[role="textbox"], [role="combobox"]',
+      )
+    ) {
       return;
     }
+
+    if (
+      event.target.closest(
+        'button, a, [role="button"], [role="switch"], [role="slider"], [role="option"], [role="menuitem"], ' +
+          '[role="dialog"]',
+      )
+    ) {
+      return;
+    }
+
+    player.shortcuts.close();
 
     const code = event.keyCode ? event.keyCode : event.which;
 

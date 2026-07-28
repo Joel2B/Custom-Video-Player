@@ -40,6 +40,7 @@ const es = {
   seek: 'Buscar',
   volume: 'Volumen',
   downloadVideo: 'Descargar video',
+  logo: 'Logotipo',
   live: 'en vivo',
   mediaErrorAborted: 'Se canceló la carga del video.',
   mediaErrorNetwork: 'Un error de red impidió cargar el video.',

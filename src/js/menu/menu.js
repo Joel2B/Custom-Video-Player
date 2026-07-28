@@ -175,6 +175,36 @@ class Menu {
     }
 
     this.player.wrapper.appendChild(this.menu);
+    this.setInteractive(false);
+  };
+
+  setInteractive = (interactive) => {
+    if (interactive) {
+      this.menu.removeAttribute('inert');
+    } else {
+      this.menu.setAttribute('inert', '');
+    }
+
+    for (const element of this.menu.querySelectorAll('[tabindex], button, a[href], input, select, textarea')) {
+      if (interactive) {
+        const tabindex = element.dataset.menuTabindex;
+        if (!is.nullOrUndefined(tabindex)) {
+          if (element.dataset.menuNativeTabindex === 'true') {
+            element.removeAttribute('tabindex');
+            delete element.dataset.menuNativeTabindex;
+          } else {
+            element.setAttribute('tabindex', tabindex);
+          }
+          delete element.dataset.menuTabindex;
+        }
+      } else {
+        if (is.nullOrUndefined(element.dataset.menuTabindex)) {
+          element.dataset.menuTabindex = element.getAttribute('tabindex') || '';
+          element.dataset.menuNativeTabindex = String(!element.hasAttribute('tabindex'));
+        }
+        element.setAttribute('tabindex', '-1');
+      }
+    }
   };
 
   add = (module) => {
@@ -229,6 +259,10 @@ class Menu {
         event.preventDefault();
         module.item.click();
       });
+    }
+
+    if (this.ready && this.isClosed()) {
+      this.setInteractive(false);
     }
   };
 
@@ -311,7 +345,7 @@ class Menu {
     return !hasClass(this.menu, 'cvp_visible');
   };
 
-  close = () => {
+  close = (restoreFocus = false) => {
     if (!this.menu || this.isClosed()) {
       return;
     }
@@ -319,6 +353,7 @@ class Menu {
     toggleClass(this.menu, 'cvp_visible', false);
     this.menu.setAttribute('aria-hidden', 'true');
     this.btn.setAttribute('aria-expanded', 'false');
+    this.setInteractive(false);
 
     if (this.player.mobile) {
       this.player.controlBar.toggleMobile(this.player.paused);
@@ -330,22 +365,31 @@ class Menu {
     this.inSubpage = false;
 
     this.restartLater();
+
+    if (restoreFocus) {
+      this.btn.focus();
+    }
   };
 
   listeners = () => {
     const event = this.player.mobile ? 'touchend' : 'click';
 
-    on.call(this.player, this.btn, event, () => {
+    on.call(this.player, this.btn, event, (inputEvent) => {
       if (this.isClosed()) {
         toggleClass(this.menu, 'cvp_visible', true);
         this.menu.setAttribute('aria-hidden', 'false');
         this.btn.setAttribute('aria-expanded', 'true');
+        this.setInteractive(true);
 
         if (this.player.mobile) {
           this.player.controlBar.toggleMobile();
           toggleClass(this.player.wrapper, 'fluid_show_options', true);
         } else {
           toggleClass(this.btn, 'cvp_rotate', true);
+        }
+
+        if (inputEvent.detail === 0) {
+          this.container.querySelector('[tabindex="0"]')?.focus();
         }
       } else {
         this.close();
@@ -397,6 +441,16 @@ class Menu {
       const items = Array.from(item.parentNode.querySelectorAll('li'));
       const offset = keyboardEvent.key === 'ArrowDown' ? 1 : -1;
       items[(items.indexOf(item) + offset + items.length) % items.length].focus();
+    });
+
+    on.call(this.player, this.menu, 'keydown', (keyboardEvent) => {
+      if (keyboardEvent.key !== 'Escape') {
+        return;
+      }
+
+      keyboardEvent.preventDefault();
+      keyboardEvent.stopPropagation();
+      this.close(true);
     });
   };
 }

@@ -58,6 +58,7 @@ const defaults = {
     title: null,
     logo: {
       imageUrl: null,
+      alt: '',
       clickUrl: null,
       mouseOverImageUrl: null,
       width: '100px',

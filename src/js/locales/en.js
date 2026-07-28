@@ -40,6 +40,7 @@ const en = {
   seek: 'Seek',
   volume: 'Volume',
   downloadVideo: 'Download video',
+  logo: 'Logo',
   live: 'live',
   mediaErrorAborted: 'Video loading was aborted.',
   mediaErrorNetwork: 'A network error prevented the video from loading.',

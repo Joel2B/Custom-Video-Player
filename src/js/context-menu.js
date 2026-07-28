@@ -1,4 +1,4 @@
-import { createElement, getEventOffsetX, getEventOffsetY, insertAfter } from './utils/dom';
+import { createElement, insertAfter } from './utils/dom';
 import { on } from './utils/events';
 import is from './utils/is';
 
@@ -24,30 +24,81 @@ class ContextMenu {
 
     if (!is.empty(links)) {
       for (const link of links) {
-        const li = createElement('li', { role: 'menuitem', tabindex: 0 }, link.label);
-        on.call(player, li, 'click', () => window.open(link.href, '_blank'));
+        const li = this.createItem(link.label);
+        on.call(player, li, 'click', () => this.openExternal(link.href));
         this.list.appendChild(li);
       }
     }
 
     this.defaultOptions();
 
-    this.version = createElement('li', { role: 'menuitem', tabindex: 0 }, 'CVP ' + player.version);
-    on.call(player, this.version, 'click', () => window.open(player.homepage, '_blank'));
+    this.version = this.createItem('CVP ' + player.version);
+    on.call(player, this.version, 'click', () => this.openExternal(player.homepage));
     this.list.appendChild(this.version);
 
     this.menu.appendChild(this.list);
 
-    on.call(player, this.list, 'keydown', (event) => {
-      if (event.target.getAttribute('role') !== 'menuitem' || (event.key !== 'Enter' && event.key !== ' ')) {
-        return;
-      }
+    on.call(
+      player,
+      this.list,
+      'keydown',
+      (event) => {
+        const item = event.target;
+        if (item.getAttribute('role') !== 'menuitem') {
+          return;
+        }
 
-      event.preventDefault();
-      event.target.click();
+        const items = Array.from(this.list.querySelectorAll('[role="menuitem"]'));
+        let index = items.indexOf(item);
+
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          event.stopPropagation();
+          if (item === this.shortcuts) {
+            this.openShortcuts();
+          } else {
+            item.click();
+          }
+          return;
+        }
+
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          event.stopPropagation();
+          this.close(true);
+          return;
+        }
+
+        if (event.key === 'Home') {
+          index = 0;
+        } else if (event.key === 'End') {
+          index = items.length - 1;
+        } else if (event.key === 'ArrowDown') {
+          index = (index + 1) % items.length;
+        } else if (event.key === 'ArrowUp') {
+          index = (index - 1 + items.length) % items.length;
+        } else {
+          return;
+        }
+
+        event.preventDefault();
+        this.focusItem(items[index]);
+      },
+      false,
+    );
+
+    on.call(player, this.list, 'click', (event) => {
+      event.stopPropagation();
+      this.close(true);
     });
 
     insertAfter(this.menu, player.media);
+
+    on.call(player, wrapper, 'mousedown', (event) => {
+      if (event.button === 2) {
+        this.contextInvoker = document.activeElement;
+      }
+    });
 
     // Disable the default context menu
     on.call(
@@ -61,9 +112,27 @@ class ContextMenu {
           return;
         }
 
-        this.menu.style.left = getEventOffsetX(player.media, event) + 'px';
-        this.menu.style.top = getEventOffsetY(player.media, event) + 'px';
+        const invoker = this.contextInvoker || document.activeElement;
+        this.contextInvoker = null;
+        this.previousFocus =
+          invoker === document.body || invoker === player.media
+            ? player.controls.playPause
+            : invoker;
         this.menu.style.display = 'block';
+        const wrapperRect = wrapper.getBoundingClientRect();
+        const menuRect = this.menu.getBoundingClientRect();
+        const left = Math.min(
+          Math.max(event.clientX - wrapperRect.left, 0),
+          Math.max(wrapperRect.width - menuRect.width, 0),
+        );
+        const top = Math.min(
+          Math.max(event.clientY - wrapperRect.top, 0),
+          Math.max(wrapperRect.height - menuRect.height, 0),
+        );
+
+        this.menu.style.left = `${left}px`;
+        this.menu.style.top = `${top}px`;
+        this.focusItem(this.list.querySelector('[role="menuitem"]'));
       },
       false,
     );
@@ -71,9 +140,50 @@ class ContextMenu {
     // Hide the context menu on clicking elsewhere
     on.call(player, document, 'click', (event) => {
       if (event.target !== player.media || event.button !== 2) {
-        this.menu.style.display = 'none';
+        this.close();
       }
     });
+  };
+
+  createItem = (label) => createElement('li', { role: 'menuitem', tabindex: -1 }, label);
+
+  focusItem = (item) => {
+    if (!item) {
+      return;
+    }
+
+    for (const menuItem of this.list.querySelectorAll('[role="menuitem"]')) {
+      menuItem.setAttribute('tabindex', menuItem === item ? '0' : '-1');
+    }
+
+    item.focus();
+  };
+
+  close = (restoreFocus = false) => {
+    if (this.menu.style.display !== 'block') {
+      return;
+    }
+
+    this.menu.style.display = 'none';
+
+    if (restoreFocus && this.previousFocus?.isConnected) {
+      this.previousFocus.focus();
+    }
+
+    this.previousFocus = null;
+  };
+
+  openExternal = (url) => {
+    const opened = window.open(url, '_blank', 'noopener,noreferrer');
+    if (opened) {
+      opened.opener = null;
+    }
+  };
+
+  openShortcuts = () => {
+    const invoker = this.previousFocus;
+    this.close();
+    this.player.shortcuts.open(invoker);
   };
 
   defaultOptions = () => {
@@ -84,19 +194,22 @@ class ContextMenu {
       return;
     }
 
-    this.play = createElement('li', { role: 'menuitem', tabindex: 0 }, config.captions.play);
+    this.play = this.createItem(config.captions.play);
     on.call(player, this.play, 'click', player.playPause.toggle);
     this.list.appendChild(this.play);
 
-    this.mute = createElement('li', { role: 'menuitem', tabindex: 0 }, config.captions.mute);
+    this.mute = this.createItem(config.captions.mute);
     on.call(player, this.mute, 'click', player.toggleMute);
     this.list.appendChild(this.mute);
 
-    this.shortcuts = createElement('li', { role: 'menuitem', tabindex: 0 }, config.captions.shortcuts.title);
-    on.call(player, this.shortcuts, 'click', player.shortcuts.open);
+    this.shortcuts = this.createItem(config.captions.shortcuts.title);
+    on.call(player, this.shortcuts, 'click', (event) => {
+      event.stopPropagation();
+      this.openShortcuts();
+    });
     this.list.appendChild(this.shortcuts);
 
-    this.fs = createElement('li', { role: 'menuitem', tabindex: 0 }, config.captions.fullscreen);
+    this.fs = this.createItem(config.captions.fullscreen);
     on.call(player, this.fs, 'click', player.fullscreen.toggle);
     this.list.appendChild(this.fs);
   };
