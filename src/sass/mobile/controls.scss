@@ -201,5 +201,12 @@
     height: 44px;
     order: 10;
     justify-content: center;
+
+    &::before {
+      inset: auto;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
   }
 }

@@ -244,6 +244,76 @@ test('context menu activation restores focus', async ({ page }) => {
   await expect(play).toBeFocused();
 });
 
+test('mobile settings and fullscreen icons stay centered', async ({ browser }) => {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    hasTouch: true,
+    userAgent:
+      'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 ' +
+      '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
+  });
+  const page = await context.newPage();
+
+  try {
+    await page.goto('http://127.0.0.1:8080/');
+    await page.setContent('<video id="player" width="320" height="180"></video>');
+    await page.addScriptTag({ url: 'http://127.0.0.1:8080/player.min.js' });
+    await page.evaluate(() => window.fluidPlayer('player'));
+
+    const geometry = await page.evaluate(() => {
+      const settings = document.querySelector('.fluid_options_btn').getBoundingClientRect();
+      const settingsIcon = document.querySelector('.fluid_mobile_main_menu').getBoundingClientRect();
+      const settingsGlyph = getComputedStyle(document.querySelector('.fluid_mobile_main_menu'), '::before');
+      const fullscreen = document.querySelector('.fluid_control_fullscreen').getBoundingClientRect();
+      const fullscreenGlyph = getComputedStyle(document.querySelector('.fluid_control_fullscreen'), '::before');
+
+      return {
+        wrapperMobile: document.querySelector('.fluid_video_wrapper').classList.contains('fluid_mobile'),
+        settings: { width: settings.width, height: settings.height },
+        settingsIcon: {
+          width: settingsIcon.width,
+          height: settingsIcon.height,
+          centeredX: settingsIcon.left + settingsIcon.width / 2 === settings.left + settings.width / 2,
+          centeredY: settingsIcon.top + settingsIcon.height / 2 === settings.top + settings.height / 2,
+          glyphTop: settingsGlyph.top,
+          glyphLeft: settingsGlyph.left,
+        },
+        fullscreen: { width: fullscreen.width, height: fullscreen.height },
+        fullscreenGlyph: {
+          width: fullscreenGlyph.width,
+          height: fullscreenGlyph.height,
+          top: fullscreenGlyph.top,
+          left: fullscreenGlyph.left,
+          transform: fullscreenGlyph.transform,
+        },
+      };
+    });
+
+    expect(geometry).toEqual({
+      wrapperMobile: true,
+      settings: { width: 44, height: 44 },
+      settingsIcon: {
+        width: 24,
+        height: 24,
+        centeredX: true,
+        centeredY: true,
+        glyphTop: '0px',
+        glyphLeft: '0px',
+      },
+      fullscreen: { width: 44, height: 44 },
+      fullscreenGlyph: {
+        width: '24px',
+        height: '24px',
+        top: '22px',
+        left: '22px',
+        transform: 'matrix(1, 0, 0, 1, -12, -12)',
+      },
+    });
+  } finally {
+    await context.close();
+  }
+});
+
 test('focus is visible and reduced motion disables long transitions', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await setup(page);

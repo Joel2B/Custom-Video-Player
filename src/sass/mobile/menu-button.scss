@@ -35,6 +35,11 @@
 
     .fluid_icon {
       filter: $mobile-icon-color;
+
+      &::before {
+        top: 0;
+        left: 0;
+      }
     }
 
     .fluid_mobile_close_main_menu {
