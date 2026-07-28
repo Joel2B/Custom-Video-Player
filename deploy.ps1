@@ -33,7 +33,7 @@ Assert-DeployConfiguration $remoteHost $remoteUser $remoteDir $archiveName $dist
 if (-not (Test-Path -LiteralPath $localKey -PathType Leaf)) {
   throw "SSH key file not found: $localKey"
 }
-foreach ($command in @('npm', 'scp', 'ssh')) {
+foreach ($command in @('npm.cmd', 'scp', 'ssh')) {
   if (-not (Get-Command $command -ErrorAction SilentlyContinue)) {
     throw "Required command not found: $command"
   }
@@ -55,12 +55,12 @@ Write-Host ">>> Using SSH key: $localKey"
 
 try {
   Write-Host ">>> Installing locked dependencies..."
-  Invoke-NativeCommand 'npm' @('ci') 'npm ci'
+  Invoke-NativeCommand 'npm.cmd' @('ci') 'npm ci'
 
   Write-Host ">>> Running npm run build-cdn..."
-  Invoke-NativeCommand 'npm' @('run', 'build-cdn') 'npm run build-cdn'
+  Invoke-NativeCommand 'npm.cmd' @('run', 'build-cdn') 'npm run build-cdn'
   Write-Host ">>> Running npm run build-dev..."
-  Invoke-NativeCommand 'npm' @('run', 'build-dev') 'npm run build-dev'
+  Invoke-NativeCommand 'npm.cmd' @('run', 'build-dev') 'npm run build-dev'
 
   $cdnDist = Join-Path $projectRoot 'dist-cdn'
   $dist = Join-Path $projectRoot 'dist'

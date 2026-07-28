@@ -20,8 +20,9 @@ cleanup() {
   rm -rf "$STAGING"
   if [ "$PUBLISHED" -eq 1 ]; then
     rm -rf "$BACKUP"
-  elif [ -e "$BACKUP" ] && [ ! -e "$APP_DIR" ]; then
-    mv "$BACKUP" "$APP_DIR"
+  elif [ -d "$BACKUP" ] && [ -d "$APP_DIR" ]; then
+    rsync -a --delete "$BACKUP/" "$APP_DIR/"
+    rm -rf "$BACKUP"
   fi
 }
 trap cleanup EXIT
@@ -37,19 +38,22 @@ validate_zip() {
 
 validate_zip "$ARCHIVE"
 validate_zip "$DIST"
+command -v rsync >/dev/null
 rm -rf "$STAGING" "$BACKUP"
 mkdir -p "$(dirname "$APP_DIR")"
-mkdir -p "$STAGING"
+mkdir -p "$STAGING" "$BACKUP"
 unzip -oq "$ARCHIVE" -d "$STAGING"
 unzip -oq "$DIST" -d "$STAGING"
 test -s "$STAGING/player.min.js"
 
-if [ -e "$APP_DIR" ]; then
-  mv "$APP_DIR" "$BACKUP"
-fi
-if ! mv "$STAGING" "$APP_DIR"; then
-  if [ -e "$BACKUP" ]; then mv "$BACKUP" "$APP_DIR"; fi
+if [ -d "$APP_DIR" ]; then
+  rsync -a "$APP_DIR/" "$BACKUP/"
+elif [ -e "$APP_DIR" ]; then
+  echo "Deploy path exists but is not a directory: $APP_DIR" >&2
   exit 1
+else
+  mkdir -p "$APP_DIR"
 fi
+rsync -a --delete --delay-updates "$STAGING/" "$APP_DIR/"
 PUBLISHED=1
 echo ">>> CDN remote deploy completed successfully."
