@@ -11,6 +11,8 @@ class PreviewThumbnails {
     this.player = player;
     this.loaded = false;
     this.data = [];
+    this.request = null;
+    this.destroyed = false;
   }
 
   init = () => {
@@ -80,7 +82,16 @@ class PreviewThumbnails {
   };
 
   getThumbnails = (url) => {
-    return fetch(url).then(
+    this.request?.abort();
+
+    const { player } = this;
+    this.request = fetch(url, 'text', {
+      timeout: player.config.xhrTimeout,
+      onBeforeOpen: player.config.onBeforeXMLHttpRequestOpen,
+      onBeforeSend: player.config.onBeforeXMLHttpRequest,
+    });
+    const request = this.request;
+    return request.then(
       (response) =>
         new Promise((resolve) => {
           const parser = new WebVTT.Parser(window, WebVTT.StringDecoder());
@@ -98,7 +109,11 @@ class PreviewThumbnails {
           parser.parse(response);
           parser.flush();
         }),
-    );
+    ).finally(() => {
+      if (this.request === request) {
+        this.request = null;
+      }
+    });
   };
 
   move = (event) => {
@@ -218,6 +233,11 @@ class PreviewThumbnails {
 
     // hide thumbnails
     on.call(player, player.controls.progressContainer, 'mouseleave touchend', this.hide);
+  };
+
+  destroy = () => {
+    this.destroyed = true;
+    this.request?.abort();
   };
 }
 

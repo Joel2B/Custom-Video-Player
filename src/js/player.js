@@ -158,7 +158,7 @@ class CVP {
         this.promiseTimeouts.delete(promiseTimeout);
       };
 
-      promise.then(clearPromiseTimeout).catch((error) => {
+      Promise.resolve(promise).then(clearPromiseTimeout).catch((error) => {
         this.debug.error(error);
 
         if (
@@ -312,6 +312,7 @@ class CVP {
 
   resize = () => {
     this.progressBar.resize();
+    this.volumeControl.resize();
   };
 
   overwrite = (from, to) => {
@@ -869,8 +870,10 @@ class CVP {
       this.mobileControls,
       this.playPause,
       this.progressBar,
+      this.preview?.current,
       this.autoPlay,
       this.menu,
+      this.subtitles,
       this.fps,
       this.fullscreen,
       this.theatre,
@@ -886,10 +889,9 @@ class CVP {
 
     this.streaming.detach();
 
-    this.media.setAttribute('src', this.config.blankVideo);
+    this.media.removeAttribute('src');
+    this.media.querySelectorAll('source').forEach((source) => source.remove());
     this.media.load();
-
-    this.original.setAttribute('controls', '');
 
     replaceElement(this.original, this.wrapper);
 

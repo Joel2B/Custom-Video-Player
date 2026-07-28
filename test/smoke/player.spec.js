@@ -392,6 +392,45 @@ test('browser bundle initializes, emits events, destroys, and reinitializes', as
   expect(reinitialized).toEqual({ ready: true, wrapped: true });
 });
 
+test('destroy restores media markup stopped without loading blankVideo', async ({ page }) => {
+  let blankRequests = 0;
+  await page.route('**/blank-destroy.mp4', (route) => {
+    blankRequests++;
+    return route.abort();
+  });
+
+  await page.goto('/');
+  await page.setContent(`
+    <video id="player" autoplay muted class="original" style="width: 320px">
+      <source src="/static/sample.webm" type="video/webm">
+      <track kind="subtitles" src="/static/subtitles-en.vtt" srclang="en">
+    </video>
+  `);
+  await page.addScriptTag({ url: '/player.min.js' });
+
+  const result = await page.evaluate(async () => {
+    const media = document.getElementById('player');
+    const original = media.outerHTML;
+    const api = window.fluidPlayer('player', { blankVideo: '/blank-destroy.mp4' });
+    await api.destroy();
+    const restored = document.getElementById('player');
+
+    return {
+      restored: restored.outerHTML,
+      expected: original.replace(' autoplay=""', ''),
+      autoplay: restored.hasAttribute('autoplay'),
+      paused: restored.paused,
+      controls: restored.hasAttribute('controls'),
+      sources: restored.querySelectorAll('source').length,
+      tracks: restored.querySelectorAll('track').length,
+    };
+  });
+
+  expect(result.restored).toBe(result.expected);
+  expect(result).toMatchObject({ autoplay: false, paused: true, controls: false, sources: 1, tracks: 1 });
+  expect(blankRequests).toBe(0);
+});
+
 test('configuration merge ignores prototype pollution keys', async ({ page }) => {
   await loadPlayer(page, '<video id="player" width="640" height="360"></video><video id="second"></video>');
 
@@ -431,6 +470,93 @@ test('configuration merge ignores prototype pollution keys', async ({ page }) =>
     firstMenu: true,
     secondMenu: true,
   });
+});
+
+test('audio registration processes only the supplied track and ignores duplicates', async ({ page }) => {
+  await loadPlayer(page, '<video id="player" width="640" height="360"></video>');
+
+  const result = await page.evaluate(() => {
+    const api = window.fluidPlayer('player');
+    const player = window.fluidPlayerDebug.at(-1).internals;
+    const first = { id: 1, name: 'English' };
+    const second = { id: 2, name: 'Spanish' };
+
+    player.audio.addTrack(first);
+    player.audio.addTrack(second);
+    first.id = 99;
+    player.audio.addTrack(first);
+
+    return {
+      first: player.audio.meta.get(first),
+      second: player.audio.meta.get(second),
+    };
+  });
+
+  expect(result).toEqual({ first: { id: 1 }, second: { id: 2 } });
+});
+
+test('volume rendering polling stops after its configured attempt limit', async ({ page }) => {
+  await loadPlayer(page, '<video id="player" width="640" height="360"></video>');
+
+  const attempts = await page.evaluate(async () => {
+    const api = window.fluidPlayer('player');
+    const volume = window.fluidPlayerDebug.at(-1).internals.volumeControl;
+    clearTimeout(volume.renderTimer);
+    volume.renderTimer = null;
+    volume.renderAttempts = 0;
+    volume.maxRenderAttempts = 2;
+    Object.defineProperty(volume.player.controls.volume, 'clientWidth', { configurable: true, value: 0 });
+    volume.update();
+    const firstTimer = volume.renderTimer;
+    volume.update();
+    const secondTimer = volume.renderTimer;
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    const exhausted = volume.renderPollingExhausted;
+    volume.resize();
+    const restarted = !volume.renderPollingExhausted && volume.renderTimer !== null;
+    clearTimeout(volume.renderTimer);
+    volume.renderTimer = null;
+    await api.destroy();
+    return {
+      attempts: volume.renderAttempts,
+      exhausted,
+      maximum: volume.maxRenderAttempts,
+      oneTimer: firstTimer === secondTimer,
+      restarted,
+      timerCreated: volume.renderTimer !== null,
+    };
+  });
+
+  expect(attempts).toEqual({
+    attempts: 0,
+    exhausted: true,
+    maximum: 2,
+    oneTimer: true,
+    restarted: true,
+    timerCreated: false,
+  });
+});
+
+test('media play accepts thenables whose then method does not return a promise', async ({ page }) => {
+  await page.goto('/');
+  await page.setContent('<video id="player" width="640" height="360"></video>');
+  await page.addInitScript(() => {
+    HTMLMediaElement.prototype.play = () => ({
+      then(resolve) {
+        resolve();
+      },
+    });
+  });
+  await page.addScriptTag({ url: '/player.min.js' });
+
+  const result = await page.evaluate(async () => {
+    const api = window.fluidPlayer('player');
+    const playResult = api.play();
+    await Promise.resolve();
+    return { thenable: typeof playResult.then === 'function' };
+  });
+
+  expect(result).toEqual({ thenable: true });
 });
 
 test('pause stops media while it is buffering', async ({ page }) => {

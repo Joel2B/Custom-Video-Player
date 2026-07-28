@@ -13,9 +13,13 @@ class Preview {
     this.current = new PreviewThumbnails(player);
     this.current
       .init()
-      .catch((error) => player.debug.error(error))
+      .catch((error) => {
+        if (error.name !== 'AbortError') {
+          player.debug.error(error);
+        }
+      })
       .finally(() => {
-        if (!this.current.loaded) {
+        if (!this.current.loaded && !this.current.destroyed) {
           this.current = new PreviewTime(player);
         }
       });

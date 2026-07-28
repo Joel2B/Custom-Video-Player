@@ -18,7 +18,7 @@ const isEvent = (input) => instanceOf(input, Event);
 const isKeyboardEvent = (input) => instanceOf(input, KeyboardEvent);
 const isCue = (input) => instanceOf(input, window.TextTrackCue) || instanceOf(input, window.VTTCue);
 const isTrack = (input) => instanceOf(input, TextTrack) || (!isNullOrUndefined(input) && isString(input.kind));
-const isPromise = (input) => instanceOf(input, Promise) && isFunction(input.then);
+const isPromise = (input) => !isNullOrUndefined(input) && typeof input.then === 'function';
 
 const isElement = (input) =>
   input !== null &&
@@ -45,7 +45,7 @@ const isUrl = (input) => {
 
   // Add the protocol if required
   let string = input;
-  if (!input.startsWith('http://') || !input.startsWith('https://')) {
+  if (!input.startsWith('http://') && !input.startsWith('https://')) {
     string = `http://${input}`;
   }
 
@@ -55,6 +55,8 @@ const isUrl = (input) => {
     return false;
   }
 };
+
+export { isPromise, isUrl };
 
 export default {
   nullOrUndefined: isNullOrUndefined,

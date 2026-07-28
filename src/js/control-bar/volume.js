@@ -16,6 +16,9 @@ class Volume {
     this.latestVolume = 1;
     this.applyTimer = null;
     this.renderTimer = null;
+    this.renderAttempts = 0;
+    this.maxRenderAttempts = 50;
+    this.renderPollingExhausted = false;
   }
 
   init = () => {
@@ -49,10 +52,20 @@ class Volume {
     const cmMute = player.contextMenu.mute;
     const width = volume.clientWidth;
 
-    if (!player.mobile && !width && innerWidth() >= 375) {
-      this.waitRendering();
+    if (
+      !player.mobile &&
+      !width &&
+      innerWidth() >= 375 &&
+      !this.renderPollingExhausted &&
+      this.renderAttempts < this.maxRenderAttempts
+    ) {
+      if (this.renderTimer === null) {
+        this.waitRendering();
+      }
       return;
     }
+
+    this.renderAttempts = 0;
 
     if (player.volume !== 0) {
       this.latestVolume = player.volume;
@@ -87,12 +100,26 @@ class Volume {
 
   waitRendering = () => {
     const { player } = this;
+    this.renderTimer = null;
 
     if (!is.nullOrUndefined(player.controls) && player.controls.volume.clientWidth) {
+      this.renderAttempts = 0;
       this.update();
-    } else {
+    } else if (++this.renderAttempts < this.maxRenderAttempts) {
       this.renderTimer = setTimeout(this.waitRendering, 100);
+    } else {
+      this.renderTimer = null;
+      this.renderPollingExhausted = true;
+      this.update();
     }
+  };
+
+  resize = () => {
+    clearTimeout(this.renderTimer);
+    this.renderTimer = null;
+    this.renderAttempts = 0;
+    this.renderPollingExhausted = false;
+    this.update();
   };
 
   updateVolume = (positionX) => {
@@ -229,6 +256,8 @@ class Volume {
   destroy = () => {
     clearTimeout(this.applyTimer);
     clearTimeout(this.renderTimer);
+    this.renderAttempts = 0;
+    this.renderPollingExhausted = true;
 
     off.call(this.player, document, 'mousemove touchmove', this.move);
     off.call(this.player, document, 'mouseup touchend mouseleave', this.end);

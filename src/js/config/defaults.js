@@ -104,6 +104,7 @@ const defaults = {
     },
   },
   captions: en,
+  xhrTimeout: 15000,
   onBeforeXMLHttpRequestOpen: (request) => {},
   onBeforeXMLHttpRequest: (request) => {},
   hls: {

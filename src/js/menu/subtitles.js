@@ -59,6 +59,7 @@ class Subtitles {
 
     // to render the current subtitles
     this.currentTrack = -1;
+    this.request = null;
   }
 
   init = () => {
@@ -271,7 +272,16 @@ class Subtitles {
   };
 
   downloadTrack = (url) => {
-    return fetch(url).then(
+    this.request?.abort();
+
+    const { player } = this;
+    this.request = fetch(url, 'text', {
+      timeout: player.config.xhrTimeout,
+      onBeforeOpen: player.config.onBeforeXMLHttpRequestOpen,
+      onBeforeSend: player.config.onBeforeXMLHttpRequest,
+    });
+    const request = this.request;
+    return request.then(
       (response) =>
         new Promise((resolve) => {
           const parser = new WebVTT.Parser(window, WebVTT.StringDecoder());
@@ -288,7 +298,15 @@ class Subtitles {
           parser.parse(response);
           parser.flush();
         }),
-    );
+    ).finally(() => {
+      if (this.request === request) {
+        this.request = null;
+      }
+    });
+  };
+
+  destroy = () => {
+    this.request?.abort();
   };
 
   setupMenu = () => {
@@ -524,6 +542,10 @@ class Subtitles {
             }
           })
           .catch((error) => {
+            if (error.name === 'AbortError') {
+              return;
+            }
+
             player.debug.error(`Failed to load subtitles: ${track.src}`, error);
 
             if (this.currentTrack === selectedTrack) {

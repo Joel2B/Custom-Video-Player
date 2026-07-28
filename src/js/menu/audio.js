@@ -158,18 +158,12 @@ class Audio {
   };
 
   addTrack = (track) => {
-    const { player } = this;
-    const tracks = this.getTracks();
+    if (!track || typeof track !== 'object' || this.meta.has(track)) {
+      return;
+    }
 
-    tracks
-      .filter((track) => !this.meta.has(track))
-      .forEach((track) => {
-        player.debug.log('Audio track added', track);
-
-        this.meta.set(track, {
-          id: track.id,
-        });
-      });
+    this.player.debug.log('Audio track added', track);
+    this.meta.set(track, { id: track.id });
   };
 
   update = () => {
