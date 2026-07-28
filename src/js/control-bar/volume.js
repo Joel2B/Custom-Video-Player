@@ -1,6 +1,5 @@
 import { getEventOffsetX, toggleClass } from '../utils/dom';
 import { off, on } from '../utils/events';
-import { innerWidth } from '../utils/window';
 import is from '../utils/is';
 
 class Volume {
@@ -23,6 +22,13 @@ class Volume {
 
   init = () => {
     const { player } = this;
+
+    this.updateAvailability();
+
+    if (is.function(window.ResizeObserver)) {
+      this.resizeObserver = new window.ResizeObserver(this.resize);
+      this.resizeObserver.observe(player.wrapper);
+    }
 
     if (player.storage.get(this.id) === null || !this.persistent) {
       player.storage.set(this.id, this.defaultValue);
@@ -55,7 +61,7 @@ class Volume {
     if (
       !player.mobile &&
       !width &&
-      innerWidth() >= 375 &&
+      player.wrapper.clientWidth >= 375 &&
       !this.renderPollingExhausted &&
       this.renderAttempts < this.maxRenderAttempts
     ) {
@@ -98,6 +104,11 @@ class Volume {
     this.updateTooltip(player.volume);
   };
 
+  updateAvailability = () => {
+    const available = !this.player.mobile && this.player.wrapper.clientWidth >= 375;
+    toggleClass(this.player.wrapper, 'fluid_volume_bar_available', available);
+  };
+
   waitRendering = () => {
     const { player } = this;
     this.renderTimer = null;
@@ -119,6 +130,7 @@ class Volume {
     this.renderTimer = null;
     this.renderAttempts = 0;
     this.renderPollingExhausted = false;
+    this.updateAvailability();
     this.update();
   };
 
@@ -258,6 +270,8 @@ class Volume {
     clearTimeout(this.renderTimer);
     this.renderAttempts = 0;
     this.renderPollingExhausted = true;
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = null;
 
     off.call(this.player, document, 'mousemove touchmove', this.move);
     off.call(this.player, document, 'mouseup touchend mouseleave', this.end);

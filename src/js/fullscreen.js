@@ -9,6 +9,8 @@ import { hasClass, toggleClass, toggleHidden } from './utils/dom';
 import { off, on, triggerEvent } from './utils/events';
 import is from './utils/is';
 
+let activeFallback = null;
+
 class Fullscreen {
   constructor(player) {
     // Keep reference to parent
@@ -23,6 +25,7 @@ class Fullscreen {
     this.bodyOverflow = null;
     this.viewportState = null;
     this.fallbackActive = false;
+    this.iosNativeActive = false;
     this.destroyed = false;
 
     // Force the use of 'full window/browser' rather than fullscreen
@@ -33,6 +36,11 @@ class Fullscreen {
     this.fullscreenChangeEvent = this.prefix === 'ms' ? 'MSFullscreenChange' : `${this.prefix}fullscreenchange`;
     this.nativeActive = this.nativeFullscreenActive;
     on.call(this.player, document, this.fullscreenChangeEvent, this.onNativeChange);
+
+    if (IS_IOS && this.player.config.layoutControls.fullscreen.iosNative) {
+      on.call(this.player, this.player.media, 'webkitbeginfullscreen', this.onIOSNativeBegin);
+      on.call(this.player, this.player.media, 'webkitendfullscreen', this.onIOSNativeEnd);
+    }
 
     // Fullscreen toggle on double click
     if (this.player.config.layoutControls.doubleclickFullscreen && !this.player.touch) {
@@ -108,9 +116,13 @@ class Fullscreen {
       return false;
     }
 
+    if (IS_IOS && this.player.config.layoutControls.fullscreen.iosNative && this.iosNativeActive) {
+      return true;
+    }
+
     // Fallback using classname
     if (this.fallbackActive || !Fullscreen.native || this.forceFallback) {
-      return hasClass(this.target, 'fluid_fullscreen_fallback');
+      return hasClass(this.player.wrapper, 'fluid_fullscreen_fallback');
     }
 
     return this.nativeFullscreenActive;
@@ -125,7 +137,7 @@ class Fullscreen {
       ? this.target.getRootNode().fullscreenElement
       : this.target.getRootNode()[`${this.prefix}${this.property}Element`];
 
-    return element && element.shadowRoot ? element === this.target.getRootNode().host : element === this.target;
+    return !!element && (element.shadowRoot ? element === this.target.getRootNode().host : element === this.target);
   }
 
   // Get target element
@@ -146,6 +158,24 @@ class Fullscreen {
 
     this.nativeActive = active;
     this.onChange(active);
+  };
+
+  onIOSNativeBegin = () => {
+    if (this.destroyed || this.iosNativeActive) {
+      return;
+    }
+
+    this.iosNativeActive = true;
+    this.onChange(true);
+  };
+
+  onIOSNativeEnd = () => {
+    if (this.destroyed || !this.iosNativeActive) {
+      return;
+    }
+
+    this.iosNativeActive = false;
+    this.onChange(false);
   };
 
   onChange = (active = this.active) => {
@@ -179,6 +209,13 @@ class Fullscreen {
       return;
     }
 
+    if (toggle && activeFallback && activeFallback !== this) {
+      activeFallback.toggleFallback(false);
+      if (activeFallback) {
+        return;
+      }
+    }
+
     // Store or restore scroll position
     if (toggle) {
       this.scrollPosition = {
@@ -204,8 +241,9 @@ class Fullscreen {
     }
 
     // Toggle class hook
-    toggleClass(this.target, 'fluid_fullscreen_fallback', toggle);
+    toggleClass(this.player.wrapper, 'fluid_fullscreen_fallback', toggle);
     this.fallbackActive = toggle;
+    activeFallback = toggle ? this : activeFallback === this ? null : activeFallback;
 
     // Force full viewport on iPhone X+
     if (IS_IOS) {
@@ -289,10 +327,15 @@ class Fullscreen {
         return;
       }
 
-      if (this.target.requestFullscreen) {
-        this.target.requestFullscreen().catch(() => {
-          this.toggleFallback(true);
-        });
+      if (is.function(this.target.requestFullscreen)) {
+        const request = this.target.requestFullscreen();
+        if (request && is.function(request.catch)) {
+          request.catch(() => {
+            if (!this.destroyed) {
+              this.toggleFallback(true);
+            }
+          });
+        }
         return;
       }
 
@@ -303,11 +346,37 @@ class Fullscreen {
     if (!Fullscreen.native || this.forceFallback) {
       this.toggleFallback(true);
     } else if (!this.prefix) {
-      this.target.requestFullscreen?.({ navigationUI: 'hide' }).catch?.(() => {
-        this.toggleFallback(true);
-      });
+      const request = this.target.requestFullscreen?.({ navigationUI: 'hide' });
+      if (request && is.function(request.catch)) {
+        request.catch(() => {
+          if (!this.destroyed) {
+            this.toggleFallback(true);
+          }
+        });
+      }
     } else if (!is.empty(this.prefix)) {
       this.target[`${this.prefix}Request${this.property}`]();
+    }
+  };
+
+  exitNative = () => {
+    if (!this.prefix) {
+      const exit = document.cancelFullScreen || document.exitFullscreen;
+      if (is.function(exit)) {
+        const request = exit.call(document);
+        if (request && is.function(request.catch)) {
+          request.catch(() => {});
+        }
+      }
+    } else if (!is.empty(this.prefix)) {
+      const action = this.prefix === 'moz' ? 'Cancel' : 'Exit';
+      const exit = document[`${this.prefix}${action}${this.property}`];
+      if (is.function(exit)) {
+        const request = exit.call(document);
+        if (request && is.function(request.catch)) {
+          request.catch(() => {});
+        }
+      }
     }
   };
 
@@ -317,17 +386,20 @@ class Fullscreen {
       return;
     }
 
-    // iOS native fullscreen
-    if (IS_IOS && this.player.config.layoutControls.fullscreen.iosNative) {
+    if (this.fallbackActive) {
+      this.toggleFallback(false);
+    } else if (
+      IS_IOS &&
+      this.player.config.layoutControls.fullscreen.iosNative &&
+      this.iosNativeActive &&
+      is.function(this.target.webkitExitFullscreen)
+    ) {
       this.target.webkitExitFullscreen();
       this.player.play();
-    } else if (this.fallbackActive || !Fullscreen.native || this.forceFallback) {
+    } else if (!Fullscreen.native || this.forceFallback) {
       this.toggleFallback(false);
-    } else if (!this.prefix) {
-      (document.cancelFullScreen || document.exitFullscreen).call(document);
-    } else if (!is.empty(this.prefix)) {
-      const action = this.prefix === 'moz' ? 'Cancel' : 'Exit';
-      document[`${this.prefix}${action}${this.property}`]();
+    } else {
+      this.exitNative();
     }
   };
 
@@ -347,6 +419,8 @@ class Fullscreen {
 
     this.destroyed = true;
     off(document, this.fullscreenChangeEvent, this.onNativeChange);
+    off(this.player.media, 'webkitbeginfullscreen', this.onIOSNativeBegin);
+    off(this.player.media, 'webkitendfullscreen', this.onIOSNativeEnd);
 
     if (this.onDoubleClick) {
       off(this.player.wrapper, 'dblclick', this.onDoubleClick);
@@ -355,15 +429,12 @@ class Fullscreen {
     if (this.fallbackActive) {
       this.toggleFallback(false, false);
     } else {
-      toggleClass(this.target, 'fluid_fullscreen_fallback', false);
+      toggleClass(this.player.wrapper, 'fluid_fullscreen_fallback', false);
 
-      if (this.nativeFullscreenActive) {
-        if (!this.prefix) {
-          (document.cancelFullScreen || document.exitFullscreen).call(document);
-        } else {
-          const action = this.prefix === 'moz' ? 'Cancel' : 'Exit';
-          document[`${this.prefix}${action}${this.property}`]();
-        }
+      if (this.iosNativeActive && is.function(this.target.webkitExitFullscreen)) {
+        this.target.webkitExitFullscreen();
+      } else if (this.nativeFullscreenActive) {
+        this.exitNative();
       }
     }
   };

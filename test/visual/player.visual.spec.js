@@ -59,3 +59,44 @@ test('compact controls', async ({ page }) => {
   await setup(page, { width: 350, height: 197 });
   await expect(page.locator('.fluid_video_wrapper')).toHaveScreenshot('compact-controls.png');
 });
+
+test('mobile menus fit supported player widths', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({
+    baseURL,
+    viewport: { width: 1500, height: 420 },
+    hasTouch: true,
+    userAgent:
+      'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 ' +
+      '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
+  });
+  const page = await context.newPage();
+
+  try {
+    await page.goto('/');
+    await page.setContent(`
+      <style>
+        html, body { margin: 0; background: #161616; }
+        .matrix { display: flex; gap: 12px; padding: 12px; width: 1468px; }
+        video { display: block; height: 360px; }
+        .cvp_options_menu, .cvp_options_menu * { transition: none !important; }
+      </style>
+      <div class="matrix">
+        ${[200, 260, 320, 640]
+          .map((width) => `<video id="player-${width}" width="${width}" height="360"></video>`)
+          .join('')}
+      </div>
+    `);
+    await page.addScriptTag({ url: '/player.min.js' });
+    await page.evaluate(() => {
+      [200, 260, 320, 640].forEach((width) => window.fluidPlayer(`player-${width}`));
+    });
+    for (const button of await page.locator('.fluid_options_btn').all()) {
+      await button.dispatchEvent('touchend');
+    }
+    await expect(page.locator('.cvp_options_menu.cvp_visible')).toHaveCount(4);
+
+    await expect(page.locator('.matrix')).toHaveScreenshot('mobile-menu-widths.png');
+  } finally {
+    await context.close();
+  }
+});

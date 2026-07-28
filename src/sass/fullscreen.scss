@@ -1,6 +1,37 @@
-.fluid_fullscreen_fallback {
+@mixin fullscreen-size {
   width: 100% !important;
   height: 100% !important;
+}
+
+@mixin fullscreen-safe-area {
+  .fluid_controls_container {
+    right: constant(safe-area-inset-right);
+    bottom: constant(safe-area-inset-bottom);
+    left: constant(safe-area-inset-left);
+    right: env(safe-area-inset-right);
+    bottom: env(safe-area-inset-bottom);
+    left: env(safe-area-inset-left);
+  }
+
+  .fluid_mobile_controls {
+    right: constant(safe-area-inset-right);
+    bottom: constant(safe-area-inset-bottom);
+    left: constant(safe-area-inset-left);
+    right: env(safe-area-inset-right);
+    bottom: env(safe-area-inset-bottom);
+    left: env(safe-area-inset-left);
+    width: auto;
+  }
+
+  &.fluid_hide_controls .fluid_mobile_controls {
+    transform: translate3d(0, calc(52px + constant(safe-area-inset-bottom)), 0);
+    transform: translate3d(0, calc(52px + env(safe-area-inset-bottom)), 0);
+  }
+}
+
+.fluid_fullscreen_fallback {
+  @include fullscreen-size;
+  @include fullscreen-safe-area;
   top: 0;
   right: 0;
   bottom: 0;
@@ -10,16 +41,23 @@
   z-index: 9999;
 }
 
+.fluid_video_wrapper:fullscreen {
+  @include fullscreen-size;
+  @include fullscreen-safe-area;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
 .fluid_video_wrapper:-webkit-full-screen {
-  width: 100% !important;
-  height: 100% !important;
+  @include fullscreen-size;
+  @include fullscreen-safe-area;
   position: absolute;
   top: 0;
   left: 0;
 }
 
 .fluid_video_wrapper:-ms-fullscreen {
-  width: 100% !important;
-  height: 100% !important;
+  @include fullscreen-size;
   position: absolute;
 }
