@@ -126,25 +126,6 @@ export const CHROME_VERSION = (function() {
 })();
 
 /**
- * The detected Internet Explorer version - or `null`.
- *
- * @static
- * @const
- * @type {number|null}
- */
-export const IE_VERSION = (function() {
-  const result = /MSIE\s(\d+)\.\d/.exec(USER_AGENT);
-  let version = result && parseFloat(result[1]);
-
-  if (!version && /Trident\/7.0/i.test(USER_AGENT) && /rv:11.0/.test(USER_AGENT)) {
-    // IE 11 has a different user agent string than other IE versions
-    version = 11.0;
-  }
-
-  return version;
-})();
-
-/**
  * Whether or not this is desktop Safari.
  *
  * @static

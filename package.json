@@ -32,8 +32,7 @@
   "homepage": "https://github.com/Joel2B/Custom-Video-Player",
   "browserslist": [
     "> 0.25%",
-    "not dead",
-    "IE 11"
+    "not dead"
   ],
   "dependencies": {
     "custom-event-polyfill": "^1.0.7",

@@ -56,8 +56,3 @@
   top: 0;
   left: 0;
 }
-
-.fluid_video_wrapper:-ms-fullscreen {
-  @include fullscreen-size;
-  position: absolute;
-}

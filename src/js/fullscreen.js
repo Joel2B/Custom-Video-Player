@@ -33,7 +33,7 @@ class Fullscreen {
 
     // Register event listeners
     // Handle event (incase user presses escape etc)
-    this.fullscreenChangeEvent = this.prefix === 'ms' ? 'MSFullscreenChange' : `${this.prefix}fullscreenchange`;
+    this.fullscreenChangeEvent = `${this.prefix}fullscreenchange`;
     this.nativeActive = this.nativeFullscreenActive;
     on.call(this.player, document, this.fullscreenChangeEvent, this.onNativeChange);
 
@@ -65,8 +65,7 @@ class Fullscreen {
     return !!(
       document.fullscreenEnabled ||
       document.webkitFullscreenEnabled ||
-      document.mozFullScreenEnabled ||
-      document.msFullscreenEnabled
+      document.mozFullScreenEnabled
     );
   }
 
@@ -84,7 +83,7 @@ class Fullscreen {
 
     // Check for fullscreen support by vendor prefix
     let value = '';
-    const prefixes = ['webkit', 'moz', 'ms'];
+    const prefixes = ['webkit', 'moz'];
 
     prefixes.some((pre) => {
       if (is.function(document[`${pre}ExitFullscreen`]) || is.function(document[`${pre}CancelFullScreen`])) {

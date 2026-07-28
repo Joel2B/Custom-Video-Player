@@ -10,12 +10,6 @@
   display: none;
   position: absolute;
 
-  // IE 10+
-  _:-ms-lang(x),
-  & {
-    text-align: left;
-  }
-
   ul {
     list-style: none;
     padding: 0;
