@@ -139,6 +139,16 @@ npm run deploy
 
 Required `.env` values are documented in `.env.example`. Deploy uses locked dependencies without lifecycle scripts, builds production CDN and E2E artifacts, validates ZIP entries and SHA-256, acquires local and remote locks, and keeps a persistent rollback transaction until Nginx reload succeeds. Public E2E builds omit source maps.
 
+Production deploy should use the restricted `cvp-deploy` SSH account installed by `deploy/server/install.sh`. Its forced command accepts deployment packages over standard input and exposes no shell, forwarding, PTY, `sudo`, or Docker access beyond the root-owned Nginx activation helper.
+
+Install restricted server helpers as root after generating a dedicated Ed25519 key:
+
+```text
+bash deploy/server/install.sh /path/to/cvp_deploy.pub
+```
+
+The installer creates `cvp-deploy`, installs root-owned deploy and Nginx activation helpers, validates the dedicated sudoers rule, restricts `authorized_keys`, and grants ownership only over `/home/j/player`. Keep an administrative SSH account separate from deployment credentials.
+
 ## Changes
 
 New options:

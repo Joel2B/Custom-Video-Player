@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+command="${SSH_ORIGINAL_COMMAND:-}"
+if [[ "$command" =~ ^deploy\ ([0-9]{8}T[0-9]{6}Z-[a-f0-9]{32})\ ([a-f0-9]{64})$ ]]; then
+  exec /usr/local/libexec/cvp-remote-deploy "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}"
+fi
+
+echo 'Command not permitted' >&2
+exit 126

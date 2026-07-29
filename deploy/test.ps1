@@ -16,6 +16,12 @@ try {
   docker run --rm -v "${projectRoot}/deploy/remote-deploy.sh:/deploy.sh:ro" bash:latest bash -n /deploy.sh
   if ($LASTEXITCODE -ne 0) { throw 'Remote deploy syntax check failed' }
 
+  docker run --rm -v "${projectRoot}/deploy/server:/server:ro" bash:latest bash -n /server/cvp-deploy-entrypoint /server/cvp-nginx-activate /server/install.sh
+  if ($LASTEXITCODE -ne 0) { throw 'Restricted SSH helper syntax check failed' }
+
+  docker run --rm -v "${projectRoot}/deploy/server/cvp-deploy.sudoers:/etc/sudoers.d/cvp-deploy:ro" ubuntu:24.04 sh -c 'apt-get update -qq && apt-get install -y -qq sudo >/dev/null && visudo -cf /etc/sudoers.d/cvp-deploy'
+  if ($LASTEXITCODE -ne 0) { throw 'Restricted sudoers validation failed' }
+
   [IO.File]::WriteAllText(
     $tempConfig,
     [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/player.conf')).Replace('__CURRENT_LOCATION__', $location),

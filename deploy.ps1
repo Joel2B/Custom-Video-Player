@@ -32,7 +32,7 @@ Assert-DeployConfiguration $remoteHost $remoteUser $archiveName $distName
 if (-not (Test-Path -LiteralPath $localKey -PathType Leaf)) {
   throw "SSH key file not found: $localKey"
 }
-foreach ($command in @('npm.cmd', 'scp', 'ssh')) {
+foreach ($command in @('npm.cmd', 'ssh')) {
   if (-not (Get-Command $command -ErrorAction SilentlyContinue)) {
     throw "Required command not found: $command"
   }
@@ -40,14 +40,11 @@ foreach ($command in @('npm.cmd', 'scp', 'ssh')) {
 
 $deploymentId = "$(Get-Date -AsUTC -Format 'yyyyMMddTHHmmssZ')-$([Guid]::NewGuid().ToString('N'))"
 $sshTarget = "$remoteUser@$remoteHost"
-$scpHost = if ($remoteHost.Contains(':')) { "[$remoteHost]" } else { $remoteHost }
-$scpTarget = "$remoteUser@$scpHost"
 $archivePath = Join-Path $projectRoot $archiveName
 $distPath = Join-Path $projectRoot $distName
 $localTempDir = Join-Path ([IO.Path]::GetTempPath()) "cvp-deploy-$([Guid]::NewGuid().ToString('N'))"
-$localScriptPath = Join-Path $localTempDir 'remote-deploy.sh'
+$packagePath = Join-Path $localTempDir 'package.zip'
 $sshOptions = @('-i', $localKey, '-o', 'BatchMode=yes', '-o', 'IdentitiesOnly=yes', '-o', 'StrictHostKeyChecking=yes')
-$remoteTempDir = $null
 $deployLock = $null
 
 Write-Host ">>> Deploying CDN to $sshTarget"
@@ -88,32 +85,17 @@ try {
   Assert-ZipArchive $archivePath
   Assert-ZipArchive $distPath
 
-  $remoteTempDir = (Invoke-NativeCommandOutput 'ssh' ($sshOptions + @($sshTarget, 'mktemp', '-d', '/tmp/cvp-deploy.XXXXXXXXXX')) 'remote temp directory').Trim()
-  if ($remoteTempDir -notmatch '^/tmp/cvp-deploy\.[A-Za-z0-9]{10}$') {
-    throw "Unexpected remote temp directory: $remoteTempDir"
-  }
+  Copy-Item -LiteralPath $archivePath -Destination (Join-Path $localTempDir 'cdn.zip')
+  Copy-Item -LiteralPath $distPath -Destination (Join-Path $localTempDir 'dist.zip')
+  Compress-Archive -Path (Join-Path $localTempDir 'cdn.zip'), (Join-Path $localTempDir 'dist.zip') -DestinationPath $packagePath -Force
+  Assert-ZipArchive $packagePath
 
-  Write-Host ">>> Uploading verified archives..."
-  $scpOptions = @('-i', $localKey, '-o', 'BatchMode=yes', '-o', 'IdentitiesOnly=yes', '-o', 'StrictHostKeyChecking=yes')
-  Invoke-NativeCommand 'scp' ($scpOptions + @($archivePath, "${scpTarget}:$remoteTempDir/cdn.zip")) 'CDN archive upload'
-  Invoke-NativeCommand 'scp' ($scpOptions + @($distPath, "${scpTarget}:$remoteTempDir/dist.zip")) 'dist archive upload'
-
-  $remoteScriptSource = Join-Path $projectRoot 'deploy/remote-deploy.sh'
-  $remoteScript = [IO.File]::ReadAllText($remoteScriptSource).Replace("`r`n", "`n")
-  [IO.File]::WriteAllText($localScriptPath, $remoteScript, [Text.UTF8Encoding]::new($false))
-  Invoke-NativeCommand 'scp' ($scpOptions + @($localScriptPath, "${scpTarget}:$remoteTempDir/remote-deploy.sh")) 'remote script upload'
-  Invoke-NativeCommand 'scp' ($scpOptions + @((Join-Path $projectRoot 'deploy/safe_extract.py'), "${scpTarget}:$remoteTempDir/safe_extract.py")) 'extractor upload'
-  Invoke-NativeCommand 'scp' ($scpOptions + @((Join-Path $projectRoot 'deploy/player.conf'), "${scpTarget}:$remoteTempDir/player.conf")) 'Nginx config upload'
-
-  $remoteArguments = $sshOptions + @($sshTarget, 'bash', "$remoteTempDir/remote-deploy.sh", $deploymentId, $cdnHash)
-  Invoke-NativeCommand 'ssh' $remoteArguments 'remote deploy'
-  $remoteTempDir = $null
+  Write-Host ">>> Sending deployment package..."
+  $remoteArguments = $sshOptions + @($sshTarget, 'deploy', $deploymentId, $cdnHash)
+  Invoke-NativeCommandWithInput 'ssh' $remoteArguments $packagePath 'remote deploy'
   Write-Host "CDN deploy finished successfully."
 }
 finally {
-  if ($remoteTempDir) {
-    Invoke-NativeCommand 'ssh' ($sshOptions + @($sshTarget, 'rm', '-rf', '--', $remoteTempDir)) 'remote temp cleanup' -IgnoreError
-  }
   Remove-Item -LiteralPath $archivePath, $distPath -Force -ErrorAction SilentlyContinue
   Remove-Item -LiteralPath $localTempDir -Recurse -Force -ErrorAction SilentlyContinue
   Exit-DeployLock $deployLock

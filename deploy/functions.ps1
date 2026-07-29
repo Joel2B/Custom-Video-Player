@@ -19,18 +19,47 @@ function Invoke-NativeCommand {
   }
 }
 
-function Invoke-NativeCommandOutput {
+function Invoke-NativeCommandWithInput {
   param(
     [Parameter(Mandatory)] [string]$Command,
     [Parameter(Mandatory)] [string[]]$Arguments,
+    [Parameter(Mandatory)] [string]$InputPath,
     [Parameter(Mandatory)] [string]$Description
   )
 
-  $output = & $Command @Arguments
-  if ($LASTEXITCODE -ne 0) {
-    throw "$Description failed with exit code $LASTEXITCODE"
+  $startInfo = [Diagnostics.ProcessStartInfo]::new()
+  $startInfo.FileName = $Command
+  $startInfo.UseShellExecute = $false
+  $startInfo.RedirectStandardInput = $true
+  foreach ($argument in $Arguments) { [void]$startInfo.ArgumentList.Add($argument) }
+
+  $process = [Diagnostics.Process]::Start($startInfo)
+  $streamError = $null
+  try {
+    $input = [IO.File]::OpenRead($InputPath)
+    try {
+      $input.CopyTo($process.StandardInput.BaseStream)
+    }
+    catch {
+      $streamError = $_
+    }
+    finally {
+      $input.Dispose()
+      $process.StandardInput.Close()
+    }
+    $process.WaitForExit()
+    if ($streamError) { throw $streamError }
+    if ($process.ExitCode -ne 0) {
+      throw "$Description failed with exit code $($process.ExitCode)"
+    }
   }
-  return ($output -join "`n")
+  finally {
+    if (-not $process.HasExited) {
+      $process.Kill($true)
+      $process.WaitForExit()
+    }
+    $process.Dispose()
+  }
 }
 
 function Enter-DeployLock {

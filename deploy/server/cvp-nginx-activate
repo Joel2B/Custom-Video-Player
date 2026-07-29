@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+TEMPLATE='/etc/cvp-deploy/player.conf.template'
+CONFIG='/home/j/nginx/player.conf'
+CONTAINER='player'
+IMAGE='nginx@sha256:b3c656d55d7ad751196f21b7fd2e8d4da9cb430e32f646adcf92441b72f82b14'
+APP_DIR='/home/j/player'
+
+[ "$#" -eq 2 ]
+DEPLOY_ID="$1"
+SHA="$2"
+printf '%s' "$DEPLOY_ID" | grep -Eq '^[0-9]{8}T[0-9]{6}Z-([a-f0-9]{8}|[a-f0-9]{32})$'
+printf '%s' "$SHA" | grep -Eq '^[a-f0-9]{64}$'
+BUNDLE="v1/deployments/$DEPLOY_ID/sha256/$SHA/player.min.js"
+[ -f "$APP_DIR/$BUNDLE" ] && [ ! -L "$APP_DIR/$BUNDLE" ]
+printf '%s  %s\n' "$SHA" "$APP_DIR/$BUNDLE" | sha256sum -c -
+[ "$(realpath -e /home/j/nginx)" = '/home/j/nginx' ]
+[ ! -L /home/j/nginx ] && [ "$(stat -c '%U:%G:%a' /home/j/nginx)" = 'j:j:775' ]
+[ "$(realpath -e "$CONFIG")" = "$CONFIG" ]
+[ ! -L "$CONFIG" ] && [ "$(stat -c '%U:%G:%a' "$CONFIG")" = 'root:root:644' ]
+
+temp="$(mktemp /home/j/nginx/player.conf.XXXXXXXXXX)"
+backup="$(mktemp /home/j/nginx/player.conf.backup.XXXXXXXXXX)"
+trap 'rm -f -- "$temp" "$backup"' EXIT
+sed "s|__CURRENT_LOCATION__|/$BUNDLE|" "$TEMPLATE" > "$temp"
+grep -Fq "return 302 /$BUNDLE;" "$temp"
+cp -f "$CONFIG" "$backup"
+
+restore() {
+  cat "$backup" > "$CONFIG"
+  docker exec "$CONTAINER" nginx -t
+  docker exec "$CONTAINER" nginx -s reload
+}
+
+docker run --rm -v "$temp:/etc/nginx/conf.d/default.conf:ro" "$IMAGE" nginx -t
+cat "$temp" > "$CONFIG"
+if ! docker exec "$CONTAINER" nginx -t || ! docker exec "$CONTAINER" nginx -s reload; then
+  restore
+  exit 1
+fi
