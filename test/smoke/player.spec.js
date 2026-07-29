@@ -476,7 +476,7 @@ test('audio registration processes only the supplied track and ignores duplicate
   await loadPlayer(page, '<video id="player" width="640" height="360"></video>');
 
   const result = await page.evaluate(() => {
-    const api = window.fluidPlayer('player');
+    window.fluidPlayer('player');
     const player = window.fluidPlayerDebug.at(-1).internals;
     const first = { id: 1, name: 'English' };
     const second = { id: 2, name: 'Spanish' };
@@ -771,7 +771,7 @@ test('pause cancels waitInteraction retry timer', async ({ page }) => {
     localStorage.clear();
     window.mediaPlayCalls = 0;
     window.waitPlayCalls = 0;
-    HTMLMediaElement.prototype.play = function () {
+    HTMLMediaElement.prototype.play = function() {
       if (this.id === 'player') {
         window.mediaPlayCalls++;
         return window.mediaPlayCalls === 1
@@ -813,7 +813,7 @@ test('source change invalidates pending waitInteraction promise', async ({ page 
     localStorage.clear();
     window.mediaPlayCalls = 0;
     window.resolveWaitInteraction = null;
-    HTMLMediaElement.prototype.play = function () {
+    HTMLMediaElement.prototype.play = function() {
       if (this.id === 'player') {
         window.mediaPlayCalls++;
         return window.mediaPlayCalls === 1

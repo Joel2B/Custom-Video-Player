@@ -21,13 +21,7 @@ export default [
         sourceType: 'module',
       },
       globals: {
-        ...browser,
-        ...node,
         ...es2021,
-        FP_BUILD_VERSION: 'readonly',
-        FP_HOMEPAGE: 'readonly',
-        FP_ENV: 'readonly',
-        FP_DEBUG: 'readonly',
       },
     },
     plugins: {
@@ -63,6 +57,50 @@ export default [
           asyncArrow: 'always',
         },
       ],
+    },
+  },
+  {
+    files: ['src/**/*.js', 'test/static/**/*.js'],
+    languageOptions: {
+      globals: {
+        ...browser,
+        FP_BUILD_VERSION: 'readonly',
+        FP_HOMEPAGE: 'readonly',
+        FP_ENV: 'readonly',
+        FP_DEBUG: 'readonly',
+      },
+    },
+  },
+  {
+    files: ['test/smoke/**/*.js', 'test/visual/**/*.js'],
+    languageOptions: {
+      globals: {
+        ...browser,
+        ...node,
+      },
+    },
+    rules: {
+      indent: 'off',
+      'max-len': 'off',
+      'no-proto': 'off',
+    },
+  },
+  {
+    files: ['test/static/**/*.js'],
+    rules: {
+      'lines-between-class-members': 'off',
+    },
+  },
+  {
+    files: ['test/unit/**/*.{js,cjs}', '*.config.{js,mjs}', 'webpack.config.js'],
+    languageOptions: {
+      globals: {
+        ...node,
+      },
+    },
+    rules: {
+      indent: 'off',
+      'object-shorthand': 'off',
     },
   },
   {

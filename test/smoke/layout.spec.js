@@ -159,6 +159,7 @@ test('volume observer disconnects on destroy', async ({ page }) => {
       observe() {
         window.resizeObserverCalls.observe++;
       }
+
       disconnect() {
         window.resizeObserverCalls.disconnect++;
       }
