@@ -7,6 +7,7 @@
     "build": "webpack --mode=production",
     "build-obf": "webpack --mode=production --env obf",
     "build-cdn": "webpack --mode=production --env dist=current",
+    "build-e2e": "webpack --env deploy",
     "build-dev": "webpack",
     "build-debug": "webpack --env debug",
     "lint": "eslint src --ext .js",

@@ -68,11 +68,18 @@ const getDistOptions = (mode) => {
         path: _resolve(__dirname, 'dist'),
         publicPath: '',
       };
-    case 'current':
+    case 'current': {
+      const deploymentId = getEnv('DEPLOY_ID');
+
+      if (!deploymentId || !/^\d{8}T\d{6}Z-[a-f0-9]{32}$/.test(deploymentId)) {
+        throw new Error('DEPLOY_ID must use YYYYMMDDTHHMMSSZ followed by a 32-character hex suffix.');
+      }
+
       return {
-        path: _resolve(__dirname, 'dist-cdn/v' + majorVersion + '/current/'),
-        publicPath: cdnRoot + '/v' + majorVersion + '/current/',
+        path: _resolve(__dirname, 'dist-cdn/v' + majorVersion + '/deployments/' + deploymentId + '/'),
+        publicPath: cdnRoot + '/v' + majorVersion + '/deployments/' + deploymentId + '/',
       };
+    }
     case 'versioned':
       return {
         path: _resolve(__dirname, 'dist-cdn/' + fullVersion + '/'),
@@ -201,7 +208,7 @@ export default (env, argv) => {
     devServer: {
       static: distOptions.path,
     },
-    devtool: mode === 'development' ? 'source-map' : false,
+    devtool: mode === 'development' && !env.deploy ? 'source-map' : false,
     plugins,
     entry: {
       player: './src/browser.js',

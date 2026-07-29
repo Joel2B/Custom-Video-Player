@@ -2,13 +2,54 @@ function Invoke-NativeCommand {
   param(
     [Parameter(Mandatory)] [string]$Command,
     [Parameter(Mandatory)] [string[]]$Arguments,
+    [Parameter(Mandatory)] [string]$Description,
+    [switch]$IgnoreError
+  )
+
+  if ($Command.EndsWith('.cmd', [StringComparison]::OrdinalIgnoreCase)) {
+    $process = Start-Process -FilePath $Command -ArgumentList $Arguments -NoNewWindow -Wait -PassThru
+    $exitCode = $process.ExitCode
+  } else {
+    & $Command @Arguments
+    $exitCode = $LASTEXITCODE
+  }
+  if ($exitCode -ne 0) {
+    if ($IgnoreError) { return }
+    throw "$Description failed with exit code $exitCode"
+  }
+}
+
+function Invoke-NativeCommandOutput {
+  param(
+    [Parameter(Mandatory)] [string]$Command,
+    [Parameter(Mandatory)] [string[]]$Arguments,
     [Parameter(Mandatory)] [string]$Description
   )
 
-  & $Command @Arguments
+  $output = & $Command @Arguments
   if ($LASTEXITCODE -ne 0) {
     throw "$Description failed with exit code $LASTEXITCODE"
   }
+  return ($output -join "`n")
+}
+
+function Enter-DeployLock {
+  param([Parameter(Mandatory)] [string]$ProjectRoot)
+  $lockPath = Join-Path ([IO.Path]::GetFullPath($ProjectRoot)) '.deploy.lock'
+  try {
+    return [IO.File]::Open($lockPath, [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+  }
+  catch [IO.IOException] {
+    throw 'Another local deploy is already running'
+  }
+}
+
+function Exit-DeployLock {
+  param([IO.FileStream]$Lock)
+  if (-not $Lock) { return }
+  $path = $Lock.Name
+  $Lock.Dispose()
+  Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue
 }
 
 function Import-DeployEnvironment {
@@ -42,7 +83,6 @@ function Assert-DeployConfiguration {
   param(
     [Parameter(Mandatory)] [string]$RemoteHost,
     [Parameter(Mandatory)] [string]$RemoteUser,
-    [Parameter(Mandatory)] [string]$RemoteDir,
     [Parameter(Mandatory)] [string]$ArchiveName,
     [Parameter(Mandatory)] [string]$DistName
   )
@@ -53,11 +93,6 @@ function Assert-DeployConfiguration {
   if ($RemoteUser -notmatch '^[A-Za-z0-9._-]+$') {
     throw "DEPLOY_USER contains unsupported characters"
   }
-  if (-not $RemoteDir.StartsWith('/') -or $RemoteDir -eq '/' -or
-      $RemoteDir.EndsWith('/') -or $RemoteDir -match '[\r\n\x00]') {
-    throw "DEPLOY_DIR must be a non-root absolute Linux path without a trailing slash or control characters"
-  }
-
   foreach ($name in @($ArchiveName, $DistName)) {
     if ($name -notmatch '^[A-Za-z0-9._-]+\.zip$' -or [IO.Path]::GetFileName($name) -ne $name) {
       throw "Archive names must be safe .zip file names"
@@ -66,6 +101,35 @@ function Assert-DeployConfiguration {
   if ($ArchiveName -eq $DistName) {
     throw "DEPLOY_ARCHIVE_NAME and DEPLOY_DIST_NAME must differ"
   }
+}
+
+function New-CdnDeploymentLayout {
+  param(
+    [Parameter(Mandatory)] [string]$ProjectRoot,
+    [Parameter(Mandatory)] [string]$DeploymentId
+  )
+
+  if ($DeploymentId -notmatch '^\d{8}T\d{6}Z-[a-f0-9]{32}$') {
+    throw "Invalid deployment ID: $DeploymentId"
+  }
+
+  $deploymentDir = Join-Path $ProjectRoot "dist-cdn/v1/deployments/$DeploymentId"
+  $bundle = Join-Path $deploymentDir 'player.min.js'
+  if (-not (Test-Path -LiteralPath $bundle -PathType Leaf)) {
+    throw "CDN bundle was not created: $bundle"
+  }
+
+  $hash = (Get-FileHash -LiteralPath $bundle -Algorithm SHA256).Hash.ToLowerInvariant()
+  $hashDir = Join-Path $deploymentDir "sha256/$hash"
+  [void](New-Item -ItemType Directory -Path $hashDir -Force)
+  Move-Item -LiteralPath $bundle -Destination (Join-Path $hashDir 'player.min.js')
+
+  $license = Join-Path $deploymentDir 'player.min.js.LICENSE.txt'
+  if (Test-Path -LiteralPath $license -PathType Leaf) {
+    Move-Item -LiteralPath $license -Destination (Join-Path $hashDir 'player.min.js.LICENSE.txt')
+  }
+
+  return $hash
 }
 
 function Assert-ZipArchive {
@@ -95,35 +159,16 @@ function Assert-ZipArchive {
   }
 }
 
-function ConvertTo-Base64Utf8 {
-  param([Parameter(Mandatory)] [string]$Value)
-  [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($Value))
-}
-
 function Invoke-DeploySelfTest {
-  Assert-DeployConfiguration 'example.com' 'deploy_user' '/srv/player path' 'cdn-dist.zip' 'dist.zip'
-
-  foreach ($invalidDir in @('relative/path', "/srv/player`nrm -rf /")) {
-    try {
-      Assert-DeployConfiguration 'example.com' 'deploy' $invalidDir 'cdn-dist.zip' 'dist.zip'
-      throw "Expected invalid DEPLOY_DIR to fail"
-    }
-    catch {
-      if ($_.Exception.Message -eq 'Expected invalid DEPLOY_DIR to fail') { throw }
-    }
-  }
+  Assert-DeployConfiguration 'example.com' 'deploy_user' 'cdn-dist.zip' 'dist.zip'
 
   try {
-    Assert-DeployConfiguration 'example.com;reboot' 'deploy' '/srv/player' 'cdn-dist.zip' 'dist.zip'
+    Assert-DeployConfiguration 'example.com;reboot' 'deploy' 'cdn-dist.zip' 'dist.zip'
     throw "Expected invalid DEPLOY_HOST to fail"
   }
   catch {
     if ($_.Exception.Message -eq 'Expected invalid DEPLOY_HOST to fail') { throw }
   }
-
-  $value = "/srv/player 'quoted'"
-  $roundTrip = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String((ConvertTo-Base64Utf8 $value)))
-  if ($roundTrip -ne $value) { throw "Base64 path round trip failed" }
 
   $testRoot = Join-Path ([IO.Path]::GetTempPath()) "cvp-deploy-test-$([Guid]::NewGuid().ToString('N'))"
   try {
@@ -133,6 +178,18 @@ function Invoke-DeploySelfTest {
     [IO.File]::WriteAllText((Join-Path $contentPath 'player.min.js'), 'test')
     [IO.Compression.ZipFile]::CreateFromDirectory($contentPath, $zipPath)
     Assert-ZipArchive $zipPath
+
+    $deploymentId = '20260729T000321Z-a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4'
+    $bundleDir = Join-Path $testRoot "dist-cdn/v1/deployments/$deploymentId"
+    [void](New-Item -ItemType Directory -Path $bundleDir -Force)
+    [IO.File]::WriteAllText((Join-Path $bundleDir 'player.min.js'), 'bundle')
+    $hash = New-CdnDeploymentLayout $testRoot $deploymentId
+    $publishedBundle = Join-Path $bundleDir "sha256/$hash/player.min.js"
+    if ($hash -ne '1e6ed65d77d6364eeaed5a745ba5c4985ae2b700dd85d7cf7f027bdf294a33fc' -or
+        -not (Test-Path -LiteralPath $publishedBundle -PathType Leaf)) {
+      throw "CDN deployment layout self-test failed"
+    }
+
   }
   finally {
     Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue

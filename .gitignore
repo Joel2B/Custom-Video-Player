@@ -6,3 +6,6 @@ dist-cdn/
 *.zip
 playwright-report/
 test-results/
+.deploy.lock
+__pycache__/
+*.pyc
