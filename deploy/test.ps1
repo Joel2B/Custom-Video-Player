@@ -36,9 +36,9 @@ chmod -R go-w /root/deploy
 printf 'ssh-ed25519 AAAA test\n' > /root/cvp-deploy.pub
 mkdir -p /home/j/player /home/j/nginx
 touch /home/j/nginx/player.conf
-/root/deploy/server/install.sh /root/cvp-deploy.pub
+bash /root/deploy/server/install.sh /root/cvp-deploy.pub
 cp -R /source /tmp/deploy
-if /tmp/deploy/server/install.sh /root/cvp-deploy.pub > /tmp/unsafe-source.log 2>&1; then exit 1; fi
+if bash /tmp/deploy/server/install.sh /root/cvp-deploy.pub > /tmp/unsafe-source.log 2>&1; then exit 1; fi
 grep -q 'Install source must be root-owned' /tmp/unsafe-source.log
 '@
   & docker @('run', '--rm', '-v', "${projectRoot}/deploy:/source:ro", 'ubuntu@sha256:4fbb8e6a8395de5a7550b33509421a2bafbc0aab6c06ba2cef9ebffbc7092d90', 'bash', '-c', $serverTest)

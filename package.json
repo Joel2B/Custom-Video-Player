@@ -17,7 +17,7 @@
     "lint-fix": "npm run lint -- --fix",
     "serve": "webpack serve --open",
     "deploy": "pwsh -ExecutionPolicy Bypass -File ./deploy.ps1",
-    "test:unit": "node --test test/unit",
+    "test:unit": "node --test test/unit/fetch.test.cjs test/unit/is.test.cjs test/unit/time.test.cjs",
     "test:smoke": "playwright test",
     "test:webkit": "playwright test --config=playwright.webkit.config.js",
     "test:deploy": "pwsh -ExecutionPolicy Bypass -File ./deploy/test.ps1",

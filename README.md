@@ -150,7 +150,7 @@ sudo cp -R deploy /root/cvp-install/
 sudo cp /path/to/cvp_deploy.pub /root/cvp-install/
 sudo chown -R root:root /root/cvp-install
 sudo chmod -R go-w /root/cvp-install
-sudo /root/cvp-install/deploy/server/install.sh /root/cvp-install/cvp_deploy.pub
+sudo bash /root/cvp-install/deploy/server/install.sh /root/cvp-install/cvp_deploy.pub
 ```
 
 The installer creates `cvp-deploy`, installs root-owned deploy and Nginx activation helpers, validates the dedicated sudoers rule, restricts `authorized_keys`, and grants ownership only over `/home/j/player`. Keep an administrative SSH account separate from deployment credentials.
