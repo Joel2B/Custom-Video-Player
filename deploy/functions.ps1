@@ -6,13 +6,8 @@ function Invoke-NativeCommand {
     [switch]$IgnoreError
   )
 
-  if ($Command.EndsWith('.cmd', [StringComparison]::OrdinalIgnoreCase)) {
-    $process = Start-Process -FilePath $Command -ArgumentList $Arguments -NoNewWindow -Wait -PassThru
-    $exitCode = $process.ExitCode
-  } else {
-    & $Command @Arguments
-    $exitCode = $LASTEXITCODE
-  }
+  & $Command @Arguments
+  $exitCode = $LASTEXITCODE
   if ($exitCode -ne 0) {
     if ($IgnoreError) { return }
     throw "$Description failed with exit code $exitCode"
