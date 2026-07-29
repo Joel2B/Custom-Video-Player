@@ -12,12 +12,12 @@
   }
 
   .transform-active {
-    animation: flash 0.5s;
+    animation: cvp_flash 0.5s;
     opacity: 0;
   }
 }
 
-@keyframes flash {
+@keyframes cvp_flash {
   0% {
     opacity: 0.6;
     box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.6);

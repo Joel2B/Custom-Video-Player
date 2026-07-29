@@ -27,14 +27,14 @@
     margin: auto;
     transform: rotate(0deg);
     transform-origin: center center;
-    animation: rotate 2s linear infinite;
+    animation: cvp_rotate 2s linear infinite;
   }
 
   .path {
     stroke-dasharray: 1, 200;
     stroke-dashoffset: 0;
     stroke: #fff;
-    animation: dash 1.5s ease-in-out infinite;
+    animation: cvp_dash 1.5s ease-in-out infinite;
     stroke-linecap: round;
   }
 
@@ -43,13 +43,13 @@
   }
 }
 
-@keyframes rotate {
+@keyframes cvp_rotate {
   100% {
     transform: rotate(360deg);
   }
 }
 
-@keyframes dash {
+@keyframes cvp_dash {
   0% {
     stroke-dasharray: 1, 200;
     stroke-dashoffset: 0;
