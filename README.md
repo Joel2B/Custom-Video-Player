@@ -113,13 +113,14 @@ Automated smoke tests run in Chromium and Firefox. Safari and iOS behavior shoul
 npm run lint
 npm run test:unit
 npm run test:smoke
+npm run test:webkit
 npm run test:visual
 pwsh ./deploy.ps1 -SelfTest
 python3 deploy/test_safe_extract.py
 npm run test:deploy
 ```
 
-`npm run check` runs lint, production build, unit tests, and Chromium/Firefox smoke tests. Visual snapshots run separately.
+`npm run check` runs lint, production build, unit tests, and smoke tests. CI runs Chromium/Firefox smoke tests, focused WebKit coverage, and Win32 visual snapshots in separate jobs.
 
 ## CDN Deployments
 
