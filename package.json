@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "HTML5 video player",
   "main": "src/index.js",
+  "files": [
+    "src"
+  ],
   "scripts": {
     "build": "webpack --mode=production",
     "build-obf": "webpack --mode=production --env obf",
