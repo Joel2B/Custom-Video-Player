@@ -37,6 +37,8 @@ printf 'ssh-ed25519 AAAA test\n' > /root/cvp-deploy.pub
 mkdir -p /home/j/player /home/j/nginx
 touch /home/j/nginx/player.conf
 bash /root/deploy/server/install.sh /root/cvp-deploy.pub
+test "$(stat -c '%U:%G:%a' /home/cvp-deploy/.ssh/authorized_keys)" = 'root:root:444'
+runuser -u cvp-deploy -- test -r /home/cvp-deploy/.ssh/authorized_keys
 cp -R /source /tmp/deploy
 if bash /tmp/deploy/server/install.sh /root/cvp-deploy.pub > /tmp/unsafe-source.log 2>&1; then exit 1; fi
 grep -q 'Install source must be root-owned' /tmp/unsafe-source.log

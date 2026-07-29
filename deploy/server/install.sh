@@ -64,7 +64,7 @@ install -d -o root -g root -m 755 /home/cvp-deploy/.ssh
   printf '%s\n' "$PUBLIC_KEY"
 } > /home/cvp-deploy/.ssh/authorized_keys
 chown root:root /home/cvp-deploy/.ssh/authorized_keys
-chmod 400 /home/cvp-deploy/.ssh/authorized_keys
+chmod 444 /home/cvp-deploy/.ssh/authorized_keys
 
 chown root:root /home/j/nginx
 chmod 755 /home/j/nginx
