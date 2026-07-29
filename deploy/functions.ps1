@@ -84,6 +84,16 @@ function Exit-DeployLock {
 function Import-DeployEnvironment {
   param([Parameter(Mandatory)] [string]$Path)
 
+  $allowed = @(
+    'DEPLOY_ARCHIVE_NAME',
+    'DEPLOY_CDN',
+    'DEPLOY_DIST_NAME',
+    'DEPLOY_HOST',
+    'DEPLOY_KEY',
+    'DEPLOY_KNOWN_HOSTS',
+    'DEPLOY_USER'
+  )
+
   if (-not (Test-Path -LiteralPath $Path)) {
     Write-Warning ">>> .env not found at $Path, using current env vars."
     return
@@ -100,12 +110,23 @@ function Import-DeployEnvironment {
     $key = $parts[0].Trim()
     $value = $parts[1].Trim()
     if ($key -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') { throw "Invalid .env variable name: $key" }
+    if ($key -notin $allowed) { throw "Unsupported .env variable: $key" }
     if (($value.StartsWith('"') -and $value.EndsWith('"')) -or
         ($value.StartsWith("'") -and $value.EndsWith("'"))) {
       $value = $value.Substring(1, $value.Length - 2)
     }
     Set-Item -Path "Env:$key" -Value $value
   }
+}
+
+function Assert-CleanGitWorktree {
+  param([Parameter(Mandatory)] [string]$ProjectRoot)
+
+  Invoke-NativeCommand 'git' @('-C', $ProjectRoot, 'diff', '--quiet') 'Git worktree check'
+  Invoke-NativeCommand 'git' @('-C', $ProjectRoot, 'diff', '--cached', '--quiet') 'Git index check'
+  $untracked = & git -C $ProjectRoot ls-files --others --exclude-standard
+  if ($LASTEXITCODE -ne 0) { throw 'Git untracked file check failed' }
+  if ($untracked) { throw 'Untracked files present; commit or remove them before deploy' }
 }
 
 function Assert-DeployConfiguration {
@@ -116,10 +137,10 @@ function Assert-DeployConfiguration {
     [Parameter(Mandatory)] [string]$DistName
   )
 
-  if ($RemoteHost -notmatch '^[A-Za-z0-9._:-]+$') {
+  if ($RemoteHost -notmatch '^[A-Za-z0-9][A-Za-z0-9.-]*$') {
     throw "DEPLOY_HOST contains unsupported characters"
   }
-  if ($RemoteUser -notmatch '^[A-Za-z0-9._-]+$') {
+  if ($RemoteUser -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$') {
     throw "DEPLOY_USER contains unsupported characters"
   }
   foreach ($name in @($ArchiveName, $DistName)) {
@@ -129,6 +150,21 @@ function Assert-DeployConfiguration {
   }
   if ($ArchiveName -eq $DistName) {
     throw "DEPLOY_ARCHIVE_NAME and DEPLOY_DIST_NAME must differ"
+  }
+}
+
+function Assert-DeployCdn {
+  param([Parameter(Mandatory)] [string]$Value)
+
+  $uri = $null
+  if (-not [Uri]::TryCreate($Value, [UriKind]::Absolute, [ref]$uri) -or
+      $uri.Scheme -ne 'https' -or
+      -not $uri.Host -or
+      $uri.UserInfo -or
+      $uri.Query -or
+      $uri.Fragment -or
+      $uri.AbsolutePath -ne '/') {
+    throw 'DEPLOY_CDN must be an HTTPS origin without credentials, path, query, or fragment'
   }
 }
 
@@ -190,6 +226,7 @@ function Assert-ZipArchive {
 
 function Invoke-DeploySelfTest {
   Assert-DeployConfiguration 'example.com' 'deploy_user' 'cdn-dist.zip' 'dist.zip'
+  Assert-DeployCdn 'https://example.com'
 
   try {
     Assert-DeployConfiguration 'example.com;reboot' 'deploy' 'cdn-dist.zip' 'dist.zip'

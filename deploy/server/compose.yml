@@ -1,0 +1,39 @@
+services:
+  app:
+    image: ${NPM_IMAGE:?Set NPM_IMAGE to an immutable digest}
+    container_name: npm
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "127.0.0.1:81:81"
+      - "443:443"
+    environment:
+      DB_SQLITE_FILE: "/data/database.sqlite"
+    volumes:
+      - /home/j/npm/data:/data
+      - /home/j/npm/letsencrypt:/etc/letsencrypt
+
+  player:
+    image: ${PLAYER_IMAGE:?Set PLAYER_IMAGE to an immutable digest}
+    container_name: player
+    restart: unless-stopped
+    expose:
+      - "80"
+    volumes:
+      - /srv/cvp/player:/usr/share/nginx/html:ro
+      - /etc/cvp-deploy/nginx:/etc/nginx/conf.d:ro
+
+  portainer:
+    image: ${PORTAINER_IMAGE:?Set PORTAINER_IMAGE to an immutable digest}
+    container_name: portainer
+    restart: always
+    ports:
+      - "127.0.0.1:9443:9443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+
+volumes:
+  portainer_data:
+    external: true
+    name: j_portainer_data

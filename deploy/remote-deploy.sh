@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
-trap 'status=$?; printf "line=%s exit=%s\n" "$LINENO" "$status" > /tmp/cvp-last-error.log' ERR
-
-APP_DIR='/home/j/player'
-NGINX_CONFIG='/home/j/nginx/player.conf'
-STATE_DIR='/var/lib/cvp-deploy'
-LOCK_FILE="$STATE_DIR/deploy.lock"
+APP_DIR='/srv/cvp/player'
+NGINX_CONFIG='/etc/cvp-deploy/nginx/default.conf'
+STATE_DIR='/var/lib/cvp-deploy/state'
+LOCK_FILE='/var/lib/cvp-deploy/deploy.lock'
 TRANSACTION_DIR="$STATE_DIR/transaction"
 EXTRACTOR='/usr/local/libexec/cvp-safe-extract.py'
 ACTIVATE='/usr/local/sbin/cvp-nginx-activate'
@@ -38,13 +36,13 @@ fail() {
 }
 
 activate() {
-  sudo -n "$ACTIVATE" "$1" "$2"
+  timeout --kill-after=10s 90s sudo -n "$ACTIVATE" "$1" "$2"
 }
 
 rollback() {
   local failed=0
   if [ "$APP_MUTATED" -eq 1 ]; then
-    rsync -a --delete "$BACKUP/" "$APP_DIR/" || failed=1
+    timeout --kill-after=10s 300s rsync -a --delete "$BACKUP/" "$APP_DIR/" || failed=1
     chmod 755 "$APP_DIR" || failed=1
   fi
   if [ "$ACTIVATED" -eq 1 ]; then
@@ -88,7 +86,7 @@ fi
 
 printf '%s' "$DEPLOY_ID" | grep -Eq '^[0-9]{8}T[0-9]{6}Z-[a-f0-9]{32}$' || fail 'Invalid deployment ID'
 printf '%s' "$EXPECTED_SHA" | grep -Eq '^[a-f0-9]{64}$' || fail 'Invalid SHA-256'
-for command in flock head python3 realpath rsync sha256sum stat sudo timeout; do
+for command in df du flock head python3 realpath rsync sha256sum stat sudo timeout; do
   command -v "$command" >/dev/null || fail "Required command not found: $command"
 done
 [ -f "$EXTRACTOR" ] && [ ! -L "$EXTRACTOR" ] || fail 'Safe extractor missing'
@@ -97,13 +95,14 @@ done
 [ -d "$APP_DIR" ] && [ ! -L "$APP_DIR" ] || fail 'Application path must be a real directory'
 [ -f "$NGINX_CONFIG" ] && [ ! -L "$NGINX_CONFIG" ] || fail 'Nginx config must be a regular file'
 
-timeout 120 head -c 134217729 > "$PACKAGE"
+timeout --kill-after=5s 120s head -c 134217729 > "$PACKAGE"
 [ "$(stat -c %s "$PACKAGE")" -le 134217728 ] || fail 'Deployment package too large'
 mkdir -m 700 "$INCOMING" "$STAGING"
-python3 "$EXTRACTOR" "$PACKAGE" "$INCOMING"
+timeout --kill-after=5s 180s python3 "$EXTRACTOR" "$PACKAGE" "$INCOMING"
 [ -f "$ARCHIVE" ] && [ -f "$DIST" ] || fail 'Deployment package is incomplete'
-python3 "$EXTRACTOR" "$ARCHIVE" "$STAGING"
-python3 "$EXTRACTOR" "$DIST" "$STAGING"
+timeout --kill-after=5s 180s python3 "$EXTRACTOR" "$ARCHIVE" "$STAGING"
+timeout --kill-after=5s 180s python3 "$EXTRACTOR" "$DIST" "$STAGING"
+[ "$(du -sb "$STAGING" | cut -f1)" -le 134217728 ] || fail 'Combined deployment exceeds size limit'
 
 BUNDLE_RELATIVE="v1/deployments/$DEPLOY_ID/sha256/$EXPECTED_SHA/player.min.js"
 [ -s "$STAGING/$BUNDLE_RELATIVE" ] || fail 'CDN bundle missing from archive'
@@ -118,7 +117,7 @@ if [ -d "$APP_DIR/v1/deployments" ]; then
     printf '%s' "$name" | grep -Eq '^[0-9]{8}T[0-9]{6}Z-([a-f0-9]{8}|[a-f0-9]{32})$' || fail "Unexpected deployment directory: $name"
   done < <(find "$APP_DIR/v1/deployments" -mindepth 1 -maxdepth 1 -type d -print)
   mkdir -p "$STAGING/v1/deployments"
-  rsync -a --safe-links "$APP_DIR/v1/deployments/" "$STAGING/v1/deployments/"
+  timeout --kill-after=10s 300s rsync -a --safe-links "$APP_DIR/v1/deployments/" "$STAGING/v1/deployments/"
 fi
 
 read -r PREVIOUS_DEPLOYMENT PREVIOUS_SHA < <(
@@ -138,12 +137,17 @@ while IFS= read -r deployment; do
 done < <(find "$STAGING/v1/deployments" -mindepth 1 -maxdepth 1 -type d -printf '%f\n')
 [ "$(find "$STAGING/v1/deployments" -mindepth 1 -maxdepth 1 -type d | wc -l)" -le 10 ]
 
+app_size=$(du -sb "$APP_DIR" | cut -f1)
+staging_size=$(du -sb "$STAGING" | cut -f1)
+[ "$(df --output=avail -B1 "$STATE_DIR" | tail -n 1)" -ge $(( app_size + 33554432 )) ] || fail 'Insufficient disk space for rollback'
+[ "$(df --output=avail -B1 "$APP_DIR" | tail -n 1)" -ge $(( staging_size + 33554432 )) ] || fail 'Insufficient disk space for publication'
+
 mkdir -m 700 "$TRANSACTION_DIR" "$BACKUP"
-rsync -a "$APP_DIR/" "$BACKUP/"
+timeout --kill-after=10s 300s rsync -a "$APP_DIR/" "$BACKUP/"
 printf '%s %s\n' "$PREVIOUS_DEPLOYMENT" "$PREVIOUS_SHA" > "$PREVIOUS_FILE"
 printf '%s\n' "$DEPLOY_ID" > "$TRANSACTION_MARKER"
 APP_MUTATED=1
-rsync -a --delete --delay-updates "$STAGING/" "$APP_DIR/"
+timeout --kill-after=10s 300s rsync -a --delete --delay-updates "$STAGING/" "$APP_DIR/"
 chmod 755 "$APP_DIR"
 find "$APP_DIR" -type d -exec chmod 755 {} +
 find "$APP_DIR" -type f -exec chmod 644 {} +
@@ -156,5 +160,4 @@ grep -Fq "return 302 /$BUNDLE_RELATIVE;" "$NGINX_CONFIG"
 rm -f -- "$TRANSACTION_MARKER"
 PUBLISHED=1
 rm -rf -- "$TRANSACTION_DIR"
-rm -f /tmp/cvp-last-error.log
 echo '>>> CDN remote deploy completed successfully.'

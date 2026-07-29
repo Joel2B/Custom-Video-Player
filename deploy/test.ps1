@@ -15,30 +15,42 @@ try {
   & docker @('run', '--rm', '-v', "${projectRoot}/deploy/remote-deploy.sh:/deploy.sh:ro", 'bash@sha256:ae4668c2560999e65e89532cd2ad1b6688bb23298189f0bd229ef80fa4bd0831', 'bash', '-n', '/deploy.sh')
   if ($LASTEXITCODE -ne 0) { throw 'Remote deploy syntax check failed' }
 
-  & docker @('run', '--rm', '-v', "${projectRoot}/deploy/server:/server:ro", 'bash@sha256:ae4668c2560999e65e89532cd2ad1b6688bb23298189f0bd229ef80fa4bd0831', 'bash', '-n', '/server/cvp-deploy-entrypoint', '/server/cvp-nginx-activate', '/server/install.sh')
+  & docker @('run', '--rm', '-v', "${projectRoot}/deploy/server:/server:ro", 'bash@sha256:ae4668c2560999e65e89532cd2ad1b6688bb23298189f0bd229ef80fa4bd0831', 'bash', '-n', '/server/cvp-deploy-entrypoint', '/server/cvp-nginx-activate', '/server/install.sh', '/server/migrate.sh')
   if ($LASTEXITCODE -ne 0) { throw 'Restricted SSH helper syntax check failed' }
+
+  $env:NPM_IMAGE = 'jc21/nginx-proxy-manager@sha256:cd9eba29ca132cb006729f2cb2660126453f84818c2f7d75963ad7b61ef696bd'
+  $env:PLAYER_IMAGE = 'nginx@sha256:b3c656d55d7ad751196f21b7fd2e8d4da9cb430e32f646adcf92441b72f82b14'
+  $env:PORTAINER_IMAGE = 'portainer/portainer-ce@sha256:3267f1869e0fa87b843c55f7fd848f9e3001367d053505f4cb8c664e4a997996'
+  try {
+    & docker compose -f (Join-Path $projectRoot 'deploy/server/compose.yml') config -q
+    if ($LASTEXITCODE -ne 0) { throw 'Server Compose validation failed' }
+  }
+  finally {
+    Remove-Item Env:NPM_IMAGE, Env:PLAYER_IMAGE, Env:PORTAINER_IMAGE -ErrorAction SilentlyContinue
+  }
 
   $activate = [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/server/cvp-nginx-activate'))
   $installer = [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/server/install.sh'))
   $workflow = [IO.File]::ReadAllText((Join-Path $projectRoot '.github/workflows/check.yml'))
-  if ($activate -notmatch "root:root:755" -or $activate -notmatch "RUN_DIR='/run/cvp-deploy'" -or $activate -match 'mktemp /home/j/nginx') { throw 'Nginx activation permissions are unsafe' }
-  if ($installer -notmatch 'chown root:root /home/cvp-deploy/.ssh/authorized_keys' -or $installer -notmatch 'Install source must be root-owned') { throw 'Restricted SSH installer permissions are unsafe' }
+  if ($activate -notmatch "CONFIG_DIR='/etc/cvp-deploy/nginx'" -or $activate -notmatch 'mv -fT' -or $activate -match '/home/j') { throw 'Nginx activation permissions are unsafe' }
+  if ($installer -notmatch 'chown root:root /home/cvp-deploy/.ssh/authorized_keys' -or $installer -notmatch 'Install source must be root-owned' -or $installer -notmatch '/srv/cvp/player') { throw 'Restricted SSH installer permissions are unsafe' }
   if ($workflow -match 'actions/(checkout|setup-node)@v' -or $workflow -match '(?m)^\s*- run: npm ci\s*$' -or $workflow -notmatch 'permissions:\s*\r?\n\s+contents: read') { throw 'CI supply-chain controls are missing' }
 
   $serverTest = @'
-apt-get update -qq && apt-get install -y -qq sudo >/dev/null
+apt-get update -qq && apt-get install -y -qq openssh-client sudo >/dev/null
 visudo -cf /source/server/cvp-deploy.sudoers
 printf '#!/bin/sh\nexit 0\n' > /usr/bin/docker
 chmod 755 /usr/bin/docker
 cp -R /source /root/deploy
 chown -R root:root /root/deploy
 chmod -R go-w /root/deploy
-printf 'ssh-ed25519 AAAA test\n' > /root/cvp-deploy.pub
-mkdir -p /home/j/player /home/j/nginx
-touch /home/j/nginx/player.conf
+ssh-keygen -q -t ed25519 -N '' -f /root/cvp-deploy
 bash /root/deploy/server/install.sh /root/cvp-deploy.pub
 test "$(stat -c '%U:%G:%a' /home/cvp-deploy/.ssh/authorized_keys)" = 'root:root:444'
 runuser -u cvp-deploy -- test -r /home/cvp-deploy/.ssh/authorized_keys
+test "$(stat -c '%U:%G:%a' /srv/cvp/player)" = 'cvp-deploy:cvp-deploy:755'
+test "$(stat -c '%U:%G:%a' /etc/cvp-deploy/nginx)" = 'root:root:755'
+test "$(stat -c '%U:%G:%a' /var/lib/cvp-deploy/deploy.lock)" = 'root:cvp-deploy:660'
 cp -R /source /tmp/deploy
 if bash /tmp/deploy/server/install.sh /root/cvp-deploy.pub > /tmp/unsafe-source.log 2>&1; then exit 1; fi
 grep -q 'Install source must be root-owned' /tmp/unsafe-source.log
@@ -51,7 +63,7 @@ grep -q 'Install source must be root-owned' /tmp/unsafe-source.log
     [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/player.conf')).Replace('__CURRENT_LOCATION__', $location),
     [Text.UTF8Encoding]::new($false)
   )
-  & docker @('run', '--rm', '-v', "${tempConfig}:/etc/nginx/conf.d/default.conf:ro", 'nginx@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752', 'nginx', '-t')
+  & docker @('run', '--rm', '-v', "${tempConfig}:/etc/nginx/conf.d/default.conf:ro", 'nginx@sha256:b3c656d55d7ad751196f21b7fd2e8d4da9cb430e32f646adcf92441b72f82b14', 'nginx', '-t')
   if ($LASTEXITCODE -ne 0) { throw 'Nginx config validation failed' }
 }
 finally {

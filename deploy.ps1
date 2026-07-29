@@ -18,21 +18,28 @@ Import-DeployEnvironment (Join-Path $projectRoot '.env')
 $remoteHost = $env:DEPLOY_HOST
 $remoteUser = $env:DEPLOY_USER
 $localKey = $env:DEPLOY_KEY
+$knownHosts = $env:DEPLOY_KNOWN_HOSTS
 $archiveName = if ($env:DEPLOY_ARCHIVE_NAME) { $env:DEPLOY_ARCHIVE_NAME } else { 'cdn-dist.zip' }
 $distName = if ($env:DEPLOY_DIST_NAME) { $env:DEPLOY_DIST_NAME } else { 'dist.zip' }
 
 if (-not $remoteHost -or -not $remoteUser) {
   throw "Missing DEPLOY_HOST or DEPLOY_USER in .env"
 }
-if (-not $localKey) {
-  $localKey = Join-Path $env:USERPROFILE '.ssh\id_ed25519'
-}
-
 Assert-DeployConfiguration $remoteHost $remoteUser $archiveName $distName
+Assert-DeployCdn $env:DEPLOY_CDN
+if (-not $localKey) {
+  throw "Missing DEPLOY_KEY in .env"
+}
+if (-not $knownHosts) {
+  throw "Missing DEPLOY_KNOWN_HOSTS in .env"
+}
 if (-not (Test-Path -LiteralPath $localKey -PathType Leaf)) {
   throw "SSH key file not found: $localKey"
 }
-foreach ($command in @('npm.cmd', 'ssh')) {
+if (-not (Test-Path -LiteralPath $knownHosts -PathType Leaf)) {
+  throw "SSH known hosts file not found: $knownHosts"
+}
+foreach ($command in @('git', 'npm.cmd', 'ssh')) {
   if (-not (Get-Command $command -ErrorAction SilentlyContinue)) {
     throw "Required command not found: $command"
   }
@@ -44,14 +51,22 @@ $archivePath = Join-Path $projectRoot $archiveName
 $distPath = Join-Path $projectRoot $distName
 $localTempDir = Join-Path ([IO.Path]::GetTempPath()) "cvp-deploy-$([Guid]::NewGuid().ToString('N'))"
 $packagePath = Join-Path $localTempDir 'package.zip'
-$sshOptions = @('-i', $localKey, '-o', 'BatchMode=yes', '-o', 'IdentitiesOnly=yes', '-o', 'StrictHostKeyChecking=yes')
+$sshOptions = @(
+  '-i', $localKey,
+  '-o', 'BatchMode=yes',
+  '-o', 'IdentitiesOnly=yes',
+  '-o', 'StrictHostKeyChecking=yes',
+  '-o', "UserKnownHostsFile=$knownHosts",
+  '-o', 'GlobalKnownHostsFile=none'
+)
 $deployLock = $null
 
 Write-Host ">>> Deploying CDN to $sshTarget"
-Write-Host ">>> Using SSH key: $localKey"
+Write-Host ">>> Using dedicated SSH deployment identity"
 
 try {
   $deployLock = Enter-DeployLock $projectRoot
+  Assert-CleanGitWorktree $projectRoot
   [void](New-Item -ItemType Directory -Path $localTempDir)
 
   Write-Host ">>> Installing locked dependencies..."
