@@ -69,6 +69,10 @@ test('settings menu supports keyboard activation and option navigation', async (
   await speed.focus();
   await page.keyboard.press('Enter');
   await expect(speed).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('.cvp_main_page')).toHaveAttribute('inert', '');
+  await expect(page.locator('.cvp_sub_page')).not.toHaveAttribute('inert', '');
+  await expect(page.locator('.cvp_sub_page > .cvp_header')).toBeFocused();
+  expect(await page.locator('.cvp_main_page [tabindex="0"]').count()).toBe(0);
 
   const firstOption = page.locator('.cvp_speed [role="option"]').first();
   await firstOption.focus();
@@ -76,6 +80,26 @@ test('settings menu supports keyboard activation and option navigation', async (
   await expect(page.locator('.cvp_speed [role="option"]').nth(1)).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page.locator('.cvp_speed [aria-selected="true"]')).toHaveCount(1);
+});
+
+test('returning from settings submenu restores main page focus', async ({ page }) => {
+  await setup(page);
+
+  const settings = page.locator('button.fluid_button_main_menu');
+  const speed = page.locator('.cvp_playbackRate');
+  await settings.focus();
+  await page.keyboard.press('Enter');
+  await speed.focus();
+  await page.keyboard.press('Enter');
+
+  const back = page.locator('.cvp_sub_page > .cvp_header');
+  await back.focus();
+  await page.keyboard.press('Enter');
+
+  await expect(page.locator('.cvp_main_page')).not.toHaveAttribute('inert', '');
+  await expect(page.locator('.cvp_sub_page')).toHaveAttribute('inert', '');
+  await expect(speed).toBeFocused();
+  expect(await page.locator('.cvp_sub_page [tabindex="0"]').count()).toBe(0);
 });
 
 test('closed settings menu is inert and Escape restores button focus', async ({ page }) => {

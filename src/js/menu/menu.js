@@ -178,14 +178,14 @@ class Menu {
     this.setInteractive(false);
   };
 
-  setInteractive = (interactive) => {
+  setInteractive = (interactive, container = this.menu) => {
     if (interactive) {
-      this.menu.removeAttribute('inert');
+      container.removeAttribute('inert');
     } else {
-      this.menu.setAttribute('inert', '');
+      container.setAttribute('inert', '');
     }
 
-    for (const element of this.menu.querySelectorAll('[tabindex], button, a[href], input, select, textarea')) {
+    for (const element of container.querySelectorAll('[tabindex], button, a[href], input, select, textarea')) {
       if (interactive) {
         const tabindex = element.dataset.menuTabindex;
         if (!is.nullOrUndefined(tabindex)) {
@@ -261,8 +261,12 @@ class Menu {
       });
     }
 
-    if (this.ready && this.isClosed()) {
-      this.setInteractive(false);
+    if (this.ready) {
+      if (this.isClosed()) {
+        this.setInteractive(false);
+      } else if (this.inSubpage) {
+        this.setInteractive(false, this.page);
+      }
     }
   };
 
@@ -291,6 +295,8 @@ class Menu {
   };
 
   openSubMenu = (option, subPage, width, height) => {
+    const moveFocus = this.page.contains(document.activeElement);
+
     toggleClass(subPage, 'hide', false);
     toggleClass(this.menu, 'cvp_level2', true);
 
@@ -300,13 +306,20 @@ class Menu {
     this.header.textContent = option.firstChild.nextSibling.textContent;
 
     this.inSubpage = true;
+    this.submenuOption = option;
     option.setAttribute('aria-expanded', 'true');
     subPage.setAttribute('role', 'listbox');
+    this.setInteractive(false, this.page);
+    this.setInteractive(true, this.subPage);
 
     for (const item of subPage.querySelectorAll('li')) {
       item.setAttribute('role', 'option');
       item.setAttribute('tabindex', '0');
       item.setAttribute('aria-selected', String(hasClass(item, 'cvp_active')));
+    }
+
+    if (moveFocus) {
+      this.header.focus();
     }
   };
 
@@ -318,6 +331,8 @@ class Menu {
     this.page.style.height = `${this.height}px`;
 
     toggleClass(this.menu, 'cvp_level2', false);
+    this.setInteractive(!this.isClosed(), this.page);
+    this.setInteractive(false, this.subPage);
 
     for (const module of this.modules) {
       if (module.field !== 'selector') {
@@ -363,6 +378,7 @@ class Menu {
     }
 
     this.inSubpage = false;
+    this.submenuOption = null;
 
     this.restartLater();
 
@@ -380,6 +396,8 @@ class Menu {
         this.menu.setAttribute('aria-hidden', 'false');
         this.btn.setAttribute('aria-expanded', 'true');
         this.setInteractive(true);
+        this.setInteractive(true, this.page);
+        this.setInteractive(false, this.subPage);
 
         if (this.player.mobile) {
           this.player.controlBar.toggleMobile();
@@ -397,9 +415,17 @@ class Menu {
     });
 
     on.call(this.player, this.header, event, () => {
+      const restoreFocus = document.activeElement === this.header;
+
       this.inSubpage = false;
 
       this.restart();
+
+      if (restoreFocus) {
+        this.submenuOption?.focus();
+      }
+
+      this.submenuOption = null;
     });
 
     on.call(this.player, this.header, 'keydown', (keyboardEvent) => {
