@@ -98,8 +98,46 @@ Mobile
 
 ## Build Project
 
-1. install project dependencies: `npm install`
-2. run `npm run build-dev`
+1. Install project dependencies: `npm ci`.
+2. Run `npm run build-dev` for a local build with source maps.
+
+## Browser Support
+
+The player targets browsers selected by `> 0.25%` and `not dead`. Internet Explorer 11 is not supported.
+
+Automated smoke tests run in Chromium and Firefox. Safari and iOS behavior should also be checked on a real device or simulator before releases that change media or fullscreen behavior.
+
+## Testing
+
+```text
+npm run lint
+npm run test:unit
+npm run test:smoke
+npm run test:visual
+pwsh ./deploy.ps1 -SelfTest
+python3 deploy/test_safe_extract.py
+npm run test:deploy
+```
+
+`npm run check` runs lint, production build, unit tests, and Chromium/Firefox smoke tests. Visual snapshots run separately.
+
+## CDN Deployments
+
+Public integrations should always load:
+
+```html
+<script src="https://player.tinyapps.download/v1/current/player.min.js"></script>
+```
+
+The `current` URL is not cached and redirects to a deployment-specific URL containing its SHA-256 digest. Deployment URLs are cached for 7 days. The server keeps the current deployment and up to 9 previous deployments for rollback.
+
+Deploy with:
+
+```text
+npm run deploy
+```
+
+Required `.env` values are documented in `.env.example`. Deploy uses locked dependencies without lifecycle scripts, builds production CDN and E2E artifacts, validates ZIP entries and SHA-256, acquires local and remote locks, and keeps a persistent rollback transaction until Nginx reload succeeds. Public E2E builds omit source maps.
 
 ## Changes
 

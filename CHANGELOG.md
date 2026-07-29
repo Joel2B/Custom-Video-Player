@@ -1,3 +1,17 @@
+# Unreleased
+
+### Changed
+
+- Dropped Internet Explorer 11 support.
+- Added immutable CDN deployment URLs addressed by deployment ID and SHA-256.
+- Hardened deployment locking, ZIP extraction, rollback, retention, SSH options, and Nginx validation.
+- Stopped publishing source maps with public E2E builds.
+
+### Fixed
+
+- Prevented hidden settings-menu pages from remaining keyboard-focusable.
+- Hardened fullscreen, responsive controls, XHR cancellation, player lifecycle, and deployment rollback behavior.
+
 # 1.0.0 (2021-08-02)
 
 ### Features

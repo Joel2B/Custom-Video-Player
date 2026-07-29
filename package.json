@@ -16,6 +16,7 @@
     "deploy": "pwsh -ExecutionPolicy Bypass -File ./deploy.ps1",
     "test:unit": "node --test test/unit",
     "test:smoke": "playwright test",
+    "test:deploy": "pwsh -ExecutionPolicy Bypass -File ./deploy/test.ps1",
     "test:visual": "playwright test --config=playwright.visual.config.js",
     "test:visual:update": "playwright test --config=playwright.visual.config.js --update-snapshots",
     "test": "npm run test:unit && npm run test:smoke",
