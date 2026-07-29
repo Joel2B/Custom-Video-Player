@@ -142,10 +142,15 @@ Required `.env` values are documented in `.env.example`. Deploy uses locked depe
 
 Production deploy should use the restricted `cvp-deploy` SSH account installed by `deploy/server/install.sh`. Its forced command accepts deployment packages over standard input and exposes no shell, forwarding, PTY, `sudo`, or Docker access beyond the root-owned Nginx activation helper.
 
-Install restricted server helpers as root after generating a dedicated Ed25519 key:
+Copy the deploy sources and dedicated Ed25519 public key into a root-owned staging directory, then run the installer there. The installer rejects source paths writable by non-root users:
 
 ```text
-bash deploy/server/install.sh /path/to/cvp_deploy.pub
+sudo install -d -o root -g root -m 700 /root/cvp-install
+sudo cp -R deploy /root/cvp-install/
+sudo cp /path/to/cvp_deploy.pub /root/cvp-install/
+sudo chown -R root:root /root/cvp-install
+sudo chmod -R go-w /root/cvp-install
+sudo /root/cvp-install/deploy/server/install.sh /root/cvp-install/cvp_deploy.pub
 ```
 
 The installer creates `cvp-deploy`, installs root-owned deploy and Nginx activation helpers, validates the dedicated sudoers rule, restricts `authorized_keys`, and grants ownership only over `/home/j/player`. Keep an administrative SSH account separate from deployment credentials.

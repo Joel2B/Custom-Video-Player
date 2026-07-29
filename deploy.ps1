@@ -9,7 +9,7 @@ $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 if ($SelfTest) {
   Invoke-DeploySelfTest
-  exit 0
+  return
 }
 
 Set-Location $projectRoot

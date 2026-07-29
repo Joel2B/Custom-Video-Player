@@ -1,1 +1,2 @@
+Defaults:cvp-deploy secure_path=/usr/sbin:/usr/bin:/sbin:/bin
 cvp-deploy ALL=(root) NOPASSWD: /usr/local/sbin/cvp-nginx-activate *

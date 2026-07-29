@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+readonly PATH
 
 TEMPLATE='/etc/cvp-deploy/player.conf.template'
 CONFIG='/home/j/nginx/player.conf'
+RUN_DIR='/run/cvp-deploy'
 CONTAINER='player'
 IMAGE='nginx@sha256:b3c656d55d7ad751196f21b7fd2e8d4da9cb430e32f646adcf92441b72f82b14'
 APP_DIR='/home/j/player'
@@ -16,12 +19,15 @@ BUNDLE="v1/deployments/$DEPLOY_ID/sha256/$SHA/player.min.js"
 [ -f "$APP_DIR/$BUNDLE" ] && [ ! -L "$APP_DIR/$BUNDLE" ]
 printf '%s  %s\n' "$SHA" "$APP_DIR/$BUNDLE" | sha256sum -c -
 [ "$(realpath -e /home/j/nginx)" = '/home/j/nginx' ]
-[ ! -L /home/j/nginx ] && [ "$(stat -c '%U:%G:%a' /home/j/nginx)" = 'j:j:775' ]
+[ ! -L /home/j/nginx ] && [ "$(stat -c '%U:%G:%a' /home/j/nginx)" = 'root:root:755' ]
 [ "$(realpath -e "$CONFIG")" = "$CONFIG" ]
 [ ! -L "$CONFIG" ] && [ "$(stat -c '%U:%G:%a' "$CONFIG")" = 'root:root:644' ]
 
-temp="$(mktemp /home/j/nginx/player.conf.XXXXXXXXXX)"
-backup="$(mktemp /home/j/nginx/player.conf.backup.XXXXXXXXXX)"
+install -d -o root -g root -m 700 "$RUN_DIR"
+[ "$(realpath -e "$RUN_DIR")" = "$RUN_DIR" ]
+[ ! -L "$RUN_DIR" ] && [ "$(stat -c '%U:%G:%a' "$RUN_DIR")" = 'root:root:700' ]
+temp="$(mktemp "$RUN_DIR/player.conf.XXXXXXXXXX")"
+backup="$(mktemp "$RUN_DIR/player.conf.backup.XXXXXXXXXX")"
 trap 'rm -f -- "$temp" "$backup"' EXIT
 sed "s|__CURRENT_LOCATION__|/$BUNDLE|" "$TEMPLATE" > "$temp"
 grep -Fq "return 302 /$BUNDLE;" "$temp"
