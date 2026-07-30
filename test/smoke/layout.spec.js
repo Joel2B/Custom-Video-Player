@@ -137,9 +137,11 @@ test('volume bar follows player width instead of viewport width', async ({ page 
   });
 
   const displays = () =>
-    page.locator('.fluid_video_wrapper').evaluateAll((wrappers) =>
-      wrappers.map((wrapper) => getComputedStyle(wrapper.querySelector('.fluid_control_volume_container')).display),
-    );
+    page
+      .locator('.fluid_video_wrapper')
+      .evaluateAll((wrappers) =>
+        wrappers.map((wrapper) => getComputedStyle(wrapper.querySelector('.fluid_control_volume_container')).display),
+      );
 
   await expect.poll(displays).toEqual(['none', 'flex']);
 

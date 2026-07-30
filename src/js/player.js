@@ -164,23 +164,25 @@ class CVP {
         this.promiseTimeouts.delete(promiseTimeout);
       };
 
-      Promise.resolve(promise).then(clearPromiseTimeout).catch((error) => {
-        this.debug.error(error);
+      Promise.resolve(promise)
+        .then(clearPromiseTimeout)
+        .catch((error) => {
+          this.debug.error(error);
 
-        if (
-          this.ready &&
-          this.media &&
-          generation === this.playAttemptGeneration &&
-          source === this.currentSource.src &&
-          autoplayAttempt &&
-          !this.muted &&
-          error.name === 'NotAllowedError'
-        ) {
-          this.autoPlay.playMuted();
-        }
+          if (
+            this.ready &&
+            this.media &&
+            generation === this.playAttemptGeneration &&
+            source === this.currentSource.src &&
+            autoplayAttempt &&
+            !this.muted &&
+            error.name === 'NotAllowedError'
+          ) {
+            this.autoPlay.playMuted();
+          }
 
-        clearPromiseTimeout();
-      });
+          clearPromiseTimeout();
+        });
 
       return promise;
     };
