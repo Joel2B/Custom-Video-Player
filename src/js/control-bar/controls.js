@@ -81,8 +81,9 @@ class Controls {
     // Play progress
     this.playProgress = createElement('div', {
       class: 'fluid_controls_play_progress',
-      style: `background-color: ${primaryColor}`,
     });
+
+    this.playProgress.style.backgroundColor = primaryColor;
     this.progress.appendChild(this.playProgress);
 
     // Hover progress
@@ -100,8 +101,8 @@ class Controls {
     // Scrubber
     this.scrubberProgress = createElement('div', {
       class: 'fluid_controls_scrubber_progress',
-      style: `background-color: ${primaryColor}`,
     });
+    this.scrubberProgress.style.backgroundColor = primaryColor;
     this.scrubberProgressContainer.appendChild(this.scrubberProgress);
     this.progressContainer.appendChild(this.scrubberProgressContainer);
 

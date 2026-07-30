@@ -1,6 +1,57 @@
 const { expect, test } = require('@playwright/test');
 const { loadPlayer } = require('./helpers');
 
+test('primaryColor accepts colors and rejects CSS declarations', async ({ page }) => {
+  await loadPlayer(
+    page,
+    '<video id="valid" width="640" height="360"></video><video id="invalid" width="640" height="360"></video>',
+  );
+  await page.evaluate(() => {
+    window.fluidPlayer('valid', {
+      layoutControls: { primaryColor: '#dd2e44' },
+    });
+    window.fluidPlayer('invalid', {
+      layoutControls: {
+        primaryColor: 'red; position: fixed; background-image: url(https://example.invalid/pixel)',
+      },
+    });
+  });
+
+  const styles = await page.locator('.fluid_video_wrapper').evaluateAll((wrappers) =>
+    wrappers.map((wrapper) => {
+      const progress = wrapper.querySelector('.fluid_controls_play_progress');
+      const play = wrapper.querySelector('.fluid_initial_play');
+      return {
+        progressColor: progress.style.backgroundColor,
+        progressPosition: progress.style.position,
+        progressImage: progress.style.backgroundImage,
+        playColor: play.style.backgroundColor,
+        playPosition: play.style.position,
+        playImage: play.style.backgroundImage,
+      };
+    }),
+  );
+
+  expect(styles).toEqual([
+    {
+      progressColor: 'rgb(221, 46, 68)',
+      progressPosition: '',
+      progressImage: '',
+      playColor: 'rgb(221, 46, 68)',
+      playPosition: '',
+      playImage: '',
+    },
+    {
+      progressColor: 'rgb(255, 0, 0)',
+      progressPosition: '',
+      progressImage: '',
+      playColor: 'rgb(51, 51, 51)',
+      playPosition: '',
+      playImage: '',
+    },
+  ]);
+});
+
 for (const width of [200, 260, 320, 640]) {
   test(`mobile menu stays inside ${width}px player`, async ({ browser, baseURL }) => {
     const context = await browser.newContext({

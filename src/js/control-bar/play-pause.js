@@ -27,9 +27,10 @@ class PlayPause {
     this.initialPlay = createElement('button', {
       type: 'button',
       class: `fluid_initial_play ${!primaryColor && !player.mobile ? 'fluid_initial_play_color' : ''}`,
-      style: `background-color: ${backgroundColor}`,
       'aria-label': player.config.captions.play,
     });
+
+    this.initialPlay.style.backgroundColor = backgroundColor;
 
     this.playButton = createElement('div', {
       class: 'fluid_initial_play_button',

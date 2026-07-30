@@ -75,6 +75,12 @@ class CVP {
     this.overwrite(options, this.config);
     this.config.locale = locale.locale;
 
+    const primaryColor = this.config.layoutControls.primaryColor;
+
+    if (primaryColor && (!is.string(primaryColor) || !CSS.supports('color', primaryColor))) {
+      this.config.layoutControls.primaryColor = false;
+    }
+
     if (FP_ENV === 'development') {
       this.config.debug = true;
     }
