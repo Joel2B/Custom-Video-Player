@@ -30,8 +30,8 @@ class FakeXMLHttpRequest {
     this.listeners.abort();
   }
 
-  emit(type) {
-    this.listeners[type]();
+  emit(type, event = {}) {
+    this.listeners[type](event);
   }
 }
 
@@ -127,4 +127,31 @@ test('XHR timeout works without Number.isFinite and send failures remove abort l
   await assert.rejects(failed, { message: 'send failed' });
   controller.abort();
   assert.equal(request.abortCalls || 0, 0);
+});
+
+test('XHR rejects and aborts responses over maxBytes', async () => {
+  const fetch = await loadFetch();
+
+  const progressLimited = fetch('/large.vtt', 'text', { maxBytes: 5 });
+  const progressRequest = FakeXMLHttpRequest.last;
+  progressRequest.emit('progress', { loaded: 6, lengthComputable: false });
+  await assert.rejects(progressLimited, {
+    name: 'ResponseTooLargeError',
+    message: 'XMLHttpRequest response exceeds 5 bytes',
+  });
+  assert.equal(progressRequest.abortCalls, 1);
+
+  const totalLimited = fetch('/known-large.vtt', 'text', { maxBytes: 5 });
+  const totalRequest = FakeXMLHttpRequest.last;
+  totalRequest.emit('progress', { loaded: 1, lengthComputable: true, total: 6 });
+  await assert.rejects(totalLimited, { name: 'ResponseTooLargeError' });
+  assert.equal(totalRequest.abortCalls, 1);
+
+  const finalLimited = fetch('/compressed-large.vtt', 'text', { maxBytes: 5 });
+  const finalRequest = FakeXMLHttpRequest.last;
+  finalRequest.status = 200;
+  finalRequest.responseText = '123456';
+  finalRequest.emit('load');
+  await assert.rejects(finalLimited, { name: 'ResponseTooLargeError' });
+  assert.equal(finalRequest.abortCalls, 1);
 });

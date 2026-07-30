@@ -5,6 +5,7 @@ import { formatTime } from '../utils/time';
 import computedStyle from '../utils/computed-style';
 import fetch from '../utils/fetch';
 import is from '../utils/is';
+import { addVttCue, MAX_VTT_BYTES } from '../utils/vtt';
 
 class PreviewThumbnails {
   constructor(player) {
@@ -87,6 +88,7 @@ class PreviewThumbnails {
     const { player } = this;
     this.request = fetch(url, 'text', {
       timeout: player.config.xhrTimeout,
+      maxBytes: MAX_VTT_BYTES,
       onBeforeOpen: player.config.onBeforeXMLHttpRequestOpen,
       onBeforeSend: player.config.onBeforeXMLHttpRequest,
     });
@@ -98,7 +100,7 @@ class PreviewThumbnails {
           const cues = [];
 
           parser.oncue = (cue) => {
-            cues.push(cue);
+            addVttCue(cues, cue);
           };
 
           parser.onflush = () => {

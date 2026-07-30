@@ -4,18 +4,14 @@
 // ==========================================================================
 
 export default function fetch(url, responseType = 'text', options = {}) {
-  const {
-    signal,
-    timeout = 15000,
-    onBeforeOpen = () => {},
-    onBeforeSend = () => {},
-  } = options;
+  const { signal, timeout = 15000, maxBytes, onBeforeOpen = () => {}, onBeforeSend = () => {} } = options;
 
   let abortRequest = () => {};
   const promise = new Promise((resolve, reject) => {
     try {
       const request = new XMLHttpRequest();
       let settled = false;
+      const validMaxBytes = typeof maxBytes === 'number' && isFinite(maxBytes) && maxBytes >= 0 ? maxBytes : null;
 
       const finish = (callback, value) => {
         if (settled) {
@@ -33,6 +29,17 @@ export default function fetch(url, responseType = 'text', options = {}) {
         return error;
       };
 
+      const responseTooLargeError = () => {
+        const error = new Error(`XMLHttpRequest response exceeds ${validMaxBytes} bytes`);
+        error.name = 'ResponseTooLargeError';
+        return error;
+      };
+
+      const rejectTooLarge = () => {
+        finish(reject, responseTooLargeError());
+        request.abort();
+      };
+
       // Check for CORS support
       if (!('withCredentials' in request)) {
         finish(reject, new Error('XMLHttpRequest CORS not supported'));
@@ -46,9 +53,30 @@ export default function fetch(url, responseType = 'text', options = {}) {
         }
 
         if (responseType === 'text') {
+          if (validMaxBytes !== null && new Blob([request.responseText]).size > validMaxBytes) {
+            rejectTooLarge();
+            return;
+          }
+
           finish(resolve, request.responseText);
         } else {
+          const size = request.response?.byteLength ?? request.response?.size;
+
+          if (validMaxBytes !== null && typeof size === 'number' && size > validMaxBytes) {
+            rejectTooLarge();
+            return;
+          }
+
           finish(resolve, request.response);
+        }
+      });
+
+      request.addEventListener('progress', (event) => {
+        if (
+          validMaxBytes !== null &&
+          (event.loaded > validMaxBytes || (event.lengthComputable && event.total > validMaxBytes))
+        ) {
+          rejectTooLarge();
         }
       });
 

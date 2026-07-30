@@ -11,6 +11,24 @@ const initializePreview = async (page, file) => {
   }, file);
 };
 
+const initializeSubtitles = async (page, file) => {
+  await loadPlayer(
+    page,
+    `<video id="player" width="640" height="360">
+      <track label="Limited" kind="subtitles" srclang="en" src="${file}">
+    </video>`,
+  );
+
+  await page.evaluate(() =>
+    window.fluidPlayer('player', {
+      layoutControls: {
+        subtitles: { active: true, language: 'en' },
+        menu: { subtitles: true },
+      },
+    }),
+  );
+};
+
 test('valid thumbnail VTT renders thumbnail preview', async ({ page }) => {
   await initializePreview(page, '/static/thumbnails.vtt');
   await expect(page.locator('.fluid_timeline_preview_thumbnails')).toHaveCount(1);
@@ -30,6 +48,56 @@ test('missing thumbnail VTT falls back to time preview', async ({ page }) => {
   await page.route('**/missing.vtt', (route) => route.fulfill({ status: 404, body: '' }));
   await initializePreview(page, '/missing.vtt');
   await expect(page.locator('.fluid_timeline_preview_time')).toHaveCount(1);
+});
+
+test('oversized thumbnail VTT is rejected completely', async ({ page }) => {
+  await page.route('**/oversized.vtt', (route) =>
+    route.fulfill({ contentType: 'text/vtt', body: `WEBVTT\n\n${'x'.repeat(5 * 1024 * 1024)}` }),
+  );
+
+  await initializePreview(page, '/oversized.vtt');
+
+  await expect(page.locator('.fluid_timeline_preview_time')).toHaveCount(1);
+  await expect(page.locator('.fluid_timeline_preview_thumbnails')).toHaveCount(0);
+  expect(await page.evaluate(() => window.fluidPlayerDebug.at(-1).internals.preview.current.data)).toBeUndefined();
+});
+
+test('subtitle VTT over cue count limit is rejected completely', async ({ page }) => {
+  const cue = '00:00:00.000 --> 00:00:01.000\ntext\n\n';
+  await page.route('**/too-many-cues.vtt', (route) =>
+    route.fulfill({ contentType: 'text/vtt', body: `WEBVTT\n\n${cue.repeat(20001)}` }),
+  );
+
+  await initializeSubtitles(page, '/too-many-cues.vtt');
+
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const player = window.fluidPlayerDebug.at(-1).internals;
+        return player.subtitles.request === null && player.subtitles.tracks[0].cues.length;
+      }),
+    )
+    .toBe(0);
+});
+
+test('subtitle VTT with oversized cue text is rejected completely', async ({ page }) => {
+  await page.route('**/long-cue.vtt', (route) =>
+    route.fulfill({
+      contentType: 'text/vtt',
+      body: `WEBVTT\n\n00:00:00.000 --> 00:00:01.000\n${'x'.repeat(16 * 1024 + 1)}\n`,
+    }),
+  );
+
+  await initializeSubtitles(page, '/long-cue.vtt');
+
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const player = window.fluidPlayerDebug.at(-1).internals;
+        return player.subtitles.request === null && player.subtitles.tracks[0].cues.length;
+      }),
+    )
+    .toBe(0);
 });
 
 test('thumbnail XHR runs configured hooks and aborts on destroy', async ({ page }) => {

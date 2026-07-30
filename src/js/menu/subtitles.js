@@ -4,6 +4,7 @@ import { selector } from './menu-item';
 import WebVTT from 'videojs-vtt.js/lib/vtt';
 import fetch from '../utils/fetch';
 import is from '../utils/is';
+import { addVttCue, MAX_VTT_BYTES } from '../utils/vtt';
 
 class Subtitles {
   constructor(player) {
@@ -277,32 +278,37 @@ class Subtitles {
     const { player } = this;
     this.request = fetch(url, 'text', {
       timeout: player.config.xhrTimeout,
+      maxBytes: MAX_VTT_BYTES,
       onBeforeOpen: player.config.onBeforeXMLHttpRequestOpen,
       onBeforeSend: player.config.onBeforeXMLHttpRequest,
     });
+
     const request = this.request;
-    return request.then(
-      (response) =>
-        new Promise((resolve) => {
-          const parser = new WebVTT.Parser(window, WebVTT.StringDecoder());
-          const cues = [];
 
-          parser.oncue = (cue) => {
-            cues.push(cue);
-          };
+    return request
+      .then(
+        (response) =>
+          new Promise((resolve) => {
+            const parser = new WebVTT.Parser(window, WebVTT.StringDecoder());
+            const cues = [];
 
-          parser.onflush = () => {
-            resolve(cues);
-          };
+            parser.oncue = (cue) => {
+              addVttCue(cues, cue);
+            };
 
-          parser.parse(response);
-          parser.flush();
-        }),
-    ).finally(() => {
-      if (this.request === request) {
-        this.request = null;
-      }
-    });
+            parser.onflush = () => {
+              resolve(cues);
+            };
+
+            parser.parse(response);
+            parser.flush();
+          }),
+      )
+      .finally(() => {
+        if (this.request === request) {
+          this.request = null;
+        }
+      });
   };
 
   destroy = () => {
