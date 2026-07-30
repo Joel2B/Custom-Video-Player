@@ -36,6 +36,47 @@ test('HLS initializes local adapter and detaches cleanly', async ({ page }) => {
   expect(await page.evaluate(() => window.mockHlsInstances[0].destroyed)).toBe(true);
 });
 
+test('HLS bounds subtitle cues and prunes expired live cues', async ({ page }) => {
+  await loadPlayer(page, video('https://example.test/media/live.m3u8', 'application/x-mpegURL'));
+
+  await page.evaluate(() =>
+    window.fluidPlayer('player', {
+      hls: { url: '/static/mock-hls.js' },
+      layoutControls: { menu: { subtitles: true } },
+    }),
+  );
+  await expect.poll(() => page.evaluate(() => window.mockHlsInstances?.length)).toBe(1);
+
+  const state = await page.evaluate(() => {
+    const player = window.fluidPlayerDebug.at(-1).internals;
+    const hls = window.mockHlsInstances[0];
+    Object.defineProperty(player.media, 'currentTime', { configurable: true, value: 1000 });
+
+    hls.emit(window.Hls.Events.NON_NATIVE_TEXT_TRACKS_FOUND, {
+      tracks: [{ _id: 'subtitles0', kind: 'subtitles', label: 'English', default: true }],
+    });
+    hls.emit(window.Hls.Events.LEVEL_LOADED, { details: { live: true } });
+
+    const cues = Array.from({ length: 20005 }, (_, index) => ({
+      startTime: 700 + index,
+      endTime: 701 + index,
+      text: String(index),
+    }));
+    cues.unshift({ startTime: 0, endTime: 699, text: 'expired' });
+    hls.emit(window.Hls.Events.CUES_PARSED, { track: 'subtitles0', cues });
+
+    const stored = player.subtitles.getTracks()[0].cues;
+    return {
+      count: stored.length,
+      first: stored[0].text,
+      last: stored.at(-1).text,
+      hasExpired: stored.some((cue) => cue.text === 'expired'),
+    };
+  });
+
+  expect(state).toEqual({ count: 20000, first: '0', last: '19999', hasExpired: false });
+});
+
 test('DASH initializes local adapter and detaches cleanly', async ({ page }) => {
   await loadPlayer(page, video('https://example.test/media/dash', 'application/dash+xml'));
 

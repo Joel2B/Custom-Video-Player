@@ -5,6 +5,8 @@ import is from '../utils/is';
 import loadScript from './load-script';
 
 const MAX_FATAL_RECOVERIES = 2;
+const MAX_SUBTITLE_CUES = 20000;
+const LIVE_CUE_RETENTION_SECONDS = 300;
 
 class Hlsjs {
   constructor(player) {
@@ -231,7 +233,29 @@ class Hlsjs {
           id === data.track.replace(/subtitles/, '') ||
           (track.type === 'hls' && track.default && data.track === 'default')
         ) {
-          track.cues.push(...data.cues);
+          const liveCutoff = player.streaming.live.active
+            ? player.media.currentTime - LIVE_CUE_RETENTION_SECONDS
+            : -Infinity;
+
+          let cueCount = 0;
+
+          for (const cue of track.cues) {
+            if (cue.endTime >= liveCutoff) {
+              track.cues[cueCount++] = cue;
+            }
+          }
+
+          track.cues.length = cueCount;
+
+          for (const cue of data.cues) {
+            if (track.cues.length >= MAX_SUBTITLE_CUES) {
+              break;
+            }
+
+            if (cue.endTime >= liveCutoff) {
+              track.cues.push(cue);
+            }
+          }
 
           player.subtitles.updateActiveCues();
           player.subtitles.render();
@@ -298,13 +322,17 @@ class Hlsjs {
       this.mediaErrorRetries = 0;
     });
 
-    this.listen(Hls.Events.LEVEL_LOADED, (hls, e, data) => {
-      player.debug.log(e, data);
+    this.listen(
+      Hls.Events.LEVEL_LOADED,
+      (hls, e, data) => {
+        player.debug.log(e, data);
 
-      if (data.details.live) {
-        this.setupLive(hls);
-      }
-    }, true);
+        if (data.details.live) {
+          this.setupLive(hls);
+        }
+      },
+      true,
+    );
 
     this.listen(Hls.Events.ERROR, (hls, e, data) => {
       if (!data.fatal) {
