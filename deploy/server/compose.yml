@@ -29,7 +29,6 @@ services:
       - /tmp
     volumes:
       - /srv/cvp:/srv/cvp:ro
-      - /srv/cvp/player:/usr/share/nginx/html:ro
       - /etc/cvp-deploy/nginx:/etc/nginx/conf.d:ro
     logging:
       options:
