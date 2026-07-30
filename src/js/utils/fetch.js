@@ -4,7 +4,14 @@
 // ==========================================================================
 
 export default function fetch(url, responseType = 'text', options = {}) {
-  const { signal, timeout = 15000, maxBytes, onBeforeOpen = () => {}, onBeforeSend = () => {} } = options;
+  const {
+    signal,
+    timeout = 15000,
+    maxBytes,
+    allowedOrigins = [],
+    onBeforeOpen = () => {},
+    onBeforeSend = () => {},
+  } = options;
 
   let abortRequest = () => {};
   const promise = new Promise((resolve, reject) => {
@@ -12,6 +19,32 @@ export default function fetch(url, responseType = 'text', options = {}) {
       const request = new XMLHttpRequest();
       let settled = false;
       const validMaxBytes = typeof maxBytes === 'number' && isFinite(maxBytes) && maxBytes >= 0 ? maxBytes : null;
+      const target = new URL(url, document.baseURI);
+      const currentOrigin = new URL(document.baseURI).origin;
+
+      const callbackAllowed =
+        target.origin === currentOrigin ||
+        (Array.isArray(allowedOrigins) ? allowedOrigins : []).some((value) => {
+          if (typeof value !== 'string' || value.includes('*')) {
+            return false;
+          }
+
+          try {
+            const allowed = new URL(value);
+
+            return (
+              allowed.protocol === 'https:' &&
+              !allowed.username &&
+              !allowed.password &&
+              allowed.pathname === '/' &&
+              !allowed.search &&
+              !allowed.hash &&
+              allowed.origin === target.origin
+            );
+          } catch (_) {
+            return false;
+          }
+        });
 
       const finish = (callback, value) => {
         if (settled) {
@@ -90,15 +123,20 @@ export default function fetch(url, responseType = 'text', options = {}) {
         finish(reject, abortError());
       });
 
-      onBeforeOpen(request);
-      request.open('GET', url, true);
+      if (callbackAllowed) {
+        onBeforeOpen(request, target);
+      }
+
+      request.open('GET', target.href, true);
 
       // Set the required response type
       request.responseType = responseType;
       const validTimeout = typeof timeout === 'number' && isFinite(timeout) && timeout >= 0;
       request.timeout = validTimeout ? timeout : 15000;
 
-      onBeforeSend(request);
+      if (callbackAllowed) {
+        onBeforeSend(request, target);
+      }
 
       if (signal?.aborted) {
         finish(reject, abortError());

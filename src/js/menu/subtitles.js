@@ -279,6 +279,7 @@ class Subtitles {
     this.request = fetch(url, 'text', {
       timeout: player.config.xhrTimeout,
       maxBytes: MAX_VTT_BYTES,
+      allowedOrigins: player.config.xhrAllowedOrigins,
       onBeforeOpen: player.config.onBeforeXMLHttpRequestOpen,
       onBeforeSend: player.config.onBeforeXMLHttpRequest,
     });

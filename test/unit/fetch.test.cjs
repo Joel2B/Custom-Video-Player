@@ -18,6 +18,10 @@ class FakeXMLHttpRequest {
     this.opened = { method, url, async };
   }
 
+  setRequestHeader(name, value) {
+    this.headers = { ...this.headers, [name]: value };
+  }
+
   send() {
     if (FakeXMLHttpRequest.sendError) {
       throw FakeXMLHttpRequest.sendError;
@@ -37,6 +41,7 @@ class FakeXMLHttpRequest {
 
 async function loadFetch() {
   global.XMLHttpRequest = FakeXMLHttpRequest;
+  global.document = { baseURI: 'https://app.example/player/' };
   const sourceUrl = new URL('../../src/js/utils/fetch.js', pathToFileURL(__filename));
   const source = await readFile(sourceUrl, 'utf8');
   return (await import(`data:text/javascript,${encodeURIComponent(source)}`)).default;
@@ -47,8 +52,8 @@ test('XHR callbacks run around open and configured timeout is applied', async ()
   const calls = [];
   const result = fetch('/captions.vtt', 'text', {
     timeout: 2500,
-    onBeforeOpen: (request) => calls.push(['beforeOpen', request.opened]),
-    onBeforeSend: (request) => calls.push(['beforeSend', request.opened]),
+    onBeforeOpen: (request, url) => calls.push(['beforeOpen', request.opened, url.href]),
+    onBeforeSend: (request, url) => calls.push(['beforeSend', request.opened, url.href]),
   });
   const request = FakeXMLHttpRequest.last;
   request.status = 200;
@@ -57,8 +62,12 @@ test('XHR callbacks run around open and configured timeout is applied', async ()
 
   assert.equal(await result, 'WEBVTT');
   assert.deepEqual(calls, [
-    ['beforeOpen', undefined],
-    ['beforeSend', { method: 'GET', url: '/captions.vtt', async: true }],
+    ['beforeOpen', undefined, 'https://app.example/captions.vtt'],
+    [
+      'beforeSend',
+      { method: 'GET', url: 'https://app.example/captions.vtt', async: true },
+      'https://app.example/captions.vtt',
+    ],
   ]);
   assert.equal(request.timeout, 2500);
   assert.equal(request.sent, true);
@@ -154,4 +163,57 @@ test('XHR rejects and aborts responses over maxBytes', async () => {
   finalRequest.emit('load');
   await assert.rejects(finalLimited, { name: 'ResponseTooLargeError' });
   assert.equal(finalRequest.abortCalls, 1);
+});
+
+test('XHR callbacks require same origin or an explicit HTTPS origin', async () => {
+  const fetch = await loadFetch();
+  const callback = (request, url) => {
+    request.setRequestHeader('Authorization', 'Bearer TEST_ONLY');
+    request.callbackUrl = url.href;
+  };
+
+  const blocked = fetch('https://attacker.example/captions.vtt', 'text', { onBeforeSend: callback });
+  const blockedRequest = FakeXMLHttpRequest.last;
+  blockedRequest.status = 200;
+  blockedRequest.responseText = 'WEBVTT';
+  blockedRequest.emit('load');
+  await blocked;
+  assert.equal(blockedRequest.headers, undefined);
+  assert.equal(blockedRequest.opened.url, 'https://attacker.example/captions.vtt');
+
+  const allowed = fetch('https://media.example/captions.vtt', 'text', {
+    allowedOrigins: ['https://media.example'],
+    onBeforeSend: callback,
+  });
+  const allowedRequest = FakeXMLHttpRequest.last;
+  allowedRequest.status = 200;
+  allowedRequest.responseText = 'WEBVTT';
+  allowedRequest.emit('load');
+  await allowed;
+  assert.deepEqual(allowedRequest.headers, { Authorization: 'Bearer TEST_ONLY' });
+  assert.equal(allowedRequest.callbackUrl, 'https://media.example/captions.vtt');
+});
+
+test('XHR ignores invalid origins and exact-matches allowed origins', async () => {
+  const fetch = await loadFetch();
+  const invalidOrigins = [
+    'http://media.example',
+    'https://media.example/path',
+    'https://user@media.example',
+    'https://*.example',
+    'not a URL',
+  ];
+
+  for (const target of ['https://media.example.evil.test/file.vtt', 'https://media.example/file.vtt']) {
+    const result = fetch(target, 'text', {
+      allowedOrigins: invalidOrigins,
+      onBeforeSend: (request) => request.setRequestHeader('Authorization', 'Bearer TEST_ONLY'),
+    });
+    const request = FakeXMLHttpRequest.last;
+    request.status = 200;
+    request.responseText = 'WEBVTT';
+    request.emit('load');
+    await result;
+    assert.equal(request.headers, undefined);
+  }
 });

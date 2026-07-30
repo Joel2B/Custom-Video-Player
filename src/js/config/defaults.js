@@ -105,8 +105,9 @@ const defaults = {
   },
   captions: en,
   xhrTimeout: 15000,
-  onBeforeXMLHttpRequestOpen: (request) => {},
-  onBeforeXMLHttpRequest: (request) => {},
+  xhrAllowedOrigins: [],
+  onBeforeXMLHttpRequestOpen: (request, url) => {},
+  onBeforeXMLHttpRequest: (request, url) => {},
   hls: {
     url: 'https://cdn.jsdelivr.net/npm/hls.js@1.6.13/dist/hls.min.js',
     customUrl: '',

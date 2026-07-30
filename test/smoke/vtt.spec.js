@@ -112,16 +112,16 @@ test('thumbnail XHR runs configured hooks and aborts on destroy', async ({ page 
     window.xhrAbortCalls = 0;
     const api = window.fluidPlayer('player', {
       xhrTimeout: 5000,
-      onBeforeXMLHttpRequestOpen: (request) => {
-        window.xhrHooks.push(['open', request.readyState]);
+      onBeforeXMLHttpRequestOpen: (request, url) => {
+        window.xhrHooks.push(['open', request.readyState, url.href]);
         const abort = request.abort.bind(request);
         request.abort = () => {
           window.xhrAbortCalls++;
           abort();
         };
       },
-      onBeforeXMLHttpRequest: (request) => {
-        window.xhrHooks.push(['send', request.timeout]);
+      onBeforeXMLHttpRequest: (request, url) => {
+        window.xhrHooks.push(['send', request.timeout, url.href]);
       },
       layoutControls: { timelinePreview: { file: '/slow-thumbnails.vtt', type: 'VTT' } },
     });
@@ -130,16 +130,22 @@ test('thumbnail XHR runs configured hooks and aborts on destroy', async ({ page 
     player.debug.error = () => window.xhrErrors++;
     await new Promise((resolve) => setTimeout(resolve, 50));
     await api.destroy();
-    return { hooks: window.xhrHooks, aborts: window.xhrAbortCalls, errors: window.xhrErrors };
+    return {
+      hooks: window.xhrHooks,
+      aborts: window.xhrAbortCalls,
+      errors: window.xhrErrors,
+      expectedUrl: new URL('/slow-thumbnails.vtt', document.baseURI).href,
+    };
   });
 
   expect(hooks).toEqual({
     hooks: [
-      ['open', 0],
-      ['send', 5000],
+      ['open', 0, hooks.expectedUrl],
+      ['send', 5000, hooks.expectedUrl],
     ],
     aborts: 1,
     errors: 0,
+    expectedUrl: hooks.expectedUrl,
   });
 });
 

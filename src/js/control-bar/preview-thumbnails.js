@@ -89,33 +89,38 @@ class PreviewThumbnails {
     this.request = fetch(url, 'text', {
       timeout: player.config.xhrTimeout,
       maxBytes: MAX_VTT_BYTES,
+      allowedOrigins: player.config.xhrAllowedOrigins,
       onBeforeOpen: player.config.onBeforeXMLHttpRequestOpen,
       onBeforeSend: player.config.onBeforeXMLHttpRequest,
     });
+
     const request = this.request;
-    return request.then(
-      (response) =>
-        new Promise((resolve) => {
-          const parser = new WebVTT.Parser(window, WebVTT.StringDecoder());
-          const cues = [];
 
-          parser.oncue = (cue) => {
-            addVttCue(cues, cue);
-          };
+    return request
+      .then(
+        (response) =>
+          new Promise((resolve) => {
+            const parser = new WebVTT.Parser(window, WebVTT.StringDecoder());
+            const cues = [];
 
-          parser.onflush = () => {
-            this.data = this.parseVtt(cues);
-            resolve();
-          };
+            parser.oncue = (cue) => {
+              addVttCue(cues, cue);
+            };
 
-          parser.parse(response);
-          parser.flush();
-        }),
-    ).finally(() => {
-      if (this.request === request) {
-        this.request = null;
-      }
-    });
+            parser.onflush = () => {
+              this.data = this.parseVtt(cues);
+              resolve();
+            };
+
+            parser.parse(response);
+            parser.flush();
+          }),
+      )
+      .finally(() => {
+        if (this.request === request) {
+          this.request = null;
+        }
+      });
   };
 
   move = (event) => {
