@@ -1,6 +1,7 @@
 import { createElement, toggleClass } from './utils/dom';
 import { on } from './utils/events';
 import is from './utils/is';
+import { getHttpsUrl } from './utils/url';
 
 class Logo {
   constructor(player) {
@@ -37,10 +38,11 @@ class Logo {
 
   setup = () => {
     const { player, config, img } = this;
+    const url = getHttpsUrl(config.clickUrl);
 
-    if (!is.empty(config.clickUrl)) {
+    if (url) {
       this.link = createElement('a', {
-        href: config.clickUrl,
+        href: url,
         target: '_blank',
         rel: 'noopener noreferrer',
       });
@@ -72,7 +74,7 @@ class Logo {
       img.style.opacity = config.opacity;
     }
 
-    if (!is.empty(config.clickUrl)) {
+    if (this.link) {
       img.style.cursor = 'pointer';
     }
 

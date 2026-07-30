@@ -22,3 +22,16 @@ export function getFileExtension(path) {
 
   return ext === cleanPath ? '' : ext.toLowerCase();
 }
+
+export function getHttpsUrl(value) {
+  if (!is.string(value)) {
+    return null;
+  }
+
+  try {
+    const url = new URL(value, document.baseURI);
+    return url.protocol === 'https:' ? url.href : null;
+  } catch (_) {
+    return null;
+  }
+}

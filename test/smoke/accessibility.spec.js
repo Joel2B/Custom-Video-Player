@@ -226,6 +226,58 @@ test('clickable logo gets a default localized name', async ({ page }) => {
   await expect(page.getByRole('link', { name: 'Logotipo' })).toBeVisible();
 });
 
+test('logo rejects non-HTTPS click URLs', async ({ page }) => {
+  await loadPlayer(page, '<video id="player" width="640" height="360"></video>');
+  await page.evaluate(() =>
+    window.fluidPlayer('player', {
+      layoutControls: {
+        logo: {
+          imageUrl: '/static/logo.png',
+          clickUrl: 'javascript:alert(document.domain)',
+        },
+      },
+    }),
+  );
+
+  await expect(page.locator('.fluid_video_wrapper a')).toHaveCount(0);
+  await expect(page.locator('.fluid_video_wrapper img')).toHaveCSS('cursor', 'auto');
+});
+
+test('context menu opens only HTTPS links', async ({ page }) => {
+  await loadPlayer(page, '<video id="player" width="640" height="360"></video>');
+  await page.evaluate(() => {
+    window.openedLinks = [];
+    window.open = (...args) => {
+      window.openedLinks.push(args);
+      return null;
+    };
+    window.fluidPlayer('player', {
+      layoutControls: {
+        contextMenu: {
+          controls: false,
+          links: [
+            { label: 'Safe', href: 'https://example.test/help' },
+            { label: 'HTTP', href: 'http://example.test/help' },
+            { label: 'Script', href: 'javascript:alert(document.domain)' },
+            { label: 'Data', href: 'data:text/html,test' },
+            { label: 'Invalid', href: 'https://[' },
+          ],
+        },
+      },
+    });
+  });
+
+  const configuredItems = page.locator('.fluid_context_menu [role="menuitem"]');
+  await expect(configuredItems).toHaveCount(2);
+  await expect(configuredItems.first()).toHaveText('Safe');
+  await configuredItems.first().dispatchEvent('click');
+  expect(await page.evaluate(() => window.openedLinks[0])).toEqual([
+    'https://example.test/help',
+    '_blank',
+    'noopener,noreferrer',
+  ]);
+});
+
 test('context menu stays inside player and supports Escape', async ({ page }) => {
   await setup(page);
   const wrapper = page.locator('.fluid_video_wrapper');

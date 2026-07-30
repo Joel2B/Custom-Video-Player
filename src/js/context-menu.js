@@ -1,6 +1,7 @@
 import { createElement, insertAfter } from './utils/dom';
 import { on } from './utils/events';
 import is from './utils/is';
+import { getHttpsUrl } from './utils/url';
 
 class ContextMenu {
   constructor(player) {
@@ -24,8 +25,14 @@ class ContextMenu {
 
     if (!is.empty(links)) {
       for (const link of links) {
+        const url = getHttpsUrl(link.href);
+
+        if (!url) {
+          continue;
+        }
+
         const li = this.createItem(link.label);
-        on.call(player, li, 'click', () => this.openExternal(link.href));
+        on.call(player, li, 'click', () => this.openExternal(url));
         this.list.appendChild(li);
       }
     }
@@ -115,9 +122,7 @@ class ContextMenu {
         const invoker = this.contextInvoker || document.activeElement;
         this.contextInvoker = null;
         this.previousFocus =
-          invoker === document.body || invoker === player.media
-            ? player.controls.playPause
-            : invoker;
+          invoker === document.body || invoker === player.media ? player.controls.playPause : invoker;
         this.menu.style.display = 'block';
         const wrapperRect = wrapper.getBoundingClientRect();
         const menuRect = this.menu.getBoundingClientRect();
@@ -174,7 +179,13 @@ class ContextMenu {
   };
 
   openExternal = (url) => {
-    const opened = window.open(url, '_blank', 'noopener,noreferrer');
+    const safeUrl = getHttpsUrl(url);
+
+    if (!safeUrl) {
+      return;
+    }
+
+    const opened = window.open(safeUrl, '_blank', 'noopener,noreferrer');
     if (opened) {
       opened.opener = null;
     }
