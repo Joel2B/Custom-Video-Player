@@ -105,7 +105,7 @@ docker compose -p j --env-file "$ENV_FILE" -f "$NEW_COMPOSE" up -d --no-build --
 docker exec player nginx -t
 
 location="$(sed -nE 's#.*return 302 (/v1/deployments/[^;]+);#\1#p' "$CONFIG")"
-sed -e "s|__ACTIVE_ROOT__|/srv/cvp/releases/$current|" -e "s|__CURRENT_LOCATION__|$location|" "$SOURCE_DIR/../player.conf" > "$CONFIG.tmp"
+sed -e "s|__ACTIVE_ROOT__|/srv/cvp/releases/$current|" -e "s|__CURRENT_LOCATION__|$location|" -e "s|__STABLE_LOCATION__|/v1/versions/0.0.0/player.min.js|" "$SOURCE_DIR/../player.conf" > "$CONFIG.tmp"
 chown root:root "$CONFIG.tmp"
 chmod 644 "$CONFIG.tmp"
 mv -fT "$CONFIG.tmp" "$CONFIG"

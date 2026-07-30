@@ -1,6 +1,6 @@
 {
   "name": "custom-video-player",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "HTML5 video player",
   "main": "src/index.js",
   "files": [
@@ -17,6 +17,7 @@
     "lint-fix": "npm run lint -- --fix",
     "serve": "webpack serve --open",
     "deploy": "pwsh -ExecutionPolicy Bypass -File ./deploy.ps1",
+    "promote": "pwsh -ExecutionPolicy Bypass -File ./promote.ps1",
     "test:unit": "node --test test/unit/fetch.test.cjs test/unit/is.test.cjs test/unit/time.test.cjs",
     "test:smoke": "playwright test",
     "test:webkit": "playwright test --config=playwright.webkit.config.js",

@@ -60,6 +60,7 @@ Mobile
     <video id="player">
       <source src="https://d2zihajmogu5jn.cloudfront.net/bipbop-advanced/bipbop_16x9_variant.m3u8" type="application/x-mpegURL" />
     </video>
+    <!-- QA channel: accepts automatic updates from every deployed commit. -->
     <script src="https://player.tinyapps.download/v1/current/player.min.js"></script>
     <script>
       const options = {
@@ -124,13 +125,31 @@ npm run test:deploy
 
 ## CDN Deployments
 
-Public integrations should always load:
+Every commit deployment updates the uncached `current` channel. Use it for development, demos, and QA that explicitly accept automatic updates:
 
 ```html
 <script src="https://player.tinyapps.download/v1/current/player.min.js"></script>
 ```
 
-The `current` URL is not cached and redirects to a deployment-specific URL containing its SHA-256 digest. Deployment URLs are cached for 7 days. The server keeps the current deployment, at least 9 previous deployments, and any newer than the cache TTL.
+The `current` URL redirects to a deployment-specific URL containing its SHA-256 digest. Current builds expose the package version plus their commit, for example `2.0.0+b626634`.
+
+After validating `current`, promote those exact bytes without rebuilding:
+
+```text
+npm run promote -- 2.0.0
+```
+
+Production integrations should pin the immutable version URL and SRI printed by promotion and recorded in its `release.json`:
+
+```html
+<script
+  src="https://player.tinyapps.download/v1/versions/2.0.0/player.min.js"
+  integrity="sha384-RELEASE_DIGEST"
+  crossorigin="anonymous"
+></script>
+```
+
+`/v1/stable/player.min.js` tracks the latest promoted version for consumers that accept automatic stable updates. Version URLs are immutable and cached for one year. `stable` and `current` remain uncached and independent.
 
 Deploy with:
 

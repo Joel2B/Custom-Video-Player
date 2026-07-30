@@ -80,11 +80,13 @@ try {
   Write-Host ">>> Running npm run build-cdn..."
   Remove-Item -LiteralPath (Join-Path $projectRoot 'dist-cdn') -Recurse -Force -ErrorAction SilentlyContinue
   $env:DEPLOY_ID = $deploymentId
+  $env:DEPLOY_COMMIT = $commit
   try {
     Invoke-NativeCommand 'npm.cmd' @('run', 'build-cdn') 'npm run build-cdn'
   }
   finally {
     Remove-Item Env:DEPLOY_ID -ErrorAction SilentlyContinue
+    Remove-Item Env:DEPLOY_COMMIT -ErrorAction SilentlyContinue
   }
   $cdnHash = New-CdnDeploymentLayout $projectRoot $deploymentId
   Write-Host ">>> Running npm run build-e2e..."

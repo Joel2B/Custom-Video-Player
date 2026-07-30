@@ -2,7 +2,7 @@ import { dirname as _dirname, resolve as _resolve } from 'path';
 import { existsSync, readFileSync, readdirSync } from 'fs';
 import webpack from 'webpack';
 import { fileURLToPath } from 'url';
-import { valid, major } from 'semver';
+import { valid } from 'semver';
 import { load } from 'cheerio';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import CopyPlugin from 'copy-webpack-plugin';
@@ -53,7 +53,6 @@ if (!valid(packageJSON.version)) {
 // Distribution options configure how build paths are going to be configured.
 const getDistOptions = (mode) => {
   const fullVersion = packageJSON.version;
-  const majorVersion = major(packageJSON.version);
   const cdnRoot = getEnv('DEPLOY_CDN');
 
   if (!cdnRoot && mode !== 'development') {
@@ -74,8 +73,8 @@ const getDistOptions = (mode) => {
       }
 
       return {
-        path: _resolve(__dirname, 'dist-cdn/v' + majorVersion + '/deployments/' + deploymentId + '/'),
-        publicPath: cdnRoot + '/v' + majorVersion + '/deployments/' + deploymentId + '/',
+        path: _resolve(__dirname, 'dist-cdn/v1/deployments/' + deploymentId + '/'),
+        publicPath: cdnRoot + '/v1/deployments/' + deploymentId + '/',
       };
     }
     case 'versioned':
@@ -95,7 +94,15 @@ export default (env, argv) => {
   const dist = typeof env.dist !== 'undefined' ? env.dist : 'development';
   const distOptions = getDistOptions(dist);
   const obf = !!env.obf;
-  const buildVersion = packageJSON.version;
+  let buildVersion = packageJSON.version;
+
+  if (dist === 'current') {
+    const commit = getEnv('DEPLOY_COMMIT');
+    if (!commit || !/^[a-f0-9]{40}$/.test(commit)) {
+      throw new Error('DEPLOY_COMMIT must be a 40-character Git commit hash.');
+    }
+    buildVersion += '+' + commit.slice(0, 8);
+  }
 
   if (dist !== 'development' && (mode !== 'production' || debug)) {
     throw new Error('Building a production distribution in development mode or with debug enabled is not allowed!');

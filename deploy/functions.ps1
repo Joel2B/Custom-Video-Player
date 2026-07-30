@@ -203,10 +203,23 @@ function New-ReleasePackage {
   Copy-Item -Path (Join-Path $ProjectRoot 'dist/*') -Destination $ReleaseDir -Recurse
   Copy-Item -Path (Join-Path $ProjectRoot 'dist-cdn/*') -Destination $ReleaseDir -Recurse -Force
 
+  $package = Get-Content -LiteralPath (Join-Path $ProjectRoot 'package.json') -Raw | ConvertFrom-Json
+  if ($package.version -notmatch '^\d+\.\d+\.\d+$') {
+    throw "Package version must be strict SemVer: $($package.version)"
+  }
+  $bundleRoot = Join-Path $ReleaseDir "v1/deployments/$DeploymentId/sha256"
+  $bundles = @(Get-ChildItem -LiteralPath $bundleRoot -Filter 'player.min.js' -File -Recurse)
+  if ($bundles.Count -ne 1) {
+    throw "Release must contain exactly one CDN bundle: $bundleRoot"
+  }
+  $sha384 = (Get-FileHash -LiteralPath $bundles[0].FullName -Algorithm SHA384).Hash
+  $sri = 'sha384-' + [Convert]::ToBase64String([Convert]::FromHexString($sha384))
   $metadata = [ordered]@{
+    version = $package.version
     deployment = $DeploymentId
     commit = $Commit
     cdn = $Cdn
+    sri = $sri
   } | ConvertTo-Json
   [IO.File]::WriteAllText(
     (Join-Path $ReleaseDir 'release.json'),
@@ -293,11 +306,16 @@ function Invoke-DeploySelfTest {
     $distDir = Join-Path $testRoot 'dist'
     [void](New-Item -ItemType Directory -Path $distDir)
     [IO.File]::WriteAllText((Join-Path $distDir 'index.html'), 'demo')
+    [IO.File]::WriteAllText((Join-Path $testRoot 'package.json'), '{"version":"2.0.0"}')
     $releaseDir = Join-Path $testRoot 'release'
     New-ReleasePackage $testRoot $releaseDir $deploymentId ('a' * 40) 'https://example.com'
     if (-not (Test-Path -LiteralPath (Join-Path $releaseDir 'manifest.sha256')) -or
         -not (Test-Path -LiteralPath (Join-Path $releaseDir 'index.html'))) {
       throw "Release package self-test failed"
+    }
+    $releaseMetadata = Get-Content -LiteralPath (Join-Path $releaseDir 'release.json') -Raw | ConvertFrom-Json
+    if ($releaseMetadata.version -ne '2.0.0' -or $releaseMetadata.sri -notmatch '^sha384-[A-Za-z0-9+/]{64}$') {
+      throw "Release version metadata self-test failed"
     }
 
   }

@@ -50,7 +50,8 @@ for path in /srv /srv/cvp; do
     [ -d "$path" ] && [ ! -L "$path" ] && [ "$(realpath -e "$path")" = "$path" ] || { echo "Unsafe release path: $path" >&2; exit 1; }
   fi
 done
-install -d -o root -g root -m 755 /usr/local/libexec /usr/local/sbin /etc/cvp-deploy /etc/cvp-deploy/nginx /srv /srv/cvp /srv/cvp/releases /var/lib/cvp-deploy
+install -d -o root -g root -m 755 /usr/local/libexec /usr/local/sbin /etc/cvp-deploy /etc/cvp-deploy/nginx /srv /srv/cvp /srv/cvp/releases /srv/cvp/v1 /srv/cvp/v1/versions /var/lib/cvp-deploy
+install -d -o root -g root -m 700 /var/lib/cvp-deploy/run
 install -d -o cvp-deploy -g cvp-deploy -m 700 /var/lib/cvp-deploy/state
 [ -e /var/lib/cvp-deploy/deploy.lock ] || install -o root -g cvp-deploy -m 660 /dev/null /var/lib/cvp-deploy/deploy.lock
 chown root:cvp-deploy /var/lib/cvp-deploy/deploy.lock
@@ -76,7 +77,7 @@ chown root:root "$authorized_keys_temp"
 chmod 444 "$authorized_keys_temp"
 mv -fT "$authorized_keys_temp" /home/cvp-deploy/.ssh/authorized_keys
 
-chown root:root /etc/cvp-deploy/nginx /etc/cvp-deploy/nginx/default.conf /srv /srv/cvp /srv/cvp/releases /var/lib/cvp-deploy
-chmod 755 /etc/cvp-deploy/nginx /srv /srv/cvp /srv/cvp/releases /var/lib/cvp-deploy
+chown root:root /etc/cvp-deploy/nginx /etc/cvp-deploy/nginx/default.conf /srv /srv/cvp /srv/cvp/releases /srv/cvp/v1 /srv/cvp/v1/versions /var/lib/cvp-deploy
+chmod 755 /etc/cvp-deploy/nginx /srv /srv/cvp /srv/cvp/releases /srv/cvp/v1 /srv/cvp/v1/versions /var/lib/cvp-deploy
 chmod 644 /etc/cvp-deploy/nginx/default.conf
 echo 'Restricted deploy user installed.'

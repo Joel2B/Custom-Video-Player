@@ -69,6 +69,12 @@ if verify_metadata:
         fail("Invalid release metadata")
     if metadata.get("deployment") != deployment_id or not re.fullmatch(r"[a-f0-9]{40}", metadata.get("commit", "")):
         fail("Release metadata does not match deployment")
+    has_version_metadata = "version" in metadata or "sri" in metadata
+    if has_version_metadata and (
+        not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", metadata.get("version", ""))
+        or not re.fullmatch(r"sha384-[A-Za-z0-9+/]{64}", metadata.get("sri", ""))
+    ):
+        fail("Invalid release version metadata")
     bundle = release / f"v1/deployments/{deployment_id}/sha256/{expected_sha}/player.min.js"
     if not bundle.is_file():
         fail("Release metadata bundle missing")

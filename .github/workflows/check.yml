@@ -28,6 +28,7 @@ jobs:
         env:
           DEPLOY_CDN: https://example.invalid
           DEPLOY_ID: 20260729T000321Z-a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4
+          DEPLOY_COMMIT: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
       - run: npm run build-e2e
         env:
           DEPLOY_CDN: https://example.invalid
