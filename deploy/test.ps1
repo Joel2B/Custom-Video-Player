@@ -107,6 +107,7 @@ python3 /root/deploy/verify_release.py --write "/srv/cvp/releases/$deployment"
 sed -e "s|__ACTIVE_ROOT__|/srv/cvp/releases/$deployment|" -e "s|__CURRENT_LOCATION__|/v1/deployments/$deployment/sha256/$hash/player.min.js|" -e 's|__STABLE_LOCATION__|/v1/versions/0.0.0/player.min.js|' /root/deploy/player.conf > /etc/cvp-deploy/nginx/default.conf
 sudo -u cvp-deploy sudo -n /usr/local/sbin/cvp-nginx-activate promote 2.0.0 "$commit" > /tmp/promote.log
 test -f /srv/cvp/v1/versions/2.0.0/player.min.js
+test "$(stat -c '%U:%G:%a' /srv/cvp/v1/versions/2.0.0)" = 'root:root:755'
 test "$(cat /srv/cvp/v1/versions/2.0.0/player.min.js)" = test
 grep -Fq '"version": "2.0.0"' /srv/cvp/v1/versions/2.0.0/release.json
 grep -Fq 'return 302 /v1/versions/2.0.0/player.min.js;' /etc/cvp-deploy/nginx/default.conf

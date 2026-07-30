@@ -58,6 +58,8 @@ print("sha384-" + base64.b64encode(hashlib.sha384(open(sys.argv[1], "rb").read()
 PY
     )"
     [ "$existing_actual_sri" = "$existing_sri" ]
+    chown root:root "$VERSIONS/$VERSION"
+    chmod 755 "$VERSIONS/$VERSION"
     stable_location="$(sed -nE 's#.*return 302 (/v1/versions/[^;]+);#\1#p' "$CONFIG" | head -n 1)"
     expected_stable_location="/v1/versions/$VERSION/player.min.js"
     if [ "$stable_location" != "$expected_stable_location" ]; then
@@ -156,6 +158,7 @@ with open(path, "w", encoding="utf-8", newline="\n") as output:
     output.write("\n")
 PY
   chmod 644 "$temp_version/release.json"
+  chmod 755 "$temp_version"
 
   active_root="$(sed -nE 's#^[[:space:]]*root (/srv/cvp/releases/[^;]+);#\1#p' "$CONFIG" | head -n 1)"
   stable_location="/v1/versions/$VERSION/player.min.js"
