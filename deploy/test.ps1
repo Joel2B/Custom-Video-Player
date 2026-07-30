@@ -47,9 +47,11 @@ printf changed > "/release/v1/deployments/$deployment/sha256/$hash/player.min.js
   $activate = [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/server/cvp-nginx-activate'))
   $installer = [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/server/install.sh'))
   $entrypoint = [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/server/cvp-deploy-entrypoint'))
+  $nginxTemplate = [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/player.conf'))
   $workflow = [IO.File]::ReadAllText((Join-Path $projectRoot '.github/workflows/check.yml'))
   if ($activate -notmatch "CONFIG_DIR='/etc/cvp-deploy/nginx'" -or $activate -notmatch 'mv -fT' -or $activate -match '/home/j') { throw 'Nginx activation permissions are unsafe' }
   if ($activate -notmatch 'MODE.*promote' -or $activate -notmatch 'sha384-' -or $activate -notmatch 'VERSIONS=') { throw 'Stable promotion controls are missing' }
+  if ($nginxTemplate -notmatch 'location @version_not_found' -or $nginxTemplate -notmatch 'Cache-Control "no-store"') { throw 'Versioned 404 cache protection is missing' }
   if ($entrypoint -notmatch 'promote' -or $entrypoint -notmatch '\[a-f0-9\]\{40\}') { throw 'Stable promotion forced command is missing' }
   if ($installer -notmatch 'authorized_keys_temp' -or $installer -notmatch 'Install source must be root-owned' -or $installer -notmatch '/srv/cvp/releases' -or $installer -notmatch '/srv/cvp/v1/versions') { throw 'Restricted SSH installer permissions are unsafe' }
   if ($workflow -match 'actions/(checkout|setup-node)@v' -or $workflow -match '(?m)^\s*- run: npm ci\s*$' -or $workflow -notmatch 'permissions:\s*\r?\n\s+contents: read') { throw 'CI supply-chain controls are missing' }
