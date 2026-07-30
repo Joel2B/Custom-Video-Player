@@ -226,3 +226,22 @@ test('volume observer disconnects on destroy', async ({ page }) => {
   });
   expect(calls).toEqual({ observe: 1, disconnect: 1 });
 });
+
+test('volume drags do not retain removed document listeners', async ({ page }) => {
+  await loadPlayer(page, '<video id="player" width="640" height="360"></video>');
+
+  const counts = await page.evaluate(() => {
+    window.fluidPlayer('player');
+    const player = window.fluidPlayerDebug.at(-1).internals;
+    const before = player.eventListeners.length;
+
+    for (let index = 0; index < 100; index++) {
+      player.volumeControl.start(new MouseEvent('mousedown', { clientX: 1 }));
+      player.volumeControl.end(new MouseEvent('mouseup', { clientX: 1 }));
+    }
+
+    return { before, after: player.eventListeners.length };
+  });
+
+  expect(counts.after).toBe(counts.before);
+});

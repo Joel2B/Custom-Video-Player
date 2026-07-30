@@ -61,6 +61,8 @@ class Subtitles {
     // to render the current subtitles
     this.currentTrack = -1;
     this.request = null;
+    this.setupTimer = null;
+    this.destroyed = false;
   }
 
   init = () => {
@@ -246,8 +248,12 @@ class Subtitles {
       this.update('external');
     });
 
-    setTimeout(() => {
-      this.emulateTextTracks();
+    this.setupTimer = setTimeout(() => {
+      this.setupTimer = null;
+
+      if (!this.destroyed) {
+        this.emulateTextTracks();
+      }
     }, 0);
   };
 
@@ -313,6 +319,9 @@ class Subtitles {
   };
 
   destroy = () => {
+    this.destroyed = true;
+    clearTimeout(this.setupTimer);
+    this.setupTimer = null;
     this.request?.abort();
   };
 

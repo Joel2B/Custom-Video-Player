@@ -47,9 +47,16 @@ export function toggleListener(element, event, callback, toggle = false, passive
 
   // If a single node is passed, bind the event listener
   events.forEach((type) => {
-    if (this && this.eventListeners && toggle) {
-      // Cache event listener
-      this.eventListeners.push({ element, type, callback, options });
+    if (this && this.eventListeners) {
+      if (toggle) {
+        // Cache event listener
+        this.eventListeners.push({ element, type, callback, options, capture });
+      } else {
+        this.eventListeners = this.eventListeners.filter(
+          (item) =>
+            item.element !== element || item.type !== type || item.callback !== callback || item.capture !== capture,
+        );
+      }
     }
 
     element[toggle ? 'addEventListener' : 'removeEventListener'](type, callback, options);
@@ -69,7 +76,7 @@ export function off(element, events = '', callback, passive = true, capture = fa
 // Bind once-only event handler
 export function once(element, events = '', callback, passive = true, capture = false) {
   const onceCallback = (...args) => {
-    off(element, events, onceCallback, passive, capture);
+    off.call(this, element, events, onceCallback, passive, capture);
     callback.apply(this, args);
   };
 

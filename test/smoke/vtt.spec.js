@@ -181,6 +181,38 @@ test('destroy aborts pending subtitles without reporting an error', async ({ pag
   expect(errors).toBe(0);
 });
 
+test('destroy cancels deferred native subtitle setup', async ({ page }) => {
+  await loadPlayer(
+    page,
+    `<video id="player" width="640" height="360">
+      <track label="English" kind="subtitles" srclang="en" src="/static/subtitles/english.vtt">
+    </video>`,
+  );
+
+  const state = await page.evaluate(async () => {
+    const api = window.fluidPlayer('player', {
+      layoutControls: {
+        subtitles: { native: true },
+        menu: { subtitles: true },
+      },
+    });
+    const subtitles = window.fluidPlayerDebug.at(-1).internals.subtitles;
+    let setupCalls = 0;
+    subtitles.emulateTextTracks = () => setupCalls++;
+
+    await api.destroy();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    return {
+      destroyed: subtitles.destroyed,
+      setupTimer: subtitles.setupTimer,
+      setupCalls,
+    };
+  });
+
+  expect(state).toEqual({ destroyed: true, setupTimer: null, setupCalls: 0 });
+});
+
 test('valid subtitles load cues and malformed subtitles stay empty', async ({ page }) => {
   await loadPlayer(
     page,

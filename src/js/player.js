@@ -849,7 +849,7 @@ class CVP {
    * @param {Function} callback - Callback for when event occurs
    */
   off = (event, callback) => {
-    off(this.media, event, callback);
+    off.call(this, this.media, event, callback);
   };
 
   destroy = () => {
