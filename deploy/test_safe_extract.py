@@ -43,6 +43,7 @@ for name, entries in (
     ("traversal", [("../escape.js", "bad", False)]),
     ("symlink", [("leak.js", "/etc/passwd", True)]),
     ("duplicate", [("same.js", "one", False), ("same.js", "two", False)]),
+    ("control-character", [("bad\nname.js", "bad", False)]),
 ):
     with tempfile.TemporaryDirectory(prefix="cvp-extract-") as root_name:
         root = Path(root_name)

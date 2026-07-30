@@ -47,17 +47,20 @@ foreach ($command in @('git', 'npm.cmd', 'ssh')) {
 
 $deploymentId = "$(Get-Date -AsUTC -Format 'yyyyMMddTHHmmssZ')-$([Guid]::NewGuid().ToString('N'))"
 $sshTarget = "$remoteUser@$remoteHost"
-$archivePath = Join-Path $projectRoot $archiveName
-$distPath = Join-Path $projectRoot $distName
 $localTempDir = Join-Path ([IO.Path]::GetTempPath()) "cvp-deploy-$([Guid]::NewGuid().ToString('N'))"
-$packagePath = Join-Path $localTempDir 'package.zip'
+$releaseDir = Join-Path $localTempDir 'release'
+$packagePath = Join-Path $localTempDir 'release.zip'
 $sshOptions = @(
   '-i', $localKey,
   '-o', 'BatchMode=yes',
   '-o', 'IdentitiesOnly=yes',
   '-o', 'StrictHostKeyChecking=yes',
   '-o', "UserKnownHostsFile=$knownHosts",
-  '-o', 'GlobalKnownHostsFile=none'
+  '-o', 'GlobalKnownHostsFile=none',
+  '-o', 'ConnectTimeout=15',
+  '-o', 'ConnectionAttempts=1',
+  '-o', 'ServerAliveInterval=15',
+  '-o', 'ServerAliveCountMax=3'
 )
 $deployLock = $null
 
@@ -67,6 +70,8 @@ Write-Host ">>> Using dedicated SSH deployment identity"
 try {
   $deployLock = Enter-DeployLock $projectRoot
   Assert-CleanGitWorktree $projectRoot
+  $commit = (& git -C $projectRoot rev-parse --verify HEAD).Trim()
+  if ($LASTEXITCODE -ne 0 -or $commit -notmatch '^[a-f0-9]{40}$') { throw 'Cannot determine Git commit' }
   [void](New-Item -ItemType Directory -Path $localTempDir)
 
   Write-Host ">>> Installing locked dependencies..."
@@ -94,15 +99,8 @@ try {
     }
   }
 
-  Remove-Item -LiteralPath $archivePath, $distPath -Force -ErrorAction SilentlyContinue
-  Compress-Archive -Path (Join-Path $cdnDist '*') -DestinationPath $archivePath -Force
-  Compress-Archive -Path (Join-Path $dist '*') -DestinationPath $distPath -Force
-  Assert-ZipArchive $archivePath
-  Assert-ZipArchive $distPath
-
-  Copy-Item -LiteralPath $archivePath -Destination (Join-Path $localTempDir 'cdn.zip')
-  Copy-Item -LiteralPath $distPath -Destination (Join-Path $localTempDir 'dist.zip')
-  Compress-Archive -Path (Join-Path $localTempDir 'cdn.zip'), (Join-Path $localTempDir 'dist.zip') -DestinationPath $packagePath -Force
+  New-ReleasePackage $projectRoot $releaseDir $deploymentId $commit $env:DEPLOY_CDN
+  Compress-Archive -Path (Join-Path $releaseDir '*') -DestinationPath $packagePath -Force
   Assert-ZipArchive $packagePath
 
   Write-Host ">>> Sending deployment package..."
@@ -111,7 +109,6 @@ try {
   Write-Host "CDN deploy finished successfully."
 }
 finally {
-  Remove-Item -LiteralPath $archivePath, $distPath -Force -ErrorAction SilentlyContinue
   Remove-Item -LiteralPath $localTempDir -Recurse -Force -ErrorAction SilentlyContinue
   Exit-DeployLock $deployLock
 }

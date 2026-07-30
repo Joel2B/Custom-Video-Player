@@ -130,7 +130,7 @@ Public integrations should always load:
 <script src="https://player.tinyapps.download/v1/current/player.min.js"></script>
 ```
 
-The `current` URL is not cached and redirects to a deployment-specific URL containing its SHA-256 digest. Deployment URLs are cached for 7 days. The server keeps the current deployment and up to 9 previous deployments for rollback.
+The `current` URL is not cached and redirects to a deployment-specific URL containing its SHA-256 digest. Deployment URLs are cached for 7 days. The server keeps the current deployment, at least 9 previous deployments, and any newer than the cache TTL.
 
 Deploy with:
 

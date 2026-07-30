@@ -37,7 +37,13 @@ with zipfile.ZipFile(archive) as source:
         file_type = stat.S_IFMT(mode)
         is_directory = entry.is_dir()
 
-        if not raw_name or "\\" in raw_name or path.is_absolute() or ".." in path.parts:
+        if (
+            not raw_name
+            or "\\" in raw_name
+            or any(ord(char) < 32 or ord(char) == 127 for char in raw_name)
+            or path.is_absolute()
+            or ".." in path.parts
+        ):
             fail(f"Unsafe ZIP entry: {raw_name}")
         normalized = path.as_posix().rstrip("/")
         if not normalized or normalized in seen:

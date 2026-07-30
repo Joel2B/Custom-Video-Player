@@ -12,6 +12,21 @@ try {
   & docker @('run', '--rm', '-e', 'PYTHONWARNINGS=ignore', '-v', "${projectRoot}/deploy:/deploy:ro", 'python@sha256:399babc8b49529dabfd9c922f2b5eea81d611e4512e3ed250d75bd2e7683f4b0', 'python', '/deploy/test_safe_extract.py')
   if ($LASTEXITCODE -ne 0) { throw 'Safe extractor tests failed' }
 
+  $manifestTest = @'
+set -eu
+deployment=20260729T000321Z-a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4
+hash=9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
+mkdir -p "/release/v1/deployments/$deployment/sha256/$hash"
+printf test > "/release/v1/deployments/$deployment/sha256/$hash/player.min.js"
+printf '{"deployment":"%s","commit":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","cdn":"https://example.com"}\n' "$deployment" > /release/release.json
+python /deploy/verify_release.py --write /release
+python /deploy/verify_release.py /release "$deployment" "$hash"
+printf changed > "/release/v1/deployments/$deployment/sha256/$hash/player.min.js"
+! python /deploy/verify_release.py /release
+'@
+  & docker @('run', '--rm', '-v', "${projectRoot}/deploy:/deploy:ro", 'python@sha256:399babc8b49529dabfd9c922f2b5eea81d611e4512e3ed250d75bd2e7683f4b0', 'sh', '-c', $manifestTest)
+  if ($LASTEXITCODE -ne 0) { throw 'Release manifest tests failed' }
+
   & docker @('run', '--rm', '-v', "${projectRoot}/deploy/remote-deploy.sh:/deploy.sh:ro", 'bash@sha256:ae4668c2560999e65e89532cd2ad1b6688bb23298189f0bd229ef80fa4bd0831', 'bash', '-n', '/deploy.sh')
   if ($LASTEXITCODE -ne 0) { throw 'Remote deploy syntax check failed' }
 
@@ -33,7 +48,7 @@ try {
   $installer = [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/server/install.sh'))
   $workflow = [IO.File]::ReadAllText((Join-Path $projectRoot '.github/workflows/check.yml'))
   if ($activate -notmatch "CONFIG_DIR='/etc/cvp-deploy/nginx'" -or $activate -notmatch 'mv -fT' -or $activate -match '/home/j') { throw 'Nginx activation permissions are unsafe' }
-  if ($installer -notmatch 'chown root:root /home/cvp-deploy/.ssh/authorized_keys' -or $installer -notmatch 'Install source must be root-owned' -or $installer -notmatch '/srv/cvp/player') { throw 'Restricted SSH installer permissions are unsafe' }
+  if ($installer -notmatch 'authorized_keys_temp' -or $installer -notmatch 'Install source must be root-owned' -or $installer -notmatch '/srv/cvp/releases') { throw 'Restricted SSH installer permissions are unsafe' }
   if ($workflow -match 'actions/(checkout|setup-node)@v' -or $workflow -match '(?m)^\s*- run: npm ci\s*$' -or $workflow -notmatch 'permissions:\s*\r?\n\s+contents: read') { throw 'CI supply-chain controls are missing' }
 
   $serverTest = @'
@@ -45,12 +60,20 @@ cp -R /source /root/deploy
 chown -R root:root /root/deploy
 chmod -R go-w /root/deploy
 ssh-keygen -q -t ed25519 -N '' -f /root/cvp-deploy
+mkdir -p /etc/cvp-deploy/nginx
+printf 'server { listen 80; }\n' > /etc/cvp-deploy/nginx/default.conf
 bash /root/deploy/server/install.sh /root/cvp-deploy.pub
 test "$(stat -c '%U:%G:%a' /home/cvp-deploy/.ssh/authorized_keys)" = 'root:root:444'
 runuser -u cvp-deploy -- test -r /home/cvp-deploy/.ssh/authorized_keys
-test "$(stat -c '%U:%G:%a' /srv/cvp/player)" = 'cvp-deploy:cvp-deploy:755'
+test "$(stat -c '%U:%G:%a' /srv/cvp/releases)" = 'root:root:755'
 test "$(stat -c '%U:%G:%a' /etc/cvp-deploy/nginx)" = 'root:root:755'
 test "$(stat -c '%U:%G:%a' /var/lib/cvp-deploy/deploy.lock)" = 'root:cvp-deploy:660'
+if runuser -u cvp-deploy -- touch /srv/cvp/releases/forbidden; then exit 1; fi
+flock /var/lib/cvp-deploy/deploy.lock sleep 2 &
+lock_pid=$!
+sleep 1
+if sudo -u cvp-deploy /usr/local/sbin/cvp-nginx-activate activate 20260729T000321Z-a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4 1e6ed65d77d6364eeaed5a745ba5c4985ae2b700dd85d7cf7f027bdf294a33fc; then exit 1; fi
+wait "$lock_pid"
 cp -R /source /tmp/deploy
 if bash /tmp/deploy/server/install.sh /root/cvp-deploy.pub > /tmp/unsafe-source.log 2>&1; then exit 1; fi
 grep -q 'Install source must be root-owned' /tmp/unsafe-source.log
@@ -60,7 +83,7 @@ grep -q 'Install source must be root-owned' /tmp/unsafe-source.log
 
   [IO.File]::WriteAllText(
     $tempConfig,
-    [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/player.conf')).Replace('__CURRENT_LOCATION__', $location),
+    [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/player.conf')).Replace('__ACTIVE_ROOT__', '/usr/share/nginx/html').Replace('__CURRENT_LOCATION__', $location),
     [Text.UTF8Encoding]::new($false)
   )
   & docker @('run', '--rm', '-v', "${tempConfig}:/etc/nginx/conf.d/default.conf:ro", 'nginx@sha256:b3c656d55d7ad751196f21b7fd2e8d4da9cb430e32f646adcf92441b72f82b14', 'nginx', '-t')

@@ -7,47 +7,107 @@ TEMPLATE='/etc/cvp-deploy/player.conf.template'
 CONFIG_DIR='/etc/cvp-deploy/nginx'
 CONFIG="$CONFIG_DIR/default.conf"
 RUN_DIR='/run/cvp-deploy'
+RELEASES='/srv/cvp/releases'
+LOCK_FILE='/var/lib/cvp-deploy/deploy.lock'
+VERIFY='/usr/local/libexec/cvp-verify-release.py'
 CONTAINER='player'
 IMAGE='nginx@sha256:b3c656d55d7ad751196f21b7fd2e8d4da9cb430e32f646adcf92441b72f82b14'
-APP_DIR='/srv/cvp/player'
 
-[ "$#" -eq 2 ]
-DEPLOY_ID="$1"
-SHA="$2"
+MODE="${1:-}"
+DEPLOY_ID="${2:-}"
+SHA="${3:-}"
+SOURCE="${4:-}"
+[ "$MODE" = publish ] && [ "$#" -eq 4 ] || { [ "$MODE" = activate ] && [ "$#" -eq 3 ]; }
 printf '%s' "$DEPLOY_ID" | grep -Eq '^[0-9]{8}T[0-9]{6}Z-([a-f0-9]{8}|[a-f0-9]{32})$'
 printf '%s' "$SHA" | grep -Eq '^[a-f0-9]{64}$'
-BUNDLE="v1/deployments/$DEPLOY_ID/sha256/$SHA/player.min.js"
-[ -f "$APP_DIR/$BUNDLE" ] && [ ! -L "$APP_DIR/$BUNDLE" ]
-printf '%s  %s\n' "$SHA" "$APP_DIR/$BUNDLE" | sha256sum -c -
-[ "$(realpath -e "$CONFIG_DIR")" = "$CONFIG_DIR" ]
-[ ! -L "$CONFIG_DIR" ] && [ "$(stat -c '%U:%G:%a' "$CONFIG_DIR")" = 'root:root:755' ]
-[ "$(realpath -e "$CONFIG")" = "$CONFIG" ]
-[ ! -L "$CONFIG" ] && [ "$(stat -c '%U:%G:%a' "$CONFIG")" = 'root:root:644' ]
 
+exec 9<>"$LOCK_FILE"
+flock -n 9 || { echo 'Another publication is running' >&2; exit 1; }
+
+for path in /srv /srv/cvp "$RELEASES" "$CONFIG_DIR"; do
+  [ "$(realpath -e "$path")" = "$path" ] && [ ! -L "$path" ]
+  [ "$(stat -c '%U:%G:%a' "$path")" = 'root:root:755' ]
+done
+[ -f "$CONFIG" ] && [ ! -L "$CONFIG" ] && [ "$(stat -c '%U:%G:%a' "$CONFIG")" = 'root:root:644' ]
+[ -f "$VERIFY" ] && [ ! -L "$VERIFY" ] && [ "$(stat -c '%U:%G' "$VERIFY")" = 'root:root' ]
 install -d -o root -g root -m 700 "$RUN_DIR"
-[ "$(realpath -e "$RUN_DIR")" = "$RUN_DIR" ]
-[ ! -L "$RUN_DIR" ] && [ "$(stat -c '%U:%G:%a' "$RUN_DIR")" = 'root:root:700' ]
-temp="$(mktemp "$CONFIG_DIR/.default.conf.XXXXXXXXXX")"
-backup="$(mktemp "$RUN_DIR/player.conf.backup.XXXXXXXXXX")"
-trap 'rm -f -- "$temp" "$backup"' EXIT
-sed "s|__CURRENT_LOCATION__|/$BUNDLE|" "$TEMPLATE" > "$temp"
-chmod 644 "$temp"
-grep -Fq "return 302 /$BUNDLE;" "$temp"
-cp -f "$CONFIG" "$backup"
 
-restore() {
-  local restore_temp
-  restore_temp="$(mktemp "$CONFIG_DIR/.default.conf.restore.XXXXXXXXXX")"
-  cp "$backup" "$restore_temp"
-  chmod 644 "$restore_temp"
-  mv -fT "$restore_temp" "$CONFIG"
-  timeout --kill-after=5s 30s docker exec "$CONTAINER" nginx -t
-  timeout --kill-after=5s 30s docker exec "$CONTAINER" nginx -s reload
+published="$RELEASES/$DEPLOY_ID"
+new_release=0
+temp_release=''
+temp_config="$(mktemp "$CONFIG_DIR/.default.conf.XXXXXXXXXX")"
+backup_config="$(mktemp "$RUN_DIR/default.conf.backup.XXXXXXXXXX")"
+config_changed=0
+success=0
+
+cleanup() {
+  local status=$?
+  local restored=0
+  trap - EXIT INT TERM
+  if [ "$success" -eq 0 ] && [ "$config_changed" -eq 1 ]; then
+    restore="$(mktemp "$CONFIG_DIR/.default.conf.restore.XXXXXXXXXX")"
+    cp "$backup_config" "$restore"
+    chmod 644 "$restore"
+    mv -fT "$restore" "$CONFIG"
+    if timeout --kill-after=5s 30s docker exec "$CONTAINER" nginx -t && timeout --kill-after=5s 30s docker exec "$CONTAINER" nginx -s reload; then
+      restored=1
+    else
+      echo 'ROLLBACK FAILED: release retained for manual recovery' >&2
+    fi
+  fi
+  if [ "$success" -eq 0 ] && [ "$new_release" -eq 1 ] && { [ "$config_changed" -eq 0 ] || [ "$restored" -eq 1 ]; }; then
+    rm -rf -- "$published"
+  fi
+  [ -z "$temp_release" ] || rm -rf -- "$temp_release"
+  rm -f -- "$temp_config" "$backup_config"
+  exit "$status"
 }
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
-timeout --kill-after=5s 60s docker run --rm -v "$temp:/etc/nginx/conf.d/default.conf:ro" "$IMAGE" nginx -t
-mv -fT "$temp" "$CONFIG"
-if ! timeout --kill-after=5s 30s docker exec "$CONTAINER" nginx -t || ! timeout --kill-after=5s 30s docker exec "$CONTAINER" nginx -s reload; then
-  restore
-  exit 1
+if [ "$MODE" = publish ]; then
+  printf '%s' "$SOURCE" | grep -Eq '^/tmp/cvp-deploy\.[A-Za-z0-9]{10}/release$'
+  [ "$(realpath -e "$SOURCE")" = "$SOURCE" ] && [ -d "$SOURCE" ] && [ ! -L "$SOURCE" ]
+  if find "$SOURCE" ! -type d ! -type f -print -quit | grep -q .; then
+    echo 'Staging contains special files' >&2
+    exit 1
+  fi
+  [ ! -e "$published" ]
+  temp_release="$(mktemp -d "$RELEASES/.incoming-$DEPLOY_ID.XXXXXXXXXX")"
+  timeout --kill-after=5s 120s cp -a "$SOURCE/." "$temp_release/"
+  chown -R root:root "$temp_release"
+  find "$temp_release" -type d -exec chmod 755 {} +
+  find "$temp_release" -type f -exec chmod 644 {} +
+  python3 "$VERIFY" "$temp_release" "$DEPLOY_ID" "$SHA"
+  mv -T "$temp_release" "$published"
+  temp_release=''
+  new_release=1
+else
+  [ -d "$published" ] && [ ! -L "$published" ]
+  python3 "$VERIFY" "$published"
 fi
+
+BUNDLE="v1/deployments/$DEPLOY_ID/sha256/$SHA/player.min.js"
+[ -s "$published/$BUNDLE" ]
+printf '%s  %s\n' "$SHA" "$published/$BUNDLE" | sha256sum -c -
+
+sed -e "s|__ACTIVE_ROOT__|/srv/cvp/releases/$DEPLOY_ID|" -e "s|__CURRENT_LOCATION__|/$BUNDLE|" "$TEMPLATE" > "$temp_config"
+chmod 644 "$temp_config"
+cp "$CONFIG" "$backup_config"
+timeout --kill-after=5s 60s docker run --rm -v /srv/cvp:/srv/cvp:ro -v "$temp_config:/etc/nginx/conf.d/default.conf:ro" "$IMAGE" nginx -t
+config_changed=1
+mv -fT "$temp_config" "$CONFIG"
+
+timeout --kill-after=5s 30s docker exec "$CONTAINER" nginx -t
+timeout --kill-after=5s 30s docker exec "$CONTAINER" nginx -s reload
+success=1
+
+kept=0
+while IFS= read -r old; do
+  [ "$old" = "$DEPLOY_ID" ] && continue
+  kept=$((kept + 1))
+  if [ "$kept" -gt 9 ] && [ "$(find "$RELEASES/$old" -maxdepth 0 -mtime +7 -print)" ]; then
+    rm -rf -- "$RELEASES/$old" || echo "Warning: could not remove old release $old" >&2
+  fi
+done < <(find "$RELEASES" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | grep -E '^[0-9]{8}T[0-9]{6}Z-([a-f0-9]{8}|[a-f0-9]{32})$' | sort -r)

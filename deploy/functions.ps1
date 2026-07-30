@@ -33,7 +33,7 @@ function Invoke-NativeCommandWithInput {
   try {
     $input = [IO.File]::OpenRead($InputPath)
     try {
-      $input.CopyTo($process.StandardInput.BaseStream)
+      $input.CopyToAsync($process.StandardInput.BaseStream).WaitAsync([TimeSpan]::FromMinutes(10)).GetAwaiter().GetResult()
     }
     catch {
       $streamError = $_
@@ -42,7 +42,7 @@ function Invoke-NativeCommandWithInput {
       $input.Dispose()
       $process.StandardInput.Close()
     }
-    $process.WaitForExit()
+    $process.WaitForExitAsync().WaitAsync([TimeSpan]::FromMinutes(10)).GetAwaiter().GetResult()
     if ($streamError) { throw $streamError }
     if ($process.ExitCode -ne 0) {
       throw "$Description failed with exit code $($process.ExitCode)"
@@ -71,9 +71,7 @@ function Enter-DeployLock {
 function Exit-DeployLock {
   param([IO.FileStream]$Lock)
   if (-not $Lock) { return }
-  $path = $Lock.Name
   $Lock.Dispose()
-  Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue
 }
 
 function Import-DeployEnvironment {
@@ -192,6 +190,47 @@ function New-CdnDeploymentLayout {
   return $hash
 }
 
+function New-ReleasePackage {
+  param(
+    [Parameter(Mandatory)] [string]$ProjectRoot,
+    [Parameter(Mandatory)] [string]$ReleaseDir,
+    [Parameter(Mandatory)] [string]$DeploymentId,
+    [Parameter(Mandatory)] [string]$Commit,
+    [Parameter(Mandatory)] [string]$Cdn
+  )
+
+  [void](New-Item -ItemType Directory -Path $ReleaseDir)
+  Copy-Item -Path (Join-Path $ProjectRoot 'dist/*') -Destination $ReleaseDir -Recurse
+  Copy-Item -Path (Join-Path $ProjectRoot 'dist-cdn/*') -Destination $ReleaseDir -Recurse -Force
+
+  $metadata = [ordered]@{
+    deployment = $DeploymentId
+    commit = $Commit
+    cdn = $Cdn
+  } | ConvertTo-Json
+  [IO.File]::WriteAllText(
+    (Join-Path $ReleaseDir 'release.json'),
+    "$metadata`n",
+    [Text.UTF8Encoding]::new($false)
+  )
+
+  $manifest = Get-ChildItem -LiteralPath $ReleaseDir -File -Recurse |
+    Sort-Object FullName |
+    ForEach-Object {
+      $relative = [IO.Path]::GetRelativePath($ReleaseDir, $_.FullName).Replace('\', '/')
+      if ($relative -notmatch '^[A-Za-z0-9._/-]+$') {
+        throw "Release path contains unsupported characters: $relative"
+      }
+      $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+      "$hash  $relative"
+    }
+  [IO.File]::WriteAllLines(
+    (Join-Path $ReleaseDir 'manifest.sha256'),
+    $manifest,
+    [Text.UTF8Encoding]::new($false)
+  )
+}
+
 function Assert-ZipArchive {
   param([Parameter(Mandatory)] [string]$Path)
 
@@ -249,6 +288,16 @@ function Invoke-DeploySelfTest {
     if ($hash -ne '1e6ed65d77d6364eeaed5a745ba5c4985ae2b700dd85d7cf7f027bdf294a33fc' -or
         -not (Test-Path -LiteralPath $publishedBundle -PathType Leaf)) {
       throw "CDN deployment layout self-test failed"
+    }
+
+    $distDir = Join-Path $testRoot 'dist'
+    [void](New-Item -ItemType Directory -Path $distDir)
+    [IO.File]::WriteAllText((Join-Path $distDir 'index.html'), 'demo')
+    $releaseDir = Join-Path $testRoot 'release'
+    New-ReleasePackage $testRoot $releaseDir $deploymentId ('a' * 40) 'https://example.com'
+    if (-not (Test-Path -LiteralPath (Join-Path $releaseDir 'manifest.sha256')) -or
+        -not (Test-Path -LiteralPath (Join-Path $releaseDir 'index.html'))) {
+      throw "Release package self-test failed"
     }
 
   }

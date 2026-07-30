@@ -19,9 +19,22 @@ services:
     restart: unless-stopped
     expose:
       - "80"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 100
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
     volumes:
+      - /srv/cvp:/srv/cvp:ro
       - /srv/cvp/player:/usr/share/nginx/html:ro
       - /etc/cvp-deploy/nginx:/etc/nginx/conf.d:ro
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   portainer:
     image: ${PORTAINER_IMAGE:?Set PORTAINER_IMAGE to an immutable digest}
