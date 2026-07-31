@@ -99,6 +99,9 @@ try {
         -not (Get-ChildItem -LiteralPath $buildDir -File -Recurse)) {
       throw "Build output directory is missing or empty: $buildDir"
     }
+    if (Get-ChildItem -LiteralPath $buildDir -Filter '*.svg' -File -Recurse) {
+      throw "Build emitted external SVG assets: $buildDir"
+    }
   }
 
   New-ReleasePackage $projectRoot $releaseDir $deploymentId $commit $env:DEPLOY_CDN

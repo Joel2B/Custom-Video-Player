@@ -256,7 +256,7 @@ export default (env, argv) => {
         },
         {
           test: /\.svg$/,
-          type: 'asset',
+          type: 'asset/inline',
         },
       ],
     },

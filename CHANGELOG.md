@@ -1,3 +1,9 @@
+# 2.0.1 (2026-07-30)
+
+### Changed
+
+- Embedded player SVG assets in the JavaScript bundle so CDN consumers need only `player.min.js`.
+
 # 2.0.0 (2026-07-30)
 
 ### Changed
