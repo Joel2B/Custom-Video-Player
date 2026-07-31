@@ -1,0 +1,33 @@
+server {
+    listen 80 default_server;
+    server_name _;
+    return 444;
+}
+
+server {
+    listen 80;
+    server_name __DOMAIN__;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl default_server;
+    server_name _;
+    ssl_certificate __TLS_CERT__;
+    ssl_certificate_key __TLS_KEY__;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    return 444;
+}
+
+server {
+    listen 443 ssl;
+    server_name __DOMAIN__;
+    ssl_certificate __TLS_CERT__;
+    ssl_certificate_key __TLS_KEY__;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    server_tokens off;
+
+    add_header Cache-Control "no-store" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    location / { return 404; }
+}

@@ -30,24 +30,24 @@ printf changed > "/release/v1/deployments/$deployment/sha256/$hash/player.min.js
   & docker @('run', '--rm', '-v', "${projectRoot}/deploy/remote-deploy.sh:/deploy.sh:ro", 'bash@sha256:ae4668c2560999e65e89532cd2ad1b6688bb23298189f0bd229ef80fa4bd0831', 'bash', '-n', '/deploy.sh')
   if ($LASTEXITCODE -ne 0) { throw 'Remote deploy syntax check failed' }
 
-  & docker @('run', '--rm', '-v', "${projectRoot}/deploy/server:/server:ro", 'bash@sha256:ae4668c2560999e65e89532cd2ad1b6688bb23298189f0bd229ef80fa4bd0831', 'bash', '-n', '/server/cvp-deploy-entrypoint', '/server/cvp-nginx-activate', '/server/install.sh', '/server/migrate.sh')
+  & docker @('run', '--rm', '-v', "${projectRoot}/deploy:/deploy:ro", 'bash@sha256:ae4668c2560999e65e89532cd2ad1b6688bb23298189f0bd229ef80fa4bd0831', 'bash', '-n', '/deploy/cvp-deploy-entrypoint', '/deploy/legacy/cvp-nginx-activate', '/deploy/legacy/install.sh')
   if ($LASTEXITCODE -ne 0) { throw 'Restricted SSH helper syntax check failed' }
 
   $env:NPM_IMAGE = 'jc21/nginx-proxy-manager@sha256:cd9eba29ca132cb006729f2cb2660126453f84818c2f7d75963ad7b61ef696bd'
   $env:PLAYER_IMAGE = 'nginx@sha256:b3c656d55d7ad751196f21b7fd2e8d4da9cb430e32f646adcf92441b72f82b14'
   $env:PORTAINER_IMAGE = 'portainer/portainer-ce@sha256:3267f1869e0fa87b843c55f7fd848f9e3001367d053505f4cb8c664e4a997996'
   try {
-    & docker compose -f (Join-Path $projectRoot 'deploy/server/compose.yml') config -q
+    & docker compose -f (Join-Path $projectRoot 'deploy/legacy/compose.yml') config -q
     if ($LASTEXITCODE -ne 0) { throw 'Server Compose validation failed' }
   }
   finally {
     Remove-Item Env:NPM_IMAGE, Env:PLAYER_IMAGE, Env:PORTAINER_IMAGE -ErrorAction SilentlyContinue
   }
 
-  $activate = [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/server/cvp-nginx-activate'))
-  $installer = [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/server/install.sh'))
-  $entrypoint = [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/server/cvp-deploy-entrypoint'))
-  $nginxTemplate = [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/player.conf'))
+  $activate = [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/legacy/cvp-nginx-activate'))
+  $installer = [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/legacy/install.sh'))
+  $entrypoint = [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/cvp-deploy-entrypoint'))
+  $nginxTemplate = [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/legacy/player.conf'))
   $workflow = [IO.File]::ReadAllText((Join-Path $projectRoot '.github/workflows/check.yml'))
   if ($activate -notmatch "CONFIG_DIR='/etc/cvp-deploy/nginx'" -or $activate -notmatch 'mv -fT' -or $activate -match '/home/j') { throw 'Nginx activation permissions are unsafe' }
   if ($activate -notmatch 'MODE.*promote' -or $activate -notmatch 'sha384-' -or $activate -notmatch 'VERSIONS=') { throw 'Stable promotion controls are missing' }
@@ -59,7 +59,7 @@ printf changed > "/release/v1/deployments/$deployment/sha256/$hash/player.min.js
   $serverTest = @'
 set -eu
 apt-get update -qq && apt-get install -y -qq openssh-client python3 sudo >/dev/null
-visudo -cf /source/server/cvp-deploy.sudoers
+visudo -cf /source/legacy/cvp-deploy.sudoers
 cat > /usr/bin/docker <<'DOCKER'
 #!/bin/sh
 if [ -f /tmp/docker-fail-reload ] && printf '%s\n' "$*" | grep -Fq 'nginx -s reload'; then
@@ -78,7 +78,7 @@ chmod -R go-w /root/deploy
 ssh-keygen -q -t ed25519 -N '' -f /root/cvp-deploy
 mkdir -p /etc/cvp-deploy/nginx
 printf 'server { listen 80; }\n' > /etc/cvp-deploy/nginx/default.conf
-bash /root/deploy/server/install.sh /root/cvp-deploy.pub
+bash /root/deploy/legacy/install.sh /root/cvp-deploy.pub
 test "$(stat -c '%U:%G:%a' /home/cvp-deploy/.ssh/authorized_keys)" = 'root:root:444'
 runuser -u cvp-deploy -- test -r /home/cvp-deploy/.ssh/authorized_keys
 test "$(stat -c '%U:%G:%a' /srv/cvp/releases)" = 'root:root:755'
@@ -104,7 +104,7 @@ PY
 )
 printf '{"version":"2.0.0","deployment":"%s","commit":"%s","cdn":"https://example.com","sri":"%s"}\n' "$deployment" "$commit" "$sri" > "/srv/cvp/releases/$deployment/release.json"
 python3 /root/deploy/verify_release.py --write "/srv/cvp/releases/$deployment"
-sed -e "s|__ACTIVE_ROOT__|/srv/cvp/releases/$deployment|" -e "s|__CURRENT_LOCATION__|/v1/deployments/$deployment/sha256/$hash/player.min.js|" -e 's|__STABLE_LOCATION__|/v1/versions/0.0.0/player.min.js|' /root/deploy/player.conf > /etc/cvp-deploy/nginx/default.conf
+sed -e "s|__ACTIVE_ROOT__|/srv/cvp/releases/$deployment|" -e "s|__CURRENT_LOCATION__|/v1/deployments/$deployment/sha256/$hash/player.min.js|" -e 's|__STABLE_LOCATION__|/v1/versions/0.0.0/player.min.js|' /root/deploy/legacy/player.conf > /etc/cvp-deploy/nginx/default.conf
 sudo -u cvp-deploy sudo -n /usr/local/sbin/cvp-nginx-activate promote 2.0.0 "$commit" > /tmp/promote.log
 test -f /srv/cvp/v1/versions/2.0.0/player.min.js
 test "$(stat -c '%U:%G:%a' /srv/cvp/v1/versions/2.0.0)" = 'root:root:755'
@@ -150,7 +150,7 @@ test -f /srv/cvp/v1/versions/2.0.2/player.min.js
 grep -Fq 'return 302 /v1/versions/2.0.0/player.min.js;' /etc/cvp-deploy/nginx/default.conf
 rm -f /tmp/docker-fail-reload
 cp -R /source /tmp/deploy
-if bash /tmp/deploy/server/install.sh /root/cvp-deploy.pub > /tmp/unsafe-source.log 2>&1; then exit 1; fi
+if bash /tmp/deploy/legacy/install.sh /root/cvp-deploy.pub > /tmp/unsafe-source.log 2>&1; then exit 1; fi
 grep -q 'Install source must be root-owned' /tmp/unsafe-source.log
 '@
   & docker @('run', '--rm', '-v', "${projectRoot}/deploy:/source:ro", 'ubuntu@sha256:4fbb8e6a8395de5a7550b33509421a2bafbc0aab6c06ba2cef9ebffbc7092d90', 'bash', '-c', $serverTest)
@@ -158,7 +158,7 @@ grep -q 'Install source must be root-owned' /tmp/unsafe-source.log
 
   [IO.File]::WriteAllText(
     $tempConfig,
-    [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/player.conf')).Replace('__ACTIVE_ROOT__', '/usr/share/nginx/html').Replace('__CURRENT_LOCATION__', $location).Replace('__STABLE_LOCATION__', $location),
+    [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/legacy/player.conf')).Replace('__ACTIVE_ROOT__', '/usr/share/nginx/html').Replace('__CURRENT_LOCATION__', $location).Replace('__STABLE_LOCATION__', $location),
     [Text.UTF8Encoding]::new($false)
   )
   & docker @('run', '--rm', '-v', "${tempConfig}:/etc/nginx/conf.d/default.conf:ro", 'nginx@sha256:b3c656d55d7ad751196f21b7fd2e8d4da9cb430e32f646adcf92441b72f82b14', 'nginx', '-t')

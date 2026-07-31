@@ -24,10 +24,10 @@ for trusted_path in "$SOURCE_DIR" "$(dirname "$PUBLIC_KEY_FILE")"; do
   done
 done
 [ ! -L "$PUBLIC_KEY_FILE" ] && [ "$(stat -c '%U' "$PUBLIC_KEY_FILE")" = 'root' ] && [ $((8#$(stat -c '%a' "$PUBLIC_KEY_FILE") & 022)) -eq 0 ] || { echo 'Public key file must be root-owned and not writable by group or others' >&2; exit 1; }
-for file in cvp-deploy-entrypoint cvp-nginx-activate cvp-deploy.sudoers compose.yml migrate.sh; do
+for file in cvp-nginx-activate cvp-deploy.sudoers compose.yml player.conf; do
   [ -f "$SOURCE_DIR/$file" ] && [ ! -L "$SOURCE_DIR/$file" ] && [ "$(stat -c '%U' "$SOURCE_DIR/$file")" = 'root' ] && [ $((8#$(stat -c '%a' "$SOURCE_DIR/$file") & 022)) -eq 0 ] || { echo "Unsafe source file: $file" >&2; exit 1; }
 done
-for file in ../remote-deploy.sh ../safe_extract.py ../verify_release.py ../player.conf; do
+for file in ../cvp-deploy-entrypoint ../remote-deploy.sh ../safe_extract.py ../verify_release.py; do
   [ -f "$SOURCE_DIR/$file" ] && [ ! -L "$SOURCE_DIR/$file" ] && [ "$(stat -c '%U' "$SOURCE_DIR/$file")" = 'root' ] && [ $((8#$(stat -c '%a' "$SOURCE_DIR/$file") & 022)) -eq 0 ] || { echo "Unsafe source file: $file" >&2; exit 1; }
 done
 [ "$(wc -l < "$PUBLIC_KEY_FILE")" -eq 1 ] || { echo 'Public key must contain exactly one line' >&2; exit 1; }
@@ -56,12 +56,12 @@ install -d -o cvp-deploy -g cvp-deploy -m 700 /var/lib/cvp-deploy/state
 [ -e /var/lib/cvp-deploy/deploy.lock ] || install -o root -g cvp-deploy -m 660 /dev/null /var/lib/cvp-deploy/deploy.lock
 chown root:cvp-deploy /var/lib/cvp-deploy/deploy.lock
 chmod 660 /var/lib/cvp-deploy/deploy.lock
-install -o root -g root -m 755 "$SOURCE_DIR/cvp-deploy-entrypoint" /usr/local/libexec/cvp-deploy-entrypoint
+install -o root -g root -m 755 "$SOURCE_DIR/../cvp-deploy-entrypoint" /usr/local/libexec/cvp-deploy-entrypoint
 install -o root -g root -m 755 "$SOURCE_DIR/../remote-deploy.sh" /usr/local/libexec/cvp-remote-deploy
 install -o root -g root -m 755 "$SOURCE_DIR/../safe_extract.py" /usr/local/libexec/cvp-safe-extract.py
 install -o root -g root -m 755 "$SOURCE_DIR/../verify_release.py" /usr/local/libexec/cvp-verify-release.py
 install -o root -g root -m 755 "$SOURCE_DIR/cvp-nginx-activate" /usr/local/sbin/cvp-nginx-activate
-install -o root -g root -m 644 "$SOURCE_DIR/../player.conf" /etc/cvp-deploy/player.conf.template
+install -o root -g root -m 644 "$SOURCE_DIR/player.conf" /etc/cvp-deploy/player.conf.template
 install -o root -g root -m 440 "$sudoers_temp" /etc/sudoers.d/cvp-deploy
 visudo -cf /etc/sudoers.d/cvp-deploy
 

@@ -1,0 +1,226 @@
+#!/usr/bin/env bash
+set -euo pipefail
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+readonly PATH
+
+TEMPLATE='/etc/cvp-deploy/player.conf.template'
+CONFIG='/etc/nginx/sites-enabled/player.conf'
+CONFIG_DIR='/etc/nginx/sites-enabled'
+RUN_DIR='/var/lib/cvp-deploy/run'
+RELEASES='/srv/cvp/releases'
+VERSIONS='/srv/cvp/v1/versions'
+LOCK_FILE='/var/lib/cvp-deploy/deploy.lock'
+VERIFY='/usr/local/libexec/cvp-verify-release.py'
+
+MODE="${1:-}"
+DEPLOY_ID="${2:-}"
+SHA="${3:-}"
+SOURCE="${4:-}"
+[ "$MODE" = publish ] && [ "$#" -eq 4 ] || { [ "$MODE" = activate ] && [ "$#" -eq 3 ]; } || { [ "$MODE" = promote ] && [ "$#" -eq 3 ]; }
+
+exec 9<>"$LOCK_FILE"
+flock -n 9 || { echo 'Another publication is running' >&2; exit 1; }
+
+for path in /srv /srv/cvp "$RELEASES" "$VERSIONS" "$CONFIG_DIR"; do
+  [ "$(realpath -e "$path")" = "$path" ] && [ ! -L "$path" ]
+done
+[ -f "$CONFIG" ] && [ ! -L "$CONFIG" ] && [ "$(stat -c '%U:%G:%a' "$CONFIG")" = 'root:root:644' ]
+[ -f "$VERIFY" ] && [ ! -L "$VERIFY" ] && [ "$(stat -c '%U:%G' "$VERIFY")" = 'root:root' ]
+install -d -o root -g root -m 700 "$RUN_DIR"
+
+render_config() {
+  local destination="$1" active_root="$2" current_location="$3" stable_location="$4"
+  sed -e "s|__ACTIVE_ROOT__|$active_root|" \
+      -e "s|__CURRENT_LOCATION__|$current_location|" \
+      -e "s|__STABLE_LOCATION__|$stable_location|" \
+      "$TEMPLATE" > "$destination"
+  chmod 644 "$destination"
+}
+
+validate_config() {
+  local candidate="$1" test_main
+  test_main="$(mktemp "$RUN_DIR/nginx.conf.XXXXXXXXXX")"
+  sed "s@include /etc/nginx/sites-enabled/\\\*;@include $candidate;@" /etc/nginx/nginx.conf > "$test_main"
+  [ "$(grep -Fc "include $candidate;" "$test_main")" -eq 1 ] || {
+    echo 'Ubuntu Nginx sites-enabled include not found' >&2
+    rm -f -- "$test_main"
+    return 1
+  }
+  timeout --kill-after=5s 30s nginx -t -c "$test_main"
+  rm -f -- "$test_main"
+}
+
+reload_nginx() {
+  timeout --kill-after=5s 30s nginx -t &&
+    timeout --kill-after=5s 30s systemctl reload nginx &&
+    systemctl is-active --quiet nginx
+}
+
+ACTIVATION_SAFE_TO_REMOVE=1
+activate_config() {
+  local candidate="$1" backup
+  backup="$(mktemp "$RUN_DIR/player.conf.backup.XXXXXXXXXX")"
+  cp "$CONFIG" "$backup"
+  validate_config "$candidate"
+  mv -fT "$candidate" "$CONFIG"
+  ACTIVATION_SAFE_TO_REMOVE=0
+  if ! reload_nginx; then
+    cp "$backup" "$CONFIG.restore"
+    chmod 644 "$CONFIG.restore"
+    mv -fT "$CONFIG.restore" "$CONFIG"
+    if reload_nginx; then
+      ACTIVATION_SAFE_TO_REMOVE=1
+    else
+      echo 'ROLLBACK FAILED: published bytes retained for manual recovery' >&2
+    fi
+    rm -f -- "$backup"
+    return 1
+  fi
+  # Config now references new bytes. Keep them even after successful reload.
+  ACTIVATION_SAFE_TO_REMOVE=0
+  rm -f -- "$backup"
+}
+
+if [ "$MODE" = promote ]; then
+  VERSION="$DEPLOY_ID"
+  EXPECTED_COMMIT="$SHA"
+  printf '%s' "$VERSION" | grep -Eq '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
+  printf '%s' "$EXPECTED_COMMIT" | grep -Eq '^[a-f0-9]{40}$'
+  stable_location="/v1/versions/$VERSION/player.min.js"
+
+  if [ -e "$VERSIONS/$VERSION" ]; then
+    [ -d "$VERSIONS/$VERSION" ] && [ ! -L "$VERSIONS/$VERSION" ]
+    read -r existing_version existing_commit existing_sha existing_sri existing_url < <(python3 - "$VERSIONS/$VERSION/release.json" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+print(data["version"], data["commit"], data["sha256"], data["sri"], data["url"])
+PY
+    )
+    [ "$existing_version" = "$VERSION" ] && [ "$existing_commit" = "$EXPECTED_COMMIT" ]
+    printf '%s  %s\n' "$existing_sha" "$VERSIONS/$VERSION/player.min.js" | sha256sum -c -
+    current_stable="$(sed -nE 's#.*return 302 (/v1/versions/[^;]+);#\1#p' "$CONFIG" | head -n 1)"
+    if [ "$current_stable" != "$stable_location" ]; then
+      current_location="$(sed -nE 's#.*return 302 (/v1/deployments/[^;]+);#\1#p' "$CONFIG" | head -n 1)"
+      active_root="$(sed -nE 's#^[[:space:]]*root (/srv/cvp/releases/[^;]+);#\1#p' "$CONFIG" | head -n 1)"
+      temp_config="$(mktemp "$RUN_DIR/player.conf.XXXXXXXXXX")"
+      render_config "$temp_config" "$active_root" "$current_location" "$stable_location"
+      activate_config "$temp_config"
+    else
+      reload_nginx
+    fi
+    printf 'Stable version %s already published.\nURL: %s\nSRI: %s\n' "$VERSION" "$existing_url" "$existing_sri"
+    exit 0
+  fi
+
+  current_location="$(sed -nE 's#.*return 302 (/v1/deployments/[^;]+);#\1#p' "$CONFIG" | head -n 1)"
+  printf '%s' "$current_location" | grep -Eq '^/v1/deployments/[0-9]{8}T[0-9]{6}Z-([a-f0-9]{8}|[a-f0-9]{32})/sha256/[a-f0-9]{64}/player\.min\.js$'
+  current_deployment="$(printf '%s' "$current_location" | cut -d/ -f4)"
+  current_sha="$(printf '%s' "$current_location" | cut -d/ -f6)"
+  current_release="$RELEASES/$current_deployment"
+  python3 "$VERIFY" "$current_release" "$current_deployment" "$current_sha"
+  read -r metadata_version metadata_commit metadata_sri metadata_cdn < <(python3 - "$current_release/release.json" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+print(data["version"], data["commit"], data["sri"], data["cdn"])
+PY
+  )
+  [ "$metadata_version" = "$VERSION" ] && [ "$metadata_commit" = "$EXPECTED_COMMIT" ]
+  source_bundle="$current_release$current_location"
+  printf '%s  %s\n' "$current_sha" "$source_bundle" | sha256sum -c -
+  actual_sri="$(python3 - "$source_bundle" <<'PY'
+import base64, hashlib, sys
+print("sha384-" + base64.b64encode(hashlib.sha384(open(sys.argv[1], "rb").read()).digest()).decode("ascii"))
+PY
+  )"
+  [ "$actual_sri" = "$metadata_sri" ]
+
+  temp_version="$(mktemp -d "$VERSIONS/.incoming-$VERSION.XXXXXXXXXX")"
+  cleanup_version() { rm -rf -- "${temp_version:-}"; }
+  trap cleanup_version EXIT
+  install -o root -g root -m 644 "$source_bundle" "$temp_version/player.min.js"
+  source_license="$(dirname "$source_bundle")/player.min.js.LICENSE.txt"
+  [ ! -f "$source_license" ] || install -o root -g root -m 644 "$source_license" "$temp_version/player.min.js.LICENSE.txt"
+  python3 - "$temp_version/release.json" "$VERSION" "$current_deployment" "$metadata_commit" "$metadata_cdn" "$current_sha" "$metadata_sri" <<'PY'
+import json, sys
+path, version, deployment, commit, cdn, sha256, sri = sys.argv[1:]
+with open(path, "w", encoding="utf-8", newline="\n") as output:
+    json.dump({"version": version, "deployment": deployment, "commit": commit, "url": f"{cdn}/v1/versions/{version}/player.min.js", "sha256": sha256, "sri": sri}, output, indent=2)
+    output.write("\n")
+PY
+  chmod 644 "$temp_version/release.json"
+  chmod 755 "$temp_version"
+  active_root="$(sed -nE 's#^[[:space:]]*root (/srv/cvp/releases/[^;]+);#\1#p' "$CONFIG" | head -n 1)"
+  temp_config="$(mktemp "$RUN_DIR/player.conf.XXXXXXXXXX")"
+  render_config "$temp_config" "$active_root" "$current_location" "$stable_location"
+  validate_config "$temp_config"
+  mv -T "$temp_version" "$VERSIONS/$VERSION"
+  temp_version=''
+  if ! activate_config "$temp_config"; then
+    [ "$ACTIVATION_SAFE_TO_REMOVE" -eq 0 ] || rm -rf -- "$VERSIONS/$VERSION"
+    exit 1
+  fi
+  trap - EXIT
+  printf 'Stable version %s published.\nURL: %s%s\nSRI: %s\n' "$VERSION" "$metadata_cdn" "$stable_location" "$metadata_sri"
+  exit 0
+fi
+
+printf '%s' "$DEPLOY_ID" | grep -Eq '^[0-9]{8}T[0-9]{6}Z-([a-f0-9]{8}|[a-f0-9]{32})$'
+printf '%s' "$SHA" | grep -Eq '^[a-f0-9]{64}$'
+published="$RELEASES/$DEPLOY_ID"
+new_release=0
+temp_release=''
+
+cleanup_release() {
+  status=$?
+  trap - EXIT
+  [ -z "$temp_release" ] || rm -rf -- "$temp_release"
+  [ "$status" -eq 0 ] || [ "$new_release" -eq 0 ] || [ "$ACTIVATION_SAFE_TO_REMOVE" -eq 0 ] || rm -rf -- "$published"
+  exit "$status"
+}
+trap cleanup_release EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap 'exit 129' HUP
+
+if [ "$MODE" = publish ]; then
+  printf '%s' "$SOURCE" | grep -Eq '^/tmp/cvp-deploy\.[A-Za-z0-9]{10}/release$'
+  [ "$(realpath -e "$SOURCE")" = "$SOURCE" ] && [ -d "$SOURCE" ] && [ ! -L "$SOURCE" ]
+  if find "$SOURCE" ! -type d ! -type f -print -quit | grep -q .; then
+    echo 'Staging contains special files' >&2
+    exit 1
+  fi
+  [ ! -e "$published" ]
+  temp_release="$(mktemp -d "$RELEASES/.incoming-$DEPLOY_ID.XXXXXXXXXX")"
+  timeout --kill-after=5s 120s cp -a "$SOURCE/." "$temp_release/"
+  chown -R root:root "$temp_release"
+  find "$temp_release" -type d -exec chmod 755 {} +
+  find "$temp_release" -type f -exec chmod 644 {} +
+  python3 "$VERIFY" "$temp_release" "$DEPLOY_ID" "$SHA"
+  mv -T "$temp_release" "$published"
+  temp_release=''
+  new_release=1
+else
+  [ -d "$published" ] && [ ! -L "$published" ]
+  python3 "$VERIFY" "$published"
+fi
+
+BUNDLE="v1/deployments/$DEPLOY_ID/sha256/$SHA/player.min.js"
+[ -s "$published/$BUNDLE" ]
+printf '%s  %s\n' "$SHA" "$published/$BUNDLE" | sha256sum -c -
+stable_location="$(sed -nE 's#.*return 302 (/v1/versions/[^;]+);#\1#p' "$CONFIG" | head -n 1)"
+[ -n "$stable_location" ] || stable_location='/v1/versions/0.0.0/player.min.js'
+temp_config="$(mktemp "$RUN_DIR/player.conf.XXXXXXXXXX")"
+render_config "$temp_config" "/srv/cvp/releases/$DEPLOY_ID" "/$BUNDLE" "$stable_location"
+activate_config "$temp_config"
+new_release=0
+trap - EXIT
+
+kept=0
+while IFS= read -r old; do
+  [ "$old" = "$DEPLOY_ID" ] && continue
+  if find "$VERSIONS" -mindepth 2 -maxdepth 2 -name release.json -type f -exec grep -lF '"deployment": "'"$old"'"' {} + | grep -q .; then continue; fi
+  kept=$((kept + 1))
+  if [ "$kept" -gt 9 ] && [ "$(find "$RELEASES/$old" -maxdepth 0 -mtime +7 -print)" ]; then
+    rm -rf -- "$RELEASES/$old" || echo "Warning: could not remove old release $old" >&2
+  fi
+done < <(find "$RELEASES" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | grep -E '^[0-9]{8}T[0-9]{6}Z-([a-f0-9]{8}|[a-f0-9]{32})$' | sort -r)
