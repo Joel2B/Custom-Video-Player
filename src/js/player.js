@@ -8,6 +8,7 @@ import Theatre from './control-bar/theatre';
 import Preview from './control-bar/preview';
 import VolumeControl from './control-bar/volume';
 import ContextMenu from './context-menu';
+import Zoom from './zoom';
 
 import Menu from './menu/menu';
 import Loop from './menu/loop';
@@ -80,6 +81,8 @@ class CVP {
     if (primaryColor && (!is.string(primaryColor) || !CSS.supports('color', primaryColor))) {
       this.config.layoutControls.primaryColor = false;
     }
+
+    this.normalizeZoom();
 
     if (FP_ENV === 'development') {
       this.config.debug = true;
@@ -305,6 +308,7 @@ class CVP {
     this.theatre = new Theatre(this);
     this.HtmlOnPause = new HtmlOnPause(this);
     this.contextMenu = new ContextMenu(this);
+    this.zoom = new Zoom(this);
 
     this.volumeControl = new VolumeControl(this);
     this.volumeControl.init();
@@ -321,6 +325,7 @@ class CVP {
   resize = () => {
     this.progressBar.resize();
     this.volumeControl.resize();
+    this.zoom?.resize();
   };
 
   overwrite = (from, to) => {
@@ -343,6 +348,17 @@ class CVP {
         to[key] = value;
       }
     }
+  };
+
+  normalizeZoom = () => {
+    const zoom = this.config.layoutControls.zoom;
+    const fallback = defaults.layoutControls.zoom;
+
+    zoom.enabled = typeof zoom.enabled === 'boolean' ? zoom.enabled : fallback.enabled;
+    zoom.min = Number.isFinite(zoom.min) && zoom.min > 0 ? zoom.min : fallback.min;
+    zoom.max = Number.isFinite(zoom.max) && zoom.max >= zoom.min ? zoom.max : Math.max(fallback.max, zoom.min);
+    zoom.reset = Number.isFinite(zoom.reset) ? Math.min(Math.max(zoom.reset, zoom.min), zoom.max) : fallback.reset;
+    zoom.reset = Math.min(Math.max(zoom.reset, zoom.min), zoom.max);
   };
 
   toggleLoader = (show) => {
@@ -885,6 +901,7 @@ class CVP {
       this.fps,
       this.fullscreen,
       this.theatre,
+      this.zoom,
     ].forEach((module) => module?.destroy?.());
 
     this.promiseTimeouts.forEach(clearTimeout);

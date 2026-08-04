@@ -179,6 +179,15 @@ class Mobile {
     }
 
     on.call(player, player.media, 'touchend', () => {
+      if (player.zoom?.consumeInteraction()) {
+        clearTimeout(this.showControlsTimer);
+        clearTimeout(this.touchTimer);
+        this.touchTimer = null;
+        this.singleTap = false;
+        this.doubleTap = false;
+        return;
+      }
+
       if (player.paused || hasClass(player.wrapper, 'fluid_show_controls')) {
         player.controlBar.toggleMobile();
         return;
@@ -207,6 +216,14 @@ class Mobile {
     });
 
     on.call(player, player.wrapper, 'touchstart', (event) => {
+      if (event.touches.length > 1 || player.zoom?.isInteracting()) {
+        clearTimeout(this.touchTimer);
+        this.touchTimer = null;
+        this.singleTap = false;
+        this.doubleTap = false;
+        return;
+      }
+
       if (player.playPause.initialPlay.contains(event.target) || player.paused) {
         return;
       }
@@ -255,9 +272,7 @@ class Mobile {
             player.currentTime += timeForward;
           }
 
-          this.forwardText.textContent = player.config.captions.seconds(
-            this.totalForward + this.currentTimeForward,
-          );
+          this.forwardText.textContent = player.config.captions.seconds(this.totalForward + this.currentTimeForward);
 
           toggleClass(this.fastForward, 'fluid_run_animation', true);
         } else {
@@ -278,9 +293,7 @@ class Mobile {
             player.currentTime -= timeRewind;
           }
 
-          this.rewindText.textContent = `-${player.config.captions.seconds(
-            this.totalRewind + this.currentTimeRewind,
-          )}`;
+          this.rewindText.textContent = `-${player.config.captions.seconds(this.totalRewind + this.currentTimeRewind)}`;
 
           toggleClass(this.fastRewind, 'fluid_run_animation', true);
         }

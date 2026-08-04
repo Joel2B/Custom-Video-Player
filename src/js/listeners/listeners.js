@@ -26,6 +26,10 @@ class Listeners extends Update {
         return;
       }
 
+      if (player.zoom?.consumeInteraction()) {
+        return;
+      }
+
       // Not pause if the user is idle on touch device and the video is playing
       if (player.touch && !player.userActivity.active && !player.paused) {
         return;

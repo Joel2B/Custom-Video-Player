@@ -294,7 +294,7 @@ class Menu {
     return this.player.config.layoutControls.menu[module];
   };
 
-  openSubMenu = (option, subPage, width, height) => {
+  openSubMenu = (option, subPage, width, height, popup = 'listbox') => {
     const moveFocus = this.page.contains(document.activeElement);
 
     toggleClass(subPage, 'hide', false);
@@ -308,14 +308,16 @@ class Menu {
     this.inSubpage = true;
     this.submenuOption = option;
     option.setAttribute('aria-expanded', 'true');
-    subPage.setAttribute('role', 'listbox');
+    subPage.setAttribute('role', popup);
     this.setInteractive(false, this.page);
     this.setInteractive(true, this.subPage);
 
-    for (const item of subPage.querySelectorAll('li')) {
-      item.setAttribute('role', 'option');
-      item.setAttribute('tabindex', '0');
-      item.setAttribute('aria-selected', String(hasClass(item, 'cvp_active')));
+    if (popup === 'listbox') {
+      for (const item of subPage.querySelectorAll('li')) {
+        item.setAttribute('role', 'option');
+        item.setAttribute('tabindex', '0');
+        item.setAttribute('aria-selected', String(hasClass(item, 'cvp_active')));
+      }
     }
 
     if (moveFocus) {

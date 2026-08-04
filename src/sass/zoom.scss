@@ -1,0 +1,324 @@
+.fluid_zoom_active video,
+.fluid_zoom_active .fluid_initial_play {
+  cursor: grab;
+  touch-action: none;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.fluid_zoom_active video:active,
+.fluid_zoom_active .fluid_initial_play:active {
+  cursor: grabbing;
+}
+
+.fluid_zoom_indicator {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.75);
+  border-radius: 3px;
+  color: #fff;
+  display: flex;
+  font: 600 13px/24px 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  gap: 6px;
+  left: max(10px, env(safe-area-inset-left));
+  opacity: 0;
+  padding: 4px 8px;
+  pointer-events: none;
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top));
+  transition: opacity 0.15s linear;
+  z-index: 5;
+}
+
+.fluid_zoom_indicator.fluid_zoom_visible {
+  opacity: 1;
+}
+
+.fluid_icon_zoom,
+.fluid_icon_zoomEnabled {
+  flex: 0 0 24px;
+  height: 24px;
+  width: 24px;
+}
+
+.fluid_icon_zoom::before,
+.fluid_icon_zoomEnabled::before {
+  background: none;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  box-sizing: border-box;
+  content: '';
+  height: 14px;
+  left: 4px;
+  position: absolute;
+  top: 3px;
+  width: 14px;
+}
+
+.fluid_icon_zoom::after,
+.fluid_icon_zoomEnabled::after {
+  background: currentColor;
+  content: '';
+  height: 2px;
+  left: 14px;
+  position: absolute;
+  top: 15px;
+  transform: rotate(45deg);
+  transform-origin: left center;
+  width: 8px;
+}
+
+.cvp_zoom_menu {
+  color: #fff;
+  font: 400 13px/1.2 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  padding: 0px 10px 10px;
+  box-sizing: border-box;
+}
+
+.cvp_zoom_enabled,
+.cvp_zoom_stepper {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  min-height: 38px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.fluid_video_wrapper .cvp_zoom_enabled {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  padding: 0 2px;
+  text-align: left;
+}
+
+.cvp_zoom_enabled + .cvp_zoom_stepper {
+  margin-top: 6px;
+}
+
+.cvp_zoom_toggle {
+  background: #777;
+  border-radius: 10px;
+  height: 18px;
+  position: relative;
+  transition: background-color 0.15s linear;
+  width: 32px;
+}
+
+.cvp_zoom_toggle::after {
+  background: #fff;
+  border-radius: 50%;
+  content: '';
+  height: 14px;
+  left: 2px;
+  position: absolute;
+  top: 2px;
+  transition: transform 0.15s ease;
+  width: 14px;
+}
+
+.cvp_zoom_enabled[aria-checked='true'] .cvp_zoom_toggle {
+  background: #e52b2b;
+}
+
+.cvp_zoom_enabled[aria-checked='true'] .cvp_zoom_toggle::after {
+  transform: translateX(14px);
+}
+
+.cvp_zoom_stepper {
+  gap: 8px;
+}
+
+.cvp_zoom_label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cvp_zoom_stepper_controls {
+  align-items: center;
+  column-gap: 3px;
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: 32px 56px 32px;
+}
+
+.fluid_video_wrapper .cvp_zoom_stepper button {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-sizing: border-box;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  font: 500 20px/1 sans-serif;
+  height: 32px;
+  justify-content: center;
+  padding: 0;
+  width: 32px;
+}
+
+.fluid_video_wrapper .cvp_zoom_stepper button:first-child {
+  border-radius: 4px;
+}
+
+.fluid_video_wrapper .cvp_zoom_stepper button:last-child {
+  border-radius: 4px;
+}
+
+.cvp_zoom_stepper output {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 4px;
+  box-sizing: border-box;
+  display: flex;
+  font-variant-numeric: tabular-nums;
+  height: 32px;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.cvp_zoom_stepper + .cvp_zoom_stepper {
+  margin-top: 4px;
+}
+
+.fluid_video_wrapper .cvp_zoom_stepper button:hover:not(:disabled),
+.fluid_video_wrapper .cvp_zoom_stepper button:active:not(:disabled) {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.fluid_video_wrapper .cvp_zoom_stepper button:disabled {
+  color: rgba(255, 255, 255, 0.3);
+  cursor: default;
+}
+
+.fluid_video_wrapper .cvp_zoom_reset_button {
+  background: #d9272e;
+  border: 1px solid #f25b61;
+  border-radius: 5px;
+  color: #fff;
+  cursor: pointer;
+  font: 500 13px/1 sans-serif;
+  height: 34px;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.fluid_video_wrapper .cvp_zoom_reset_button:hover,
+.fluid_video_wrapper .cvp_zoom_reset_button:active {
+  background: #ef343b;
+}
+
+.cvp_zoom_menu button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.cvp_zoom_disabled .cvp_zoom_level {
+  opacity: 0.45;
+}
+
+.fluid_desktop .cvp_zoom_stepper {
+  min-height: 34px;
+}
+
+.fluid_desktop .cvp_zoom_stepper + .cvp_zoom_stepper {
+  margin-top: 2px;
+}
+
+.fluid_mobile .cvp_zoom_menu {
+  font-size: 14px;
+  padding: 0 12px 12px;
+}
+
+.fluid_mobile .fluid_zoom_indicator {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.fluid_mobile.fluid_show_controls .fluid_zoom_indicator.fluid_zoom_visible {
+  opacity: 1;
+}
+
+.fluid_mobile .cvp_zoom_enabled,
+.fluid_mobile .cvp_zoom_stepper {
+  height: 36px;
+  margin: 0;
+  min-height: 36px;
+  padding: 0;
+}
+
+.fluid_mobile .cvp_zoom_enabled + .cvp_zoom_stepper {
+  margin-top: 6px;
+}
+
+.fluid_mobile .cvp_zoom_stepper + .cvp_zoom_stepper {
+  margin-top: 4px;
+}
+
+.fluid_mobile .cvp_zoom_stepper_controls {
+  grid-template-columns: 36px 58px 36px;
+}
+
+.fluid_mobile .cvp_zoom_stepper > .cvp_zoom_label {
+  font-size: 0;
+}
+
+.fluid_mobile .cvp_zoom_stepper > .cvp_zoom_label::after {
+  content: attr(data-short);
+  font-size: 14px;
+}
+
+.fluid_mobile .cvp_zoom_stepper button {
+  height: 36px;
+  width: 36px;
+}
+
+.fluid_mobile .cvp_zoom_stepper output {
+  height: 36px;
+}
+
+.fluid_mobile .cvp_zoom_reset_button {
+  height: 36px;
+  margin-top: 8px;
+}
+
+.fluid_mobile .cvp_selector.cvp_zoom .fluid_icon_zoom {
+  display: block;
+  margin: 0 auto;
+  padding-bottom: 0;
+  width: 24px;
+}
+
+@media (max-width: 239px) {
+  .fluid_mobile .cvp_zoom_menu {
+    font-size: 12px;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  .fluid_mobile .cvp_zoom_stepper {
+    gap: 4px;
+  }
+
+  .fluid_mobile .cvp_zoom_stepper > .cvp_zoom_label::after {
+    font-size: 12px;
+  }
+
+  .fluid_mobile .cvp_zoom_stepper_controls {
+    grid-template-columns: 32px 52px 32px;
+  }
+
+  .fluid_mobile .cvp_zoom_stepper button {
+    height: 34px;
+    width: 32px;
+  }
+
+  .fluid_mobile .cvp_zoom_stepper output {
+    height: 34px;
+  }
+}

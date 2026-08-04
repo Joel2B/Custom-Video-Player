@@ -6,7 +6,7 @@ export function selector(item) {
     class: `cvp_selector cvp_${id}`,
     role: 'button',
     tabindex: 0,
-    'aria-haspopup': 'listbox',
+    'aria-haspopup': item.popup || 'listbox',
     'aria-expanded': false,
     'aria-label': item.title,
   });

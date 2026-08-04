@@ -2,7 +2,14 @@ const { defineConfig } = require('@playwright/test');
 
 module.exports = defineConfig({
   testDir: './test/smoke',
-  testMatch: ['accessibility.spec.js', 'fullscreen.spec.js', 'layout.spec.js', 'locale.spec.js', 'vtt.spec.js'],
+  testMatch: [
+    'accessibility.spec.js',
+    'fullscreen.spec.js',
+    'layout.spec.js',
+    'locale.spec.js',
+    'vtt.spec.js',
+    'zoom.spec.js',
+  ],
   workers: 1,
   projects: [{ name: 'webkit', use: { browserName: 'webkit' } }],
   use: {
