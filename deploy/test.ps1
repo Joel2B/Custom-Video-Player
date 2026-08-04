@@ -61,6 +61,7 @@ printf changed > "/release/v1/deployments/$deployment/sha256/$hash/player.min.js
   if ($activate -notmatch "CONFIG_DIR='/etc/cvp-deploy/nginx'" -or $activate -notmatch 'mv -fT' -or $activate -match '/home/j') { throw 'Nginx activation permissions are unsafe' }
   if ($activate -notmatch 'MODE.*promote' -or $activate -notmatch 'sha384-' -or $activate -notmatch 'VERSIONS=') { throw 'Stable promotion controls are missing' }
   if ($nginxTemplate -notmatch 'location @version_not_found' -or $nginxTemplate -notmatch 'Cache-Control "no-store"') { throw 'Versioned 404 cache protection is missing' }
+  if ($nginxTemplate -notmatch 'location = /\s*\{[^}]*return 204;' -or $nginxTemplate -notmatch 'location /v1/\s*\{[^}]*return 404;' -or $nginxTemplate -notmatch 'location /\s*\{[^}]*return 302 /;') { throw 'Empty root and fallback routing are missing' }
   if ($entrypoint -notmatch 'promote' -or $entrypoint -notmatch '\[a-f0-9\]\{40\}') { throw 'Stable promotion forced command is missing' }
   if ($entrypoint -notmatch 'deploy-testing' -or $nginxTemplate -notmatch '/v1/testing/player\.min\.js' -or $nginxTemplate -notmatch '__TESTING_LOCATION__') { throw 'Testing channel controls are missing' }
   if ($installer -notmatch 'authorized_keys_temp' -or $installer -notmatch 'Install source must be root-owned' -or $installer -notmatch '/srv/cvp/releases' -or $installer -notmatch '/srv/cvp/v1/versions') { throw 'Restricted SSH installer permissions are unsafe' }

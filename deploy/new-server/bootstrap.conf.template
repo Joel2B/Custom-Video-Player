@@ -27,7 +27,20 @@ server {
     ssl_protocols TLSv1.2 TLSv1.3;
     server_tokens off;
 
-    add_header Cache-Control "no-store" always;
     add_header X-Content-Type-Options "nosniff" always;
-    location / { return 404; }
+
+    location = / {
+        add_header Cache-Control "no-store" always;
+        return 204;
+    }
+
+    location /v1/ {
+        add_header Cache-Control "no-store" always;
+        return 404;
+    }
+
+    location / {
+        add_header Cache-Control "no-store" always;
+        return 302 /;
+    }
 }

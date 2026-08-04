@@ -78,7 +78,18 @@ server {
         add_header X-Content-Type-Options "nosniff" always;
     }
 
+    location = / {
+        add_header Cache-Control "no-store" always;
+        return 204;
+    }
+
+    location /v1/ {
+        add_header Cache-Control "no-store" always;
+        return 404;
+    }
+
     location / {
-        try_files $uri $uri/ =404;
+        add_header Cache-Control "no-store" always;
+        return 302 /;
     }
 }
