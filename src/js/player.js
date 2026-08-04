@@ -308,13 +308,13 @@ class CVP {
     this.theatre = new Theatre(this);
     this.HtmlOnPause = new HtmlOnPause(this);
     this.contextMenu = new ContextMenu(this);
-    this.zoom = new Zoom(this);
 
     this.volumeControl = new VolumeControl(this);
     this.volumeControl.init();
 
     this.autoPlay = new Autoplay(this);
     this.loopMenu = new Loop(this);
+    this.zoom = new Zoom(this);
     this.speedMenu = new Speed(this);
     this.audio.init();
     this.subtitles.init();
