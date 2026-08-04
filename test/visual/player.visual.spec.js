@@ -102,6 +102,7 @@ test('mobile menus fit supported player widths', async ({ browser, baseURL }) =>
       await button.dispatchEvent('touchend');
     }
     await expect(page.locator('.cvp_options_menu.cvp_visible')).toHaveCount(4);
+    await page.evaluate(() => document.activeElement?.blur());
 
     await expect(page.locator('.matrix')).toHaveScreenshot('mobile-menu-widths.png');
   } finally {
