@@ -16,7 +16,7 @@ MODE="${1:-}"
 DEPLOY_ID="${2:-}"
 SHA="${3:-}"
 SOURCE="${4:-}"
-[ "$MODE" = publish ] && [ "$#" -eq 4 ] || { [ "$MODE" = activate ] && [ "$#" -eq 3 ]; } || { [ "$MODE" = promote ] && [ "$#" -eq 3 ]; }
+{ [ "$MODE" = publish ] || [ "$MODE" = publish-testing ]; } && [ "$#" -eq 4 ] || { [ "$MODE" = activate ] && [ "$#" -eq 3 ]; } || { [ "$MODE" = promote ] && [ "$#" -eq 3 ]; }
 
 exec 9<>"$LOCK_FILE"
 flock -n 9 || { echo 'Another publication is running' >&2; exit 1; }
@@ -29,9 +29,10 @@ done
 install -d -o root -g root -m 700 "$RUN_DIR"
 
 render_config() {
-  local destination="$1" active_root="$2" current_location="$3" stable_location="$4"
+  local destination="$1" active_root="$2" current_location="$3" testing_location="$4" stable_location="$5"
   sed -e "s|__ACTIVE_ROOT__|$active_root|" \
       -e "s|__CURRENT_LOCATION__|$current_location|" \
+      -e "s|__TESTING_LOCATION__|$testing_location|" \
       -e "s|__STABLE_LOCATION__|$stable_location|" \
       "$TEMPLATE" > "$destination"
   chmod 644 "$destination"
@@ -103,7 +104,9 @@ PY
       current_location="$(sed -nE 's#.*return 302 (/v1/deployments/[^;]+);#\1#p' "$CONFIG" | head -n 1)"
       active_root="$(sed -nE 's#^[[:space:]]*root (/srv/cvp/releases/[^;]+);#\1#p' "$CONFIG" | head -n 1)"
       temp_config="$(mktemp "$RUN_DIR/player.conf.XXXXXXXXXX")"
-      render_config "$temp_config" "$active_root" "$current_location" "$stable_location"
+      testing_location="$(sed -nE 's#.*return 302 (/v1/deployments/[^;]+);#\1#p' "$CONFIG" | sed -n '2p')"
+      [ -n "$testing_location" ] || testing_location="$current_location"
+      render_config "$temp_config" "$active_root" "$current_location" "$testing_location" "$stable_location"
       activate_config "$temp_config"
     else
       reload_nginx
@@ -151,7 +154,9 @@ PY
   chmod 755 "$temp_version"
   active_root="$(sed -nE 's#^[[:space:]]*root (/srv/cvp/releases/[^;]+);#\1#p' "$CONFIG" | head -n 1)"
   temp_config="$(mktemp "$RUN_DIR/player.conf.XXXXXXXXXX")"
-  render_config "$temp_config" "$active_root" "$current_location" "$stable_location"
+  testing_location="$(sed -nE 's#.*return 302 (/v1/deployments/[^;]+);#\1#p' "$CONFIG" | sed -n '2p')"
+  [ -n "$testing_location" ] || testing_location="$current_location"
+  render_config "$temp_config" "$active_root" "$current_location" "$testing_location" "$stable_location"
   validate_config "$temp_config"
   mv -T "$temp_version" "$VERSIONS/$VERSION"
   temp_version=''
@@ -182,7 +187,7 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 trap 'exit 129' HUP
 
-if [ "$MODE" = publish ]; then
+if [ "$MODE" = publish ] || [ "$MODE" = publish-testing ]; then
   printf '%s' "$SOURCE" | grep -Eq '^/tmp/cvp-deploy\.[A-Za-z0-9]{10}/release$'
   [ "$(realpath -e "$SOURCE")" = "$SOURCE" ] && [ -d "$SOURCE" ] && [ ! -L "$SOURCE" ]
   if find "$SOURCE" ! -type d ! -type f -print -quit | grep -q .; then
@@ -209,8 +214,15 @@ BUNDLE="v1/deployments/$DEPLOY_ID/sha256/$SHA/player.min.js"
 printf '%s  %s\n' "$SHA" "$published/$BUNDLE" | sha256sum -c -
 stable_location="$(sed -nE 's#.*return 302 (/v1/versions/[^;]+);#\1#p' "$CONFIG" | head -n 1)"
 [ -n "$stable_location" ] || stable_location='/v1/versions/0.0.0/player.min.js'
+current_location="$(sed -nE 's#.*return 302 (/v1/deployments/[^;]+);#\1#p' "$CONFIG" | sed -n '1p')"
+testing_location="$(sed -nE 's#.*return 302 (/v1/deployments/[^;]+);#\1#p' "$CONFIG" | sed -n '2p')"
+[ -n "$current_location" ] || current_location="/$BUNDLE"
+[ -n "$testing_location" ] || testing_location="$current_location"
+active_root="$(sed -nE 's#^[[:space:]]*root (/srv/cvp/releases/[^;]+);#\1#p' "$CONFIG" | head -n 1)"
+[ -n "$active_root" ] || active_root="/srv/cvp/releases/$DEPLOY_ID"
+if [ "$MODE" = publish-testing ]; then testing_location="/$BUNDLE"; else active_root="/srv/cvp/releases/$DEPLOY_ID"; current_location="/$BUNDLE"; fi
 temp_config="$(mktemp "$RUN_DIR/player.conf.XXXXXXXXXX")"
-render_config "$temp_config" "/srv/cvp/releases/$DEPLOY_ID" "/$BUNDLE" "$stable_location"
+render_config "$temp_config" "$active_root" "$current_location" "$testing_location" "$stable_location"
 activate_config "$temp_config"
 new_release=0
 trap - EXIT
@@ -218,6 +230,7 @@ trap - EXIT
 kept=0
 while IFS= read -r old; do
   [ "$old" = "$DEPLOY_ID" ] && continue
+  grep -Fq "/v1/deployments/$old/" "$CONFIG" && continue
   if find "$VERSIONS" -mindepth 2 -maxdepth 2 -name release.json -type f -exec grep -lF '"deployment": "'"$old"'"' {} + | grep -q .; then continue; fi
   kept=$((kept + 1))
   if [ "$kept" -gt 9 ] && [ "$(find "$RELEASES/$old" -maxdepth 0 -mtime +7 -print)" ]; then

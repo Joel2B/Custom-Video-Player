@@ -3,7 +3,10 @@ set -euo pipefail
 
 command="${SSH_ORIGINAL_COMMAND:-}"
 if [[ "$command" =~ ^deploy\ ([0-9]{8}T[0-9]{6}Z-[a-f0-9]{32})\ ([a-f0-9]{64})$ ]]; then
-  exec /usr/local/libexec/cvp-remote-deploy "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}"
+  exec /usr/local/libexec/cvp-remote-deploy current "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}"
+fi
+if [[ "$command" =~ ^deploy-testing\ ([0-9]{8}T[0-9]{6}Z-[a-f0-9]{32})\ ([a-f0-9]{64})$ ]]; then
+  exec /usr/local/libexec/cvp-remote-deploy testing "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}"
 fi
 if [[ "$command" =~ ^promote\ ([0-9]+\.[0-9]+\.[0-9]+)\ ([a-f0-9]{40})$ ]]; then
   exec sudo -n /usr/local/sbin/cvp-nginx-activate promote "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}"

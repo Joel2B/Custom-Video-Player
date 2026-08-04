@@ -21,6 +21,15 @@ printf test > "/release/v1/deployments/$deployment/sha256/$hash/player.min.js"
 printf '{"version":"2.0.0","deployment":"%s","commit":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","cdn":"https://example.com","sri":"sha384-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}\n' "$deployment" > /release/release.json
 python /deploy/verify_release.py --write /release
 python /deploy/verify_release.py /release "$deployment" "$hash"
+python - "$deployment" "$hash" <<'PY'
+import json, subprocess, sys
+path = "/release/release.json"
+data = json.load(open(path, encoding="utf-8"))
+data.update(channel="testing", dirty=False)
+with open(path, "w", encoding="utf-8") as output: json.dump(data, output)
+subprocess.run(["python", "/deploy/verify_release.py", "--write", "/release"], check=True)
+assert subprocess.run(["python", "/deploy/verify_release.py", "/release", *sys.argv[1:]]).returncode != 0
+PY
 printf changed > "/release/v1/deployments/$deployment/sha256/$hash/player.min.js"
 ! python /deploy/verify_release.py /release
 '@
@@ -30,7 +39,7 @@ printf changed > "/release/v1/deployments/$deployment/sha256/$hash/player.min.js
   & docker @('run', '--rm', '-v', "${projectRoot}/deploy/remote-deploy.sh:/deploy.sh:ro", 'bash@sha256:ae4668c2560999e65e89532cd2ad1b6688bb23298189f0bd229ef80fa4bd0831', 'bash', '-n', '/deploy.sh')
   if ($LASTEXITCODE -ne 0) { throw 'Remote deploy syntax check failed' }
 
-  & docker @('run', '--rm', '-v', "${projectRoot}/deploy:/deploy:ro", 'bash@sha256:ae4668c2560999e65e89532cd2ad1b6688bb23298189f0bd229ef80fa4bd0831', 'bash', '-n', '/deploy/cvp-deploy-entrypoint', '/deploy/legacy/cvp-nginx-activate', '/deploy/legacy/install.sh')
+  & docker @('run', '--rm', '-v', "${projectRoot}/deploy:/deploy:ro", 'bash@sha256:ae4668c2560999e65e89532cd2ad1b6688bb23298189f0bd229ef80fa4bd0831', 'bash', '-n', '/deploy/cvp-deploy-entrypoint', '/deploy/legacy/cvp-nginx-activate', '/deploy/new-server/cvp-nginx-activate', '/deploy/legacy/install.sh')
   if ($LASTEXITCODE -ne 0) { throw 'Restricted SSH helper syntax check failed' }
 
   $env:NPM_IMAGE = 'jc21/nginx-proxy-manager@sha256:cd9eba29ca132cb006729f2cb2660126453f84818c2f7d75963ad7b61ef696bd'
@@ -53,6 +62,7 @@ printf changed > "/release/v1/deployments/$deployment/sha256/$hash/player.min.js
   if ($activate -notmatch 'MODE.*promote' -or $activate -notmatch 'sha384-' -or $activate -notmatch 'VERSIONS=') { throw 'Stable promotion controls are missing' }
   if ($nginxTemplate -notmatch 'location @version_not_found' -or $nginxTemplate -notmatch 'Cache-Control "no-store"') { throw 'Versioned 404 cache protection is missing' }
   if ($entrypoint -notmatch 'promote' -or $entrypoint -notmatch '\[a-f0-9\]\{40\}') { throw 'Stable promotion forced command is missing' }
+  if ($entrypoint -notmatch 'deploy-testing' -or $nginxTemplate -notmatch '/v1/testing/player\.min\.js' -or $nginxTemplate -notmatch '__TESTING_LOCATION__') { throw 'Testing channel controls are missing' }
   if ($installer -notmatch 'authorized_keys_temp' -or $installer -notmatch 'Install source must be root-owned' -or $installer -notmatch '/srv/cvp/releases' -or $installer -notmatch '/srv/cvp/v1/versions') { throw 'Restricted SSH installer permissions are unsafe' }
   if ($workflow -match 'actions/(checkout|setup-node)@v' -or $workflow -match '(?m)^\s*- run: npm ci\s*$' -or $workflow -notmatch 'permissions:\s*\r?\n\s+contents: read') { throw 'CI supply-chain controls are missing' }
 
@@ -102,9 +112,23 @@ import base64, hashlib, sys
 print("sha384-" + base64.b64encode(hashlib.sha384(open(sys.argv[1], "rb").read()).digest()).decode("ascii"))
 PY
 )
-printf '{"version":"2.0.0","deployment":"%s","commit":"%s","cdn":"https://example.com","sri":"%s"}\n' "$deployment" "$commit" "$sri" > "/srv/cvp/releases/$deployment/release.json"
+printf '{"version":"2.0.0","deployment":"%s","commit":"%s","cdn":"https://example.com","sri":"%s","channel":"current","dirty":false}\n' "$deployment" "$commit" "$sri" > "/srv/cvp/releases/$deployment/release.json"
 python3 /root/deploy/verify_release.py --write "/srv/cvp/releases/$deployment"
-sed -e "s|__ACTIVE_ROOT__|/srv/cvp/releases/$deployment|" -e "s|__CURRENT_LOCATION__|/v1/deployments/$deployment/sha256/$hash/player.min.js|" -e 's|__STABLE_LOCATION__|/v1/versions/0.0.0/player.min.js|' /root/deploy/legacy/player.conf > /etc/cvp-deploy/nginx/default.conf
+sed -e "s|__ACTIVE_ROOT__|/srv/cvp/releases/$deployment|" -e "s|__CURRENT_LOCATION__|/v1/deployments/$deployment/sha256/$hash/player.min.js|" -e "s|__TESTING_LOCATION__|/v1/deployments/$deployment/sha256/$hash/player.min.js|" -e 's|__STABLE_LOCATION__|/v1/versions/0.0.0/player.min.js|' /root/deploy/legacy/player.conf > /etc/cvp-deploy/nginx/default.conf
+
+# Testing publication changes only its mutable pointer.
+testing_deployment=20260729T000322Z-b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4
+testing_source=/tmp/cvp-deploy.ABCDEFGHIJ/release
+testing_bundle="$testing_source/v1/deployments/$testing_deployment/sha256/$hash/player.min.js"
+mkdir -p "$(dirname "$testing_bundle")"
+printf test > "$testing_bundle"
+printf '{"version":"2.0.0","deployment":"%s","commit":"%s","cdn":"https://example.com","sri":"%s","channel":"testing","dirty":true}\n' "$testing_deployment" "$commit" "$sri" > "$testing_source/release.json"
+python3 /root/deploy/verify_release.py --write "$testing_source"
+sudo -u cvp-deploy sudo -n /usr/local/sbin/cvp-nginx-activate publish-testing "$testing_deployment" "$hash" "$testing_source"
+grep -Fq "root /srv/cvp/releases/$deployment;" /etc/cvp-deploy/nginx/default.conf
+test "$(grep -Fc "return 302 /v1/deployments/$deployment/sha256/$hash/player.min.js;" /etc/cvp-deploy/nginx/default.conf)" -eq 1
+grep -Fq "return 302 /v1/deployments/$testing_deployment/sha256/$hash/player.min.js;" /etc/cvp-deploy/nginx/default.conf
+
 sudo -u cvp-deploy sudo -n /usr/local/sbin/cvp-nginx-activate promote 2.0.0 "$commit" > /tmp/promote.log
 test -f /srv/cvp/v1/versions/2.0.0/player.min.js
 test "$(stat -c '%U:%G:%a' /srv/cvp/v1/versions/2.0.0)" = 'root:root:755'
@@ -158,7 +182,7 @@ grep -q 'Install source must be root-owned' /tmp/unsafe-source.log
 
   [IO.File]::WriteAllText(
     $tempConfig,
-    [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/legacy/player.conf')).Replace('__ACTIVE_ROOT__', '/usr/share/nginx/html').Replace('__CURRENT_LOCATION__', $location).Replace('__STABLE_LOCATION__', $location),
+    [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/legacy/player.conf')).Replace('__ACTIVE_ROOT__', '/usr/share/nginx/html').Replace('__CURRENT_LOCATION__', $location).Replace('__TESTING_LOCATION__', $location).Replace('__STABLE_LOCATION__', $location),
     [Text.UTF8Encoding]::new($false)
   )
   & docker @('run', '--rm', '-v', "${tempConfig}:/etc/nginx/conf.d/default.conf:ro", 'nginx@sha256:b3c656d55d7ad751196f21b7fd2e8d4da9cb430e32f646adcf92441b72f82b14', 'nginx', '-t')

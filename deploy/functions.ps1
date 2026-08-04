@@ -33,7 +33,7 @@ function Invoke-NativeCommandWithInput {
   try {
     $input = [IO.File]::OpenRead($InputPath)
     try {
-      $input.CopyToAsync($process.StandardInput.BaseStream).WaitAsync([TimeSpan]::FromMinutes(10)).GetAwaiter().GetResult()
+      [void]$input.CopyToAsync($process.StandardInput.BaseStream).WaitAsync([TimeSpan]::FromMinutes(10)).GetAwaiter().GetResult()
     }
     catch {
       $streamError = $_
@@ -196,7 +196,9 @@ function New-ReleasePackage {
     [Parameter(Mandatory)] [string]$ReleaseDir,
     [Parameter(Mandatory)] [string]$DeploymentId,
     [Parameter(Mandatory)] [string]$Commit,
-    [Parameter(Mandatory)] [string]$Cdn
+    [Parameter(Mandatory)] [string]$Cdn,
+    [ValidateSet('current', 'testing')] [string]$Channel = 'current',
+    [bool]$Dirty = $false
   )
 
   [void](New-Item -ItemType Directory -Path $ReleaseDir)
@@ -220,6 +222,8 @@ function New-ReleasePackage {
     commit = $Commit
     cdn = $Cdn
     sri = $sri
+    channel = $Channel
+    dirty = $Dirty
   } | ConvertTo-Json
   [IO.File]::WriteAllText(
     (Join-Path $ReleaseDir 'release.json'),

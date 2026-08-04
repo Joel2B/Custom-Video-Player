@@ -65,7 +65,8 @@ const getDistOptions = (mode) => {
         path: _resolve(__dirname, 'dist'),
         publicPath: '',
       };
-    case 'current': {
+    case 'current':
+    case 'testing': {
       const deploymentId = getEnv('DEPLOY_ID');
 
       if (!deploymentId || !/^\d{8}T\d{6}Z-[a-f0-9]{32}$/.test(deploymentId)) {
@@ -96,12 +97,13 @@ export default (env, argv) => {
   const obf = !!env.obf;
   let buildVersion = packageJSON.version;
 
-  if (dist === 'current') {
+  if (dist === 'current' || dist === 'testing') {
     const commit = getEnv('DEPLOY_COMMIT');
     if (!commit || !/^[a-f0-9]{40}$/.test(commit)) {
       throw new Error('DEPLOY_COMMIT must be a 40-character Git commit hash.');
     }
-    buildVersion += '+' + commit.slice(0, 8);
+    const deploymentId = getEnv('DEPLOY_ID');
+    buildVersion += dist === 'testing' ? '+testing.' + deploymentId.slice(-8) : '+' + commit.slice(0, 8);
   }
 
   if (dist !== 'development' && (mode !== 'production' || debug)) {

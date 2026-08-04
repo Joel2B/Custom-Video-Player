@@ -69,6 +69,11 @@ if verify_metadata:
         fail("Invalid release metadata")
     if metadata.get("deployment") != deployment_id or not re.fullmatch(r"[a-f0-9]{40}", metadata.get("commit", "")):
         fail("Release metadata does not match deployment")
+    channel = metadata.get("channel", "current")
+    if channel not in ("current", "testing") or not isinstance(metadata.get("dirty", False), bool):
+        fail("Invalid release channel metadata")
+    if channel == "testing" and metadata.get("dirty") is not True:
+        fail("Testing release must be marked dirty")
     has_version_metadata = "version" in metadata or "sri" in metadata
     if has_version_metadata and (
         not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", metadata.get("version", ""))

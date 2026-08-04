@@ -18,7 +18,7 @@ MODE="${1:-}"
 DEPLOY_ID="${2:-}"
 SHA="${3:-}"
 SOURCE="${4:-}"
-[ "$MODE" = publish ] && [ "$#" -eq 4 ] || { [ "$MODE" = activate ] && [ "$#" -eq 3 ]; } || { [ "$MODE" = promote ] && [ "$#" -eq 3 ]; }
+{ [ "$MODE" = publish ] || [ "$MODE" = publish-testing ]; } && [ "$#" -eq 4 ] || { [ "$MODE" = activate ] && [ "$#" -eq 3 ]; } || { [ "$MODE" = promote ] && [ "$#" -eq 3 ]; }
 
 exec 9<>"$LOCK_FILE"
 flock -n 9 || { echo 'Another publication is running' >&2; exit 1; }
@@ -68,7 +68,9 @@ PY
       retry_config="$(mktemp "$CONFIG_DIR/.default.conf.XXXXXXXXXX")"
       retry_backup="$(mktemp "$RUN_DIR/default.conf.backup.XXXXXXXXXX")"
       trap 'rm -f -- "${retry_config:-}" "${retry_backup:-}"' EXIT
-      sed -e "s|__ACTIVE_ROOT__|$active_root|" -e "s|__CURRENT_LOCATION__|$current_location|" -e "s|__STABLE_LOCATION__|$expected_stable_location|" "$TEMPLATE" > "$retry_config"
+      testing_location="$(sed -nE 's#.*return 302 (/v1/deployments/[^;]+);#\1#p' "$CONFIG" | sed -n '2p')"
+      [ -n "$testing_location" ] || testing_location="$current_location"
+      sed -e "s|__ACTIVE_ROOT__|$active_root|" -e "s|__CURRENT_LOCATION__|$current_location|" -e "s|__TESTING_LOCATION__|$testing_location|" -e "s|__STABLE_LOCATION__|$expected_stable_location|" "$TEMPLATE" > "$retry_config"
       chmod 644 "$retry_config"
       cp "$CONFIG" "$retry_backup"
       timeout --kill-after=5s 60s docker run --rm -v /srv/cvp:/srv/cvp:ro -v "$retry_config:/etc/nginx/conf.d/default.conf:ro" "$IMAGE" nginx -t
@@ -164,7 +166,9 @@ PY
   stable_location="/v1/versions/$VERSION/player.min.js"
   temp_config="$(mktemp "$CONFIG_DIR/.default.conf.XXXXXXXXXX")"
   backup_config="$(mktemp "$RUN_DIR/default.conf.backup.XXXXXXXXXX")"
-  sed -e "s|__ACTIVE_ROOT__|$active_root|" -e "s|__CURRENT_LOCATION__|$current_location|" -e "s|__STABLE_LOCATION__|$stable_location|" "$TEMPLATE" > "$temp_config"
+  testing_location="$(sed -nE 's#.*return 302 (/v1/deployments/[^;]+);#\1#p' "$CONFIG" | sed -n '2p')"
+  [ -n "$testing_location" ] || testing_location="$current_location"
+  sed -e "s|__ACTIVE_ROOT__|$active_root|" -e "s|__CURRENT_LOCATION__|$current_location|" -e "s|__TESTING_LOCATION__|$testing_location|" -e "s|__STABLE_LOCATION__|$stable_location|" "$TEMPLATE" > "$temp_config"
   chmod 644 "$temp_config"
   cp "$CONFIG" "$backup_config"
   timeout --kill-after=5s 60s docker run --rm -v /srv/cvp:/srv/cvp:ro -v "$temp_config:/etc/nginx/conf.d/default.conf:ro" "$IMAGE" nginx -t
@@ -219,7 +223,7 @@ trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-if [ "$MODE" = publish ]; then
+if [ "$MODE" = publish ] || [ "$MODE" = publish-testing ]; then
   printf '%s' "$SOURCE" | grep -Eq '^/tmp/cvp-deploy\.[A-Za-z0-9]{10}/release$'
   [ "$(realpath -e "$SOURCE")" = "$SOURCE" ] && [ -d "$SOURCE" ] && [ ! -L "$SOURCE" ]
   if find "$SOURCE" ! -type d ! -type f -print -quit | grep -q .; then
@@ -247,7 +251,14 @@ printf '%s  %s\n' "$SHA" "$published/$BUNDLE" | sha256sum -c -
 
 stable_location="$(sed -nE 's#.*return 302 (/v1/versions/[^;]+);#\1#p' "$CONFIG" | head -n 1)"
 [ -n "$stable_location" ] || stable_location='/v1/versions/0.0.0/player.min.js'
-sed -e "s|__ACTIVE_ROOT__|/srv/cvp/releases/$DEPLOY_ID|" -e "s|__CURRENT_LOCATION__|/$BUNDLE|" -e "s|__STABLE_LOCATION__|$stable_location|" "$TEMPLATE" > "$temp_config"
+current_location="$(sed -nE 's#.*return 302 (/v1/deployments/[^;]+);#\1#p' "$CONFIG" | sed -n '1p')"
+testing_location="$(sed -nE 's#.*return 302 (/v1/deployments/[^;]+);#\1#p' "$CONFIG" | sed -n '2p')"
+[ -n "$current_location" ] || current_location="/$BUNDLE"
+[ -n "$testing_location" ] || testing_location="$current_location"
+active_root="$(sed -nE 's#^[[:space:]]*root (/srv/cvp/releases/[^;]+);#\1#p' "$CONFIG" | head -n 1)"
+[ -n "$active_root" ] || active_root="/srv/cvp/releases/$DEPLOY_ID"
+if [ "$MODE" = publish-testing ]; then testing_location="/$BUNDLE"; else active_root="/srv/cvp/releases/$DEPLOY_ID"; current_location="/$BUNDLE"; fi
+sed -e "s|__ACTIVE_ROOT__|$active_root|" -e "s|__CURRENT_LOCATION__|$current_location|" -e "s|__TESTING_LOCATION__|$testing_location|" -e "s|__STABLE_LOCATION__|$stable_location|" "$TEMPLATE" > "$temp_config"
 chmod 644 "$temp_config"
 cp "$CONFIG" "$backup_config"
 timeout --kill-after=5s 60s docker run --rm -v /srv/cvp:/srv/cvp:ro -v "$temp_config:/etc/nginx/conf.d/default.conf:ro" "$IMAGE" nginx -t
@@ -261,6 +272,7 @@ success=1
 kept=0
 while IFS= read -r old; do
   [ "$old" = "$DEPLOY_ID" ] && continue
+  grep -Fq "/v1/deployments/$old/" "$CONFIG" && continue
   if find "$VERSIONS" -mindepth 2 -maxdepth 2 -name release.json -type f -exec grep -lF '"deployment": "'"$old"'"' {} + | grep -q .; then
     continue
   fi

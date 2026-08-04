@@ -37,6 +37,14 @@ server {
         return 302 __CURRENT_LOCATION__;
     }
 
+    location = /v1/testing/player.min.js {
+        add_header Cache-Control "no-store" always;
+        add_header Access-Control-Allow-Origin "*" always;
+        add_header Access-Control-Allow-Methods "GET, HEAD, OPTIONS" always;
+        add_header X-Robots-Tag "noindex, nofollow" always;
+        return 302 __TESTING_LOCATION__;
+    }
+
     location = /v1/stable/player.min.js {
         add_header Cache-Control "no-store" always;
         add_header Access-Control-Allow-Origin "*" always;

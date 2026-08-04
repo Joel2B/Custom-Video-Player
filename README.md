@@ -125,13 +125,25 @@ npm run test:deploy
 
 ## CDN Deployments
 
-Every commit deployment updates the uncached `current` channel. Use it for development, demos, and QA that explicitly accept automatic updates:
+Every clean commit deployment updates the uncached `current` channel. Use it for demos and QA that explicitly accept automatic updates:
 
 ```html
 <script src="https://player.tinyapps.download/v1/current/player.min.js"></script>
 ```
 
 The `current` URL redirects to a deployment-specific URL containing its SHA-256 digest. Current builds expose the package version plus their commit, for example `2.0.1+b626634`.
+
+Local worktree testing uses a separate public channel and never changes `current`, `stable`, or versioned releases:
+
+```powershell
+npm run deploy:testing
+```
+
+```html
+<script src="https://player.tinyapps.download/v1/testing/player.min.js"></script>
+```
+
+`testing` accepts staged, unstaged, and build-referenced untracked files. It is mutable, uncached, public, marked dirty in release metadata, and cannot be promoted. Do not include secrets or private code. Each command also prints an immutable deployment URL containing the bundle SHA-256.
 
 After validating `current`, promote those exact bytes without rebuilding:
 
