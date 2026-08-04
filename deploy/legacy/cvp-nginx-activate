@@ -31,6 +31,56 @@ done
 [ -f "$VERIFY" ] && [ ! -L "$VERIFY" ] && [ "$(stat -c '%U:%G' "$VERIFY")" = 'root:root' ]
 install -d -o root -g root -m 700 "$RUN_DIR"
 
+read_location() {
+  grep -F "# $1" "$CONFIG" | sed -nE 's#.*return 302 ([^;]+);.*#\1#p' | head -n 1 || true
+}
+
+render_config() {
+  local destination="$1" active_root="$2" current_location="$3" testing_location="$4" stable_location="$5"
+  local current_tests="$6" testing_tests="$7" stable_tests="$8"
+  sed -e "s|__ACTIVE_ROOT__|$active_root|" \
+      -e "s|__CURRENT_LOCATION__|$current_location|" \
+      -e "s|__TESTING_LOCATION__|$testing_location|" \
+      -e "s|__STABLE_LOCATION__|$stable_location|" \
+      -e "s|__CURRENT_TESTS_LOCATION__|$current_tests|" \
+      -e "s|__TESTING_TESTS_LOCATION__|$testing_tests|" \
+      -e "s|__STABLE_TESTS_LOCATION__|$stable_tests|" \
+      "$TEMPLATE" > "$destination"
+  chmod 644 "$destination"
+}
+
+load_locations() {
+  current_location="$(read_location cvp-current-player)"
+  testing_location="$(read_location cvp-testing-player)"
+  stable_location="$(read_location cvp-stable-player)"
+  [ -n "$current_location" ] || current_location="$(sed -nE 's#.*return 302 (/v1/deployments/[^;]+);#\1#p' "$CONFIG" | sed -n '1p')"
+  [ -n "$testing_location" ] || testing_location="$(sed -nE 's#.*return 302 (/v1/deployments/[^;]+);#\1#p' "$CONFIG" | sed -n '2p')"
+  [ -n "$testing_location" ] || testing_location="$current_location"
+  [ -n "$stable_location" ] || stable_location="$(sed -nE 's#.*return 302 (/v1/versions/[^;]+);#\1#p' "$CONFIG" | head -n 1)"
+  [ -n "$stable_location" ] || stable_location='/v1/versions/0.0.0/player.min.js'
+  current_tests="$(read_location cvp-current-tests)"
+  testing_tests="$(read_location cvp-testing-tests)"
+  stable_tests="$(read_location cvp-stable-tests)"
+  current_deployment="$(printf '%s' "$current_location" | cut -d/ -f4)"
+  testing_deployment="$(printf '%s' "$testing_location" | cut -d/ -f4)"
+  [ -n "$current_tests" ] || { [ -n "$current_deployment" ] && current_tests="/tests/deployments/$current_deployment/" || current_tests='/tests/unavailable/'; }
+  [ -n "$testing_tests" ] || { [ -n "$testing_deployment" ] && testing_tests="/tests/deployments/$testing_deployment/" || testing_tests='/tests/unavailable/'; }
+  if [ -z "$stable_tests" ]; then
+    stable_version="$(printf '%s' "$stable_location" | cut -d/ -f4)"
+    stable_metadata="$VERSIONS/$stable_version/release.json"
+    stable_deployment=''
+    if [ -f "$stable_metadata" ] && [ ! -L "$stable_metadata" ]; then
+      stable_deployment="$(python3 - "$stable_metadata" <<'PY'
+import json, re, sys
+value = json.load(open(sys.argv[1], encoding="utf-8")).get("deployment", "")
+print(value if re.fullmatch(r"[0-9]{8}T[0-9]{6}Z-(?:[a-f0-9]{8}|[a-f0-9]{32})", value) else "")
+PY
+)"
+    fi
+    [ -n "$stable_deployment" ] && stable_tests="/tests/deployments/$stable_deployment/" || stable_tests='/tests/unavailable/'
+  fi
+}
+
 if [ "$MODE" = promote ]; then
   VERSION="$DEPLOY_ID"
   EXPECTED_COMMIT="$SHA"
@@ -40,10 +90,10 @@ if [ "$MODE" = promote ]; then
   [ "$(stat -c '%U:%G:%a' "$VERSIONS")" = 'root:root:755' ]
   if [ -e "$VERSIONS/$VERSION" ]; then
     [ -d "$VERSIONS/$VERSION" ] && [ ! -L "$VERSIONS/$VERSION" ]
-    read -r existing_version existing_commit existing_sha existing_sri existing_url < <(python3 - "$VERSIONS/$VERSION/release.json" <<'PY'
+    read -r existing_version existing_deployment existing_commit existing_sha existing_sri existing_url < <(python3 - "$VERSIONS/$VERSION/release.json" <<'PY'
 import json, sys
 data = json.load(open(sys.argv[1], encoding="utf-8"))
-print(data["version"], data["commit"], data["sha256"], data["sri"], data["url"])
+print(data["version"], data["deployment"], data["commit"], data["sha256"], data["sri"], data["url"])
 PY
     )
     [ "$existing_version" = "$VERSION" ]
@@ -60,18 +110,16 @@ PY
     [ "$existing_actual_sri" = "$existing_sri" ]
     chown root:root "$VERSIONS/$VERSION"
     chmod 755 "$VERSIONS/$VERSION"
-    stable_location="$(sed -nE 's#.*return 302 (/v1/versions/[^;]+);#\1#p' "$CONFIG" | head -n 1)"
+    load_locations
     expected_stable_location="/v1/versions/$VERSION/player.min.js"
-    if [ "$stable_location" != "$expected_stable_location" ]; then
-      current_location="$(sed -nE 's#.*return 302 (/v1/deployments/[^;]+);#\1#p' "$CONFIG" | head -n 1)"
+    expected_stable_tests="/tests/deployments/$existing_deployment/"
+    if [ "$stable_location" != "$expected_stable_location" ] || [ "$stable_tests" != "$expected_stable_tests" ]; then
       active_root="$(sed -nE 's#^[[:space:]]*root (/srv/cvp/releases/[^;]+);#\1#p' "$CONFIG" | head -n 1)"
       retry_config="$(mktemp "$CONFIG_DIR/.default.conf.XXXXXXXXXX")"
       retry_backup="$(mktemp "$RUN_DIR/default.conf.backup.XXXXXXXXXX")"
       trap 'rm -f -- "${retry_config:-}" "${retry_backup:-}"' EXIT
-      testing_location="$(sed -nE 's#.*return 302 (/v1/deployments/[^;]+);#\1#p' "$CONFIG" | sed -n '2p')"
-      [ -n "$testing_location" ] || testing_location="$current_location"
-      sed -e "s|__ACTIVE_ROOT__|$active_root|" -e "s|__CURRENT_LOCATION__|$current_location|" -e "s|__TESTING_LOCATION__|$testing_location|" -e "s|__STABLE_LOCATION__|$expected_stable_location|" "$TEMPLATE" > "$retry_config"
-      chmod 644 "$retry_config"
+      stable_tests="$expected_stable_tests"
+      render_config "$retry_config" "$active_root" "$current_location" "$testing_location" "$expected_stable_location" "$current_tests" "$testing_tests" "$stable_tests"
       cp "$CONFIG" "$retry_backup"
       timeout --kill-after=5s 60s docker run --rm -v /srv/cvp:/srv/cvp:ro -v "$retry_config:/etc/nginx/conf.d/default.conf:ro" "$IMAGE" nginx -t
       mv -fT "$retry_config" "$CONFIG"
@@ -89,7 +137,7 @@ PY
     exit 0
   fi
 
-  current_location="$(sed -nE 's#.*return 302 (/v1/deployments/[^;]+);#\1#p' "$CONFIG" | head -n 1)"
+  load_locations
   printf '%s' "$current_location" | grep -Eq '^/v1/deployments/[0-9]{8}T[0-9]{6}Z-([a-f0-9]{8}|[a-f0-9]{32})/sha256/[a-f0-9]{64}/player\.min\.js$'
   current_deployment="$(printf '%s' "$current_location" | cut -d/ -f4)"
   current_sha="$(printf '%s' "$current_location" | cut -d/ -f6)"
@@ -166,10 +214,8 @@ PY
   stable_location="/v1/versions/$VERSION/player.min.js"
   temp_config="$(mktemp "$CONFIG_DIR/.default.conf.XXXXXXXXXX")"
   backup_config="$(mktemp "$RUN_DIR/default.conf.backup.XXXXXXXXXX")"
-  testing_location="$(sed -nE 's#.*return 302 (/v1/deployments/[^;]+);#\1#p' "$CONFIG" | sed -n '2p')"
-  [ -n "$testing_location" ] || testing_location="$current_location"
-  sed -e "s|__ACTIVE_ROOT__|$active_root|" -e "s|__CURRENT_LOCATION__|$current_location|" -e "s|__TESTING_LOCATION__|$testing_location|" -e "s|__STABLE_LOCATION__|$stable_location|" "$TEMPLATE" > "$temp_config"
-  chmod 644 "$temp_config"
+  stable_tests="$current_tests"
+  render_config "$temp_config" "$active_root" "$current_location" "$testing_location" "$stable_location" "$current_tests" "$testing_tests" "$stable_tests"
   cp "$CONFIG" "$backup_config"
   timeout --kill-after=5s 60s docker run --rm -v /srv/cvp:/srv/cvp:ro -v "$temp_config:/etc/nginx/conf.d/default.conf:ro" "$IMAGE" nginx -t
   mv -T "$temp_version" "$VERSIONS/$VERSION"
@@ -249,17 +295,22 @@ BUNDLE="v1/deployments/$DEPLOY_ID/sha256/$SHA/player.min.js"
 [ -s "$published/$BUNDLE" ]
 printf '%s  %s\n' "$SHA" "$published/$BUNDLE" | sha256sum -c -
 
-stable_location="$(sed -nE 's#.*return 302 (/v1/versions/[^;]+);#\1#p' "$CONFIG" | head -n 1)"
-[ -n "$stable_location" ] || stable_location='/v1/versions/0.0.0/player.min.js'
-current_location="$(sed -nE 's#.*return 302 (/v1/deployments/[^;]+);#\1#p' "$CONFIG" | sed -n '1p')"
-testing_location="$(sed -nE 's#.*return 302 (/v1/deployments/[^;]+);#\1#p' "$CONFIG" | sed -n '2p')"
+load_locations
 [ -n "$current_location" ] || current_location="/$BUNDLE"
-[ -n "$testing_location" ] || testing_location="$current_location"
 active_root="$(sed -nE 's#^[[:space:]]*root (/srv/cvp/releases/[^;]+);#\1#p' "$CONFIG" | head -n 1)"
 [ -n "$active_root" ] || active_root="/srv/cvp/releases/$DEPLOY_ID"
-if [ "$MODE" = publish-testing ]; then testing_location="/$BUNDLE"; else active_root="/srv/cvp/releases/$DEPLOY_ID"; current_location="/$BUNDLE"; fi
-sed -e "s|__ACTIVE_ROOT__|$active_root|" -e "s|__CURRENT_LOCATION__|$current_location|" -e "s|__TESTING_LOCATION__|$testing_location|" -e "s|__STABLE_LOCATION__|$stable_location|" "$TEMPLATE" > "$temp_config"
-chmod 644 "$temp_config"
+tests_location="/tests/deployments/$DEPLOY_ID/"
+if [ "$MODE" = publish-testing ]; then
+  [ -n "$current_location" ] || { current_location="/$BUNDLE"; current_tests="$tests_location"; active_root="/srv/cvp/releases/$DEPLOY_ID"; }
+  testing_location="/$BUNDLE"
+  testing_tests="$tests_location"
+else
+  active_root="/srv/cvp/releases/$DEPLOY_ID"
+  current_location="/$BUNDLE"
+  current_tests="$tests_location"
+  [ -n "$testing_location" ] || { testing_location="/$BUNDLE"; testing_tests="$tests_location"; }
+fi
+render_config "$temp_config" "$active_root" "$current_location" "$testing_location" "$stable_location" "$current_tests" "$testing_tests" "$stable_tests"
 cp "$CONFIG" "$backup_config"
 timeout --kill-after=5s 60s docker run --rm -v /srv/cvp:/srv/cvp:ro -v "$temp_config:/etc/nginx/conf.d/default.conf:ro" "$IMAGE" nginx -t
 config_changed=1
@@ -273,6 +324,7 @@ kept=0
 while IFS= read -r old; do
   [ "$old" = "$DEPLOY_ID" ] && continue
   grep -Fq "/v1/deployments/$old/" "$CONFIG" && continue
+  grep -Fq "/tests/deployments/$old/" "$CONFIG" && continue
   if find "$VERSIONS" -mindepth 2 -maxdepth 2 -name release.json -type f -exec grep -lF '"deployment": "'"$old"'"' {} + | grep -q .; then
     continue
   fi

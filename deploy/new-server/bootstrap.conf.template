@@ -30,8 +30,15 @@ server {
     add_header X-Content-Type-Options "nosniff" always;
 
     location = / {
+        default_type text/html;
         add_header Cache-Control "no-store" always;
-        return 204;
+        add_header X-Robots-Tag "noindex, nofollow" always;
+        return 200 '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Custom Video Player tests</title><body><main><h1>Custom Video Player tests</h1><ul><li><a href="/tests/stable/">Stable release</a></li><li><a href="/tests/current/">Current commit</a></li><li><a href="/tests/testing/">Local testing</a></li></ul></main></body></html>';
+    }
+
+    location /tests/ {
+        add_header Cache-Control "no-store" always;
+        return 404;
     }
 
     location /v1/ {

@@ -145,6 +145,17 @@ npm run deploy:testing
 
 `testing` accepts staged, unstaged, and build-referenced untracked files. It is mutable, uncached, public, marked dirty in release metadata, and cannot be promoted. Do not include secrets or private code. Each command also prints an immutable deployment URL containing the bundle SHA-256.
 
+Published browser test cases are available from the CDN root. Each mutable test channel redirects to the exact deployment that produced its player and fixtures:
+
+```text
+https://player.tinyapps.download/
+https://player.tinyapps.download/tests/stable/
+https://player.tinyapps.download/tests/current/
+https://player.tinyapps.download/tests/testing/
+```
+
+Stable tests move only during promotion, current tests move with clean deployments, and testing tests move with local worktree deployments. Deployment-specific test URLs are cached but excluded from search indexing.
+
 After validating `current`, promote those exact bytes without rebuilding:
 
 ```text

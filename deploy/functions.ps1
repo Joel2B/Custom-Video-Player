@@ -214,6 +214,7 @@ function New-ReleasePackage {
   if ($bundles.Count -ne 1) {
     throw "Release must contain exactly one CDN bundle: $bundleRoot"
   }
+  Copy-Item -LiteralPath $bundles[0].FullName -Destination (Join-Path $ReleaseDir 'player.min.js') -Force
   $sha384 = (Get-FileHash -LiteralPath $bundles[0].FullName -Algorithm SHA384).Hash
   $sri = 'sha384-' + [Convert]::ToBase64String([Convert]::FromHexString($sha384))
   $metadata = [ordered]@{
@@ -314,7 +315,8 @@ function Invoke-DeploySelfTest {
     $releaseDir = Join-Path $testRoot 'release'
     New-ReleasePackage $testRoot $releaseDir $deploymentId ('a' * 40) 'https://example.com'
     if (-not (Test-Path -LiteralPath (Join-Path $releaseDir 'manifest.sha256')) -or
-        -not (Test-Path -LiteralPath (Join-Path $releaseDir 'index.html'))) {
+        -not (Test-Path -LiteralPath (Join-Path $releaseDir 'index.html')) -or
+        [IO.File]::ReadAllText((Join-Path $releaseDir 'player.min.js')) -ne 'bundle') {
       throw "Release package self-test failed"
     }
     $releaseMetadata = Get-Content -LiteralPath (Join-Path $releaseDir 'release.json') -Raw | ConvertFrom-Json

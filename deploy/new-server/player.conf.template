@@ -34,7 +34,7 @@ server {
         add_header Cache-Control "no-store" always;
         add_header Access-Control-Allow-Origin "*" always;
         add_header Access-Control-Allow-Methods "GET, HEAD, OPTIONS" always;
-        return 302 __CURRENT_LOCATION__;
+        return 302 __CURRENT_LOCATION__; # cvp-current-player
     }
 
     location = /v1/testing/player.min.js {
@@ -42,14 +42,52 @@ server {
         add_header Access-Control-Allow-Origin "*" always;
         add_header Access-Control-Allow-Methods "GET, HEAD, OPTIONS" always;
         add_header X-Robots-Tag "noindex, nofollow" always;
-        return 302 __TESTING_LOCATION__;
+        return 302 __TESTING_LOCATION__; # cvp-testing-player
     }
 
     location = /v1/stable/player.min.js {
         add_header Cache-Control "no-store" always;
         add_header Access-Control-Allow-Origin "*" always;
         add_header Access-Control-Allow-Methods "GET, HEAD, OPTIONS" always;
-        return 302 __STABLE_LOCATION__;
+        return 302 __STABLE_LOCATION__; # cvp-stable-player
+    }
+
+    location = /tests/current/ {
+        add_header Cache-Control "no-store" always;
+        add_header X-Robots-Tag "noindex, nofollow" always;
+        return 302 __CURRENT_TESTS_LOCATION__; # cvp-current-tests
+    }
+
+    location = /tests/testing/ {
+        add_header Cache-Control "no-store" always;
+        add_header X-Robots-Tag "noindex, nofollow" always;
+        return 302 __TESTING_TESTS_LOCATION__; # cvp-testing-tests
+    }
+
+    location = /tests/stable/ {
+        add_header Cache-Control "no-store" always;
+        add_header X-Robots-Tag "noindex, nofollow" always;
+        return 302 __STABLE_TESTS_LOCATION__; # cvp-stable-tests
+    }
+
+    location = /tests/unavailable/ {
+        add_header Cache-Control "no-store" always;
+        add_header X-Robots-Tag "noindex, nofollow" always;
+        return 404;
+    }
+
+    location ~ "^/tests/deployments/(?<deployment>[0-9]{8}T[0-9]{6}Z-(?:[a-f0-9]{8}|[a-f0-9]{32}))/$" {
+        return 302 /tests/deployments/$deployment/index.html;
+        add_header Cache-Control "public, max-age=604800" always;
+        add_header X-Robots-Tag "noindex, nofollow" always;
+        add_header X-Content-Type-Options "nosniff" always;
+    }
+
+    location ~ "^/tests/deployments/(?<deployment>[0-9]{8}T[0-9]{6}Z-(?:[a-f0-9]{8}|[a-f0-9]{32}))/(?<test_asset>index\.html|[A-Za-z0-9_-][A-Za-z0-9._-]*\.html|player\.min\.js|player\.min\.js\.LICENSE\.txt|static/(?:[A-Za-z0-9_-][A-Za-z0-9._-]*/)*[A-Za-z0-9_-][A-Za-z0-9._-]*)$" {
+        alias /srv/cvp/releases/$deployment/$test_asset;
+        add_header Cache-Control "public, max-age=604800" always;
+        add_header X-Robots-Tag "noindex, nofollow" always;
+        add_header X-Content-Type-Options "nosniff" always;
     }
 
     location ~ "^/v1/versions/(?<version>[0-9]+\.[0-9]+\.[0-9]+)/(?<asset>player\.min\.js|player\.min\.js\.LICENSE\.txt|release\.json)$" {
@@ -79,8 +117,11 @@ server {
     }
 
     location = / {
+        default_type text/html;
         add_header Cache-Control "no-store" always;
-        return 204;
+        add_header X-Robots-Tag "noindex, nofollow" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        return 200 '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Custom Video Player tests</title><body><main><h1>Custom Video Player tests</h1><ul><li><a href="/tests/stable/">Stable release</a></li><li><a href="/tests/current/">Current commit</a></li><li><a href="/tests/testing/">Local testing</a></li></ul></main></body></html>';
     }
 
     location /v1/ {

@@ -61,7 +61,8 @@ printf changed > "/release/v1/deployments/$deployment/sha256/$hash/player.min.js
   if ($activate -notmatch "CONFIG_DIR='/etc/cvp-deploy/nginx'" -or $activate -notmatch 'mv -fT' -or $activate -match '/home/j') { throw 'Nginx activation permissions are unsafe' }
   if ($activate -notmatch 'MODE.*promote' -or $activate -notmatch 'sha384-' -or $activate -notmatch 'VERSIONS=') { throw 'Stable promotion controls are missing' }
   if ($nginxTemplate -notmatch 'location @version_not_found' -or $nginxTemplate -notmatch 'Cache-Control "no-store"') { throw 'Versioned 404 cache protection is missing' }
-  if ($nginxTemplate -notmatch 'location = /\s*\{[^}]*return 204;' -or $nginxTemplate -notmatch 'location /v1/\s*\{[^}]*return 404;' -or $nginxTemplate -notmatch 'location /\s*\{[^}]*return 302 /;') { throw 'Empty root and fallback routing are missing' }
+  if ($nginxTemplate -notmatch 'location = /\s*\{[^}]*return 200' -or $nginxTemplate -notmatch 'Stable release' -or $nginxTemplate -notmatch 'location /v1/\s*\{[^}]*return 404;' -or $nginxTemplate -notmatch 'location /\s*\{[^}]*return 302 /;') { throw 'Test index and fallback routing are missing' }
+  if ($nginxTemplate -notmatch '/tests/current/' -or $nginxTemplate -notmatch '/tests/testing/' -or $nginxTemplate -notmatch '/tests/stable/' -or $nginxTemplate -notmatch '/tests/deployments/') { throw 'Deployment test suite routes are missing' }
   if ($entrypoint -notmatch 'promote' -or $entrypoint -notmatch '\[a-f0-9\]\{40\}') { throw 'Stable promotion forced command is missing' }
   if ($entrypoint -notmatch 'deploy-testing' -or $nginxTemplate -notmatch '/v1/testing/player\.min\.js' -or $nginxTemplate -notmatch '__TESTING_LOCATION__') { throw 'Testing channel controls are missing' }
   if ($installer -notmatch 'authorized_keys_temp' -or $installer -notmatch 'Install source must be root-owned' -or $installer -notmatch '/srv/cvp/releases' -or $installer -notmatch '/srv/cvp/v1/versions') { throw 'Restricted SSH installer permissions are unsafe' }
@@ -115,7 +116,7 @@ PY
 )
 printf '{"version":"2.0.0","deployment":"%s","commit":"%s","cdn":"https://example.com","sri":"%s","channel":"current","dirty":false}\n' "$deployment" "$commit" "$sri" > "/srv/cvp/releases/$deployment/release.json"
 python3 /root/deploy/verify_release.py --write "/srv/cvp/releases/$deployment"
-sed -e "s|__ACTIVE_ROOT__|/srv/cvp/releases/$deployment|" -e "s|__CURRENT_LOCATION__|/v1/deployments/$deployment/sha256/$hash/player.min.js|" -e "s|__TESTING_LOCATION__|/v1/deployments/$deployment/sha256/$hash/player.min.js|" -e 's|__STABLE_LOCATION__|/v1/versions/0.0.0/player.min.js|' /root/deploy/legacy/player.conf > /etc/cvp-deploy/nginx/default.conf
+sed -e "s|__ACTIVE_ROOT__|/srv/cvp/releases/$deployment|" -e "s|__CURRENT_LOCATION__|/v1/deployments/$deployment/sha256/$hash/player.min.js|" -e "s|__TESTING_LOCATION__|/v1/deployments/$deployment/sha256/$hash/player.min.js|" -e 's|__STABLE_LOCATION__|/v1/versions/0.0.0/player.min.js|' -e "s|__CURRENT_TESTS_LOCATION__|/tests/deployments/$deployment/|" -e "s|__TESTING_TESTS_LOCATION__|/tests/deployments/$deployment/|" -e "s|__STABLE_TESTS_LOCATION__|/tests/deployments/$deployment/|" /root/deploy/legacy/player.conf > /etc/cvp-deploy/nginx/default.conf
 
 # Testing publication changes only its mutable pointer.
 testing_deployment=20260729T000322Z-b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4
@@ -129,6 +130,8 @@ sudo -u cvp-deploy sudo -n /usr/local/sbin/cvp-nginx-activate publish-testing "$
 grep -Fq "root /srv/cvp/releases/$deployment;" /etc/cvp-deploy/nginx/default.conf
 test "$(grep -Fc "return 302 /v1/deployments/$deployment/sha256/$hash/player.min.js;" /etc/cvp-deploy/nginx/default.conf)" -eq 1
 grep -Fq "return 302 /v1/deployments/$testing_deployment/sha256/$hash/player.min.js;" /etc/cvp-deploy/nginx/default.conf
+grep -Fq "return 302 /tests/deployments/$testing_deployment/;" /etc/cvp-deploy/nginx/default.conf
+test "$(grep -Fc "return 302 /tests/deployments/$deployment/;" /etc/cvp-deploy/nginx/default.conf)" -eq 2
 
 sudo -u cvp-deploy sudo -n /usr/local/sbin/cvp-nginx-activate promote 2.0.0 "$commit" > /tmp/promote.log
 test -f /srv/cvp/v1/versions/2.0.0/player.min.js
@@ -136,10 +139,16 @@ test "$(stat -c '%U:%G:%a' /srv/cvp/v1/versions/2.0.0)" = 'root:root:755'
 test "$(cat /srv/cvp/v1/versions/2.0.0/player.min.js)" = test
 grep -Fq '"version": "2.0.0"' /srv/cvp/v1/versions/2.0.0/release.json
 grep -Fq 'return 302 /v1/versions/2.0.0/player.min.js;' /etc/cvp-deploy/nginx/default.conf
+grep -Fq "return 302 /tests/deployments/$deployment/;" /etc/cvp-deploy/nginx/default.conf
+test "$(grep -Fc "return 302 /tests/deployments/$deployment/;" /etc/cvp-deploy/nginx/default.conf)" -eq 2
+grep -Fq "return 302 /tests/deployments/$testing_deployment/;" /etc/cvp-deploy/nginx/default.conf
 sed -i 's#/v1/versions/2.0.0/player.min.js#/v1/versions/0.0.0/player.min.js#' /etc/cvp-deploy/nginx/default.conf
+sed -i "/cvp-stable-tests/s#$deployment#$testing_deployment#" /etc/cvp-deploy/nginx/default.conf
 sudo -u cvp-deploy sudo -n /usr/local/sbin/cvp-nginx-activate promote 2.0.0 "$commit" > /tmp/promote-retry.log
 grep -Fq 'already published' /tmp/promote-retry.log
 grep -Fq 'return 302 /v1/versions/2.0.0/player.min.js;' /etc/cvp-deploy/nginx/default.conf
+test "$(grep -Fc "return 302 /tests/deployments/$deployment/;" /etc/cvp-deploy/nginx/default.conf)" -eq 2
+grep -Fq "return 302 /tests/deployments/$testing_deployment/; # cvp-testing-tests" /etc/cvp-deploy/nginx/default.conf
 if sudo -u cvp-deploy sudo -n /usr/local/sbin/cvp-nginx-activate promote 2.0.0 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb; then exit 1; fi
 
 # A failed new reload with a successful rollback must remove the unpublished version.
@@ -183,7 +192,7 @@ grep -q 'Install source must be root-owned' /tmp/unsafe-source.log
 
   [IO.File]::WriteAllText(
     $tempConfig,
-    [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/legacy/player.conf')).Replace('__ACTIVE_ROOT__', '/usr/share/nginx/html').Replace('__CURRENT_LOCATION__', $location).Replace('__TESTING_LOCATION__', $location).Replace('__STABLE_LOCATION__', $location),
+    [IO.File]::ReadAllText((Join-Path $projectRoot 'deploy/legacy/player.conf')).Replace('__ACTIVE_ROOT__', '/usr/share/nginx/html').Replace('__CURRENT_LOCATION__', $location).Replace('__TESTING_LOCATION__', $location).Replace('__STABLE_LOCATION__', $location).Replace('__CURRENT_TESTS_LOCATION__', "/tests/deployments/$deployment/").Replace('__TESTING_TESTS_LOCATION__', "/tests/deployments/$deployment/").Replace('__STABLE_TESTS_LOCATION__', "/tests/deployments/$deployment/"),
     [Text.UTF8Encoding]::new($false)
   )
   & docker @('run', '--rm', '-v', "${tempConfig}:/etc/nginx/conf.d/default.conf:ro", 'nginx@sha256:b3c656d55d7ad751196f21b7fd2e8d4da9cb430e32f646adcf92441b72f82b14', 'nginx', '-t')

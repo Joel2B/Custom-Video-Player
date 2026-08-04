@@ -33,6 +33,8 @@ ssh_rules="$(ufw show added | grep -E 'port 22([[:space:]]|$)|(^|[[:space:]])22/
 unexpected_rules="$(ufw status | grep 'ALLOW IN' | grep -Ev '^(22/tcp( \(v6\))? on tailscale0|80/tcp( \(v6\))?|443/tcp( \(v6\))?)[[:space:]]+ALLOW IN' || true)"
 [ -z "$unexpected_rules" ] || { echo "Unexpected inbound UFW rules:\n$unexpected_rules" >&2; exit 1; }
 openssl x509 -in /etc/cvp-deploy/tls/origin.pem -noout -checkend 86400 >/dev/null
-status="$(curl --insecure --silent --output /dev/null --write-out '%{http_code}' --resolve "$DOMAIN:443:127.0.0.1" "https://$DOMAIN/this-must-not-exist")"
-[ "$status" = 404 ]
+root_status="$(curl --insecure --silent --output /dev/null --write-out '%{http_code}' --resolve "$DOMAIN:443:127.0.0.1" "https://$DOMAIN/")"
+fallback_status="$(curl --insecure --silent --output /dev/null --write-out '%{http_code}' --resolve "$DOMAIN:443:127.0.0.1" "https://$DOMAIN/this-must-not-exist")"
+api_status="$(curl --insecure --silent --output /dev/null --write-out '%{http_code}' --resolve "$DOMAIN:443:127.0.0.1" "https://$DOMAIN/v1/this-must-not-exist")"
+[ "$root_status" = 200 ] && [ "$fallback_status" = 302 ] && [ "$api_status" = 404 ]
 echo 'Server verification passed.'
