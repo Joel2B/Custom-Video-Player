@@ -92,7 +92,9 @@ class Volume {
     controls.volumeContainer.setAttribute('aria-valuetext', `${Math.round(player.volume * 100)}%`);
 
     if (cmMute) {
-      cmMute.innerHTML = label;
+      cmMute.textContent = label;
+      toggleClass(cmMute, 'fluid_context_menu_volume', notMuted);
+      toggleClass(cmMute, 'fluid_context_menu_mute', !notMuted);
     }
     if (controls.muteTooltip) {
       controls.muteTooltip.textContent = label;

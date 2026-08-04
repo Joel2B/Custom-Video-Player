@@ -141,6 +141,8 @@ class PlayPause {
 
     if (contextMenu.play) {
       contextMenu.play.textContent = player.config.captions[playing ? 'pause' : 'play'];
+      toggleClass(contextMenu.play, 'fluid_context_menu_play', !playing);
+      toggleClass(contextMenu.play, 'fluid_context_menu_pause', playing);
     }
 
     if (controls.playPauseTooltip) {

@@ -31,7 +31,7 @@ class ContextMenu {
           continue;
         }
 
-        const li = this.createItem(link.label);
+        const li = this.createItem(link.label, 'link');
         on.call(player, li, 'click', () => this.openExternal(url));
         this.list.appendChild(li);
       }
@@ -39,7 +39,7 @@ class ContextMenu {
 
     this.defaultOptions();
 
-    this.version = this.createItem('CVP ' + player.version);
+    this.version = this.createItem('CVP ' + player.version, 'info');
     on.call(player, this.version, 'click', () => this.openExternal(player.homepage));
     this.list.appendChild(this.version);
 
@@ -150,7 +150,12 @@ class ContextMenu {
     });
   };
 
-  createItem = (label) => createElement('li', { role: 'menuitem', tabindex: -1 }, label);
+  createItem = (label, icon) =>
+    createElement('li', {
+      role: 'menuitem',
+      tabindex: -1,
+      class: `fluid_context_menu_item fluid_context_menu_${icon}`,
+    }, label);
 
   focusItem = (item) => {
     if (!item) {
@@ -205,22 +210,22 @@ class ContextMenu {
       return;
     }
 
-    this.play = this.createItem(config.captions.play);
+    this.play = this.createItem(config.captions.play, 'play');
     on.call(player, this.play, 'click', player.playPause.toggle);
     this.list.appendChild(this.play);
 
-    this.mute = this.createItem(config.captions.mute);
+    this.mute = this.createItem(config.captions.mute, 'volume');
     on.call(player, this.mute, 'click', player.toggleMute);
     this.list.appendChild(this.mute);
 
-    this.shortcuts = this.createItem(config.captions.shortcuts.title);
+    this.shortcuts = this.createItem(config.captions.shortcuts.title, 'shortcuts');
     on.call(player, this.shortcuts, 'click', (event) => {
       event.stopPropagation();
       this.openShortcuts();
     });
     this.list.appendChild(this.shortcuts);
 
-    this.fs = this.createItem(config.captions.fullscreen);
+    this.fs = this.createItem(config.captions.fullscreen, 'fullscreen');
     on.call(player, this.fs, 'click', player.fullscreen.toggle);
     this.list.appendChild(this.fs);
   };

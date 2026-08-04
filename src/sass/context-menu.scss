@@ -16,8 +16,20 @@
     margin: 0;
 
     li {
-      padding: 13px 71px 13px 21px;
+      padding: 13px 71px 13px 51px;
       cursor: pointer;
+      position: relative;
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: 17px;
+        top: 50%;
+        width: 24px;
+        height: 24px;
+        transform: translateY(-50%);
+        background: url('../static/fluid-icons.svg') no-repeat;
+      }
 
       &:hover {
         background-color: #1e1e1e;
@@ -28,4 +40,43 @@
       }
     }
   }
+}
+
+.fluid_context_menu_play::before {
+  background-position: -15px -16.5px !important;
+}
+
+.fluid_context_menu_pause::before {
+  background-position: -15px -55px !important;
+}
+
+.fluid_context_menu_volume::before {
+  background-position: -52px -16.5px !important;
+}
+
+.fluid_context_menu_mute::before {
+  background-position: -52px -54.5px !important;
+}
+
+.fluid_context_menu_fullscreen::before {
+  background-position: -88px -17px !important;
+}
+
+.fluid_context_menu_fullscreen_exit::before {
+  background-position: -88px -55px !important;
+}
+
+.fluid_context_menu_link::before {
+  background: center / 20px no-repeat
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.1 1.1M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.1-1.1'/%3E%3C/svg%3E") !important;
+}
+
+.fluid_context_menu_shortcuts::before {
+  background: center / 20px no-repeat
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'%3E%3Crect x='2' y='5' width='20' height='14' rx='2'/%3E%3Cpath d='M6 9h1m3 0h1m3 0h1m3 0h1M6 13h1m3 0h1m3 0h1m3 0h1M7 16h10'/%3E%3C/svg%3E") !important;
+}
+
+.fluid_context_menu_info::before {
+  background: center / 20px no-repeat
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 11v6m0-10h.01'/%3E%3C/svg%3E") !important;
 }

@@ -193,6 +193,8 @@ class Fullscreen {
 
     if (player.contextMenu.fs) {
       player.contextMenu.fs.textContent = player.config.captions[active ? 'exitFullscreen' : 'fullscreen'];
+      toggleClass(player.contextMenu.fs, 'fluid_context_menu_fullscreen', !active);
+      toggleClass(player.contextMenu.fs, 'fluid_context_menu_fullscreen_exit', active);
     }
 
     if (player.controls.fullscreenTooltip) {

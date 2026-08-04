@@ -320,6 +320,39 @@ test('context menu activation restores focus', async ({ page }) => {
   await expect(play).toBeFocused();
 });
 
+test('context menu shows icons and updates control states', async ({ page }) => {
+  await loadPlayer(
+    page,
+    '<video id="player" width="640" height="360"><source src="/static/sample.webm" type="video/webm"></video>',
+  );
+  await page.evaluate(() =>
+    window.fluidPlayer('player', {
+      layoutControls: {
+        contextMenu: { links: [{ label: 'Help', href: 'https://example.test/help' }] },
+      },
+    }),
+  );
+
+  const items = page.locator('.fluid_context_menu [role="menuitem"]');
+  await expect(items).toHaveCount(6);
+  await expect(items.nth(0)).toHaveClass(/fluid_context_menu_link/);
+  await expect(items.nth(1)).toHaveClass(/fluid_context_menu_play/);
+  await expect(items.nth(2)).toHaveClass(/fluid_context_menu_volume/);
+  await expect(items.nth(3)).toHaveClass(/fluid_context_menu_shortcuts/);
+  await expect(items.nth(4)).toHaveClass(/fluid_context_menu_fullscreen/);
+  await expect(items.nth(5)).toHaveClass(/fluid_context_menu_info/);
+
+  const icons = await items.evaluateAll((menuItems) =>
+    menuItems.map((item) => getComputedStyle(item, '::before').backgroundImage),
+  );
+  expect(icons.every((icon) => icon !== 'none')).toBe(true);
+
+  await page.locator('button.fluid_control_playpause').click();
+  await expect(items.nth(1)).toHaveClass(/fluid_context_menu_pause/);
+  await page.locator('button.fluid_control_mute').click();
+  await expect(items.nth(2)).toHaveClass(/fluid_context_menu_mute/);
+});
+
 test('mobile settings and fullscreen icons stay centered', async ({ browser }) => {
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
