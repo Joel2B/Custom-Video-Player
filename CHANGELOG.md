@@ -1,3 +1,15 @@
+# 2.1.0 (2026-08-04)
+
+### Added
+
+- Added configurable video zoom with wheel, pinch, pan, reset, limits, and responsive controls.
+- Added context-menu icons with dynamic state indicators.
+- Added an isolated public testing deployment channel and deployment-specific browser test suites.
+
+### Fixed
+
+- Hid CDN root content and stabilized visual regression checks.
+
 # 2.0.1 (2026-07-30)
 
 ### Changed

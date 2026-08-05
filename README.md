@@ -131,7 +131,7 @@ Every clean commit deployment updates the uncached `current` channel. Use it for
 <script src="https://player.tinyapps.download/v1/current/player.min.js"></script>
 ```
 
-The `current` URL redirects to a deployment-specific URL containing its SHA-256 digest. Current builds expose the package version plus their commit, for example `2.0.1+b626634`.
+The `current` URL redirects to a deployment-specific URL containing its SHA-256 digest. Current builds expose the package version plus their commit, for example `2.1.0+b626634`.
 
 Local worktree testing uses a separate public channel and never changes `current`, `stable`, or versioned releases:
 
@@ -159,14 +159,14 @@ Stable tests move only during promotion, current tests move with clean deploymen
 After validating `current`, promote those exact bytes without rebuilding:
 
 ```text
-npm run promote -- 2.0.1
+npm run promote -- 2.1.0
 ```
 
 Production integrations should pin the immutable version URL and SRI printed by promotion and recorded in its `release.json`:
 
 ```html
 <script
-  src="https://player.tinyapps.download/v1/versions/2.0.1/player.min.js"
+  src="https://player.tinyapps.download/v1/versions/2.1.0/player.min.js"
   integrity="sha384-RELEASE_DIGEST"
   crossorigin="anonymous"
 ></script>
