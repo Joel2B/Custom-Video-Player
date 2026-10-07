@@ -66,6 +66,16 @@ Mobile
       const options = {
         layoutControls: {
           fillToContainer: true,
+          volumeBoost: {
+            enabled: false,
+            min: 1,
+            max: 3,
+            reset: 1,
+            mode: 'limiter',
+          },
+          persistentSettings: {
+            volumeBoost: true,
+          },
           autoPlay: {
             waitInteraction: true,
           },
@@ -95,6 +105,22 @@ Mobile
     </script>
   </body>
 </html>
+```
+
+Volume boost uses Web Audio and starts at `1x` on every player load. Cross-origin media requires
+`crossorigin="anonymous"` on the `<video>` element and an `Access-Control-Allow-Origin` response header from the media
+server. Without both, boost remains unavailable and native playback is unchanged. `limiter` is the safer default;
+`pure` can clip or produce damaging output, especially above `3x`.
+`persistentSettings.volumeBoost` stores Enabled, Boost level, Maximum, and Processing. Browsers restore an enabled boost
+after the first player interaction because Web Audio cannot start during page load.
+
+Call its public API from a user interaction because browsers gate Web Audio:
+
+```js
+button.addEventListener('click', async () => {
+  player.setVolumeBoostMode('limiter');
+  await player.setVolumeBoost(2);
+});
 ```
 
 ## Build Project

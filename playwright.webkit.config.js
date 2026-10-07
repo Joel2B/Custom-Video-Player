@@ -7,6 +7,7 @@ module.exports = defineConfig({
     'fullscreen.spec.js',
     'layout.spec.js',
     'locale.spec.js',
+    'volume-boost.spec.js',
     'vtt.spec.js',
     'zoom.spec.js',
   ],

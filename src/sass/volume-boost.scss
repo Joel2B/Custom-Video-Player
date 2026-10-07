@@ -1,0 +1,409 @@
+.fluid_volume_boost_indicator {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.78);
+  border-left: 3px solid #f2b134;
+  border-radius: 3px;
+  color: #fff;
+  display: flex;
+  font:
+    600 13px/24px 'Helvetica Neue',
+    Helvetica,
+    Arial,
+    sans-serif;
+  left: max(10px, env(safe-area-inset-left));
+  opacity: 0;
+  padding: 4px 8px;
+  pointer-events: none;
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top));
+  transition: opacity 0.15s linear;
+  z-index: 5;
+}
+
+.fluid_volume_boost_indicator.fluid_volume_boost_visible {
+  opacity: 1;
+}
+
+.fluid_zoom_indicator.fluid_zoom_visible ~ .fluid_volume_boost_indicator {
+  top: max(46px, calc(env(safe-area-inset-top) + 46px));
+}
+
+.fluid_mobile .fluid_zoom_indicator.fluid_zoom_visible ~ .fluid_volume_boost_indicator {
+  top: max(10px, env(safe-area-inset-top));
+}
+
+.fluid_mobile.fluid_show_controls .fluid_zoom_indicator.fluid_zoom_visible ~ .fluid_volume_boost_indicator {
+  top: max(46px, calc(env(safe-area-inset-top) + 46px));
+}
+
+.fluid_icon_volumeBoost {
+  flex: 0 0 24px;
+  height: 24px;
+  width: 24px;
+}
+
+.fluid_icon_volumeBoost::before {
+  border: 2px solid currentColor;
+  border-left: 0;
+  border-radius: 0 12px 12px 0;
+  box-sizing: border-box;
+  content: '';
+  height: 16px;
+  left: 8px;
+  position: absolute;
+  top: 4px;
+  width: 12px;
+}
+
+.fluid_icon_volumeBoost::after {
+  background: currentColor;
+  box-shadow:
+    4px -5px 0 -1px currentColor,
+    4px 5px 0 -1px currentColor;
+  content: '';
+  height: 8px;
+  left: 4px;
+  position: absolute;
+  top: 8px;
+  width: 5px;
+}
+
+.cvp_volume_boost_menu {
+  box-sizing: border-box;
+  color: #fff;
+  font:
+    400 13px/1.2 'Helvetica Neue',
+    Helvetica,
+    Arial,
+    sans-serif;
+  padding: 0 10px 10px;
+}
+
+.cvp_volume_boost_enabled_row,
+.cvp_volume_boost_stepper,
+.cvp_volume_boost_mode {
+  align-items: center;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: space-between;
+  min-height: 38px;
+  width: 100%;
+}
+
+.cvp_volume_boost_enabled_row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.fluid_video_wrapper .cvp_volume_boost_enabled {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  height: 28px;
+  justify-content: center;
+  margin-left: auto;
+  padding: 0 2px;
+  width: 36px;
+}
+
+.fluid_video_wrapper .cvp_volume_boost_error_button {
+  align-items: center;
+  background: rgba(190, 48, 48, 0.18);
+  border: 1px solid rgba(255, 113, 113, 0.55);
+  border-radius: 4px;
+  color: #ffb0b0;
+  cursor: pointer;
+  display: flex;
+  font: 600 12px/1 sans-serif;
+  gap: 6px;
+  margin-left: auto;
+  min-height: 28px;
+  padding: 0 7px;
+}
+
+.cvp_volume_boost_error_icon {
+  align-items: center;
+  border-left: 1px solid rgba(255, 176, 176, 0.4);
+  display: flex;
+  font-size: 15px;
+  height: 16px;
+  justify-content: flex-end;
+  padding-left: 6px;
+  width: 10px;
+}
+
+.cvp_volume_boost_toggle {
+  background: #777;
+  border-radius: 10px;
+  height: 18px;
+  position: relative;
+  transition: background-color 0.15s linear;
+  width: 32px;
+}
+
+.cvp_volume_boost_toggle::after {
+  background: #fff;
+  border-radius: 50%;
+  content: '';
+  height: 14px;
+  left: 2px;
+  position: absolute;
+  top: 2px;
+  transition: transform 0.15s ease;
+  width: 14px;
+}
+
+.cvp_volume_boost_enabled[aria-checked='true'] .cvp_volume_boost_toggle {
+  background: #e29a16;
+}
+
+.cvp_volume_boost_enabled[aria-checked='true'] .cvp_volume_boost_toggle::after {
+  transform: translateX(14px);
+}
+
+.cvp_volume_boost_stepper_controls {
+  align-items: center;
+  column-gap: 3px;
+  display: grid;
+  grid-template-columns: 32px 56px 32px;
+}
+
+.fluid_video_wrapper .cvp_volume_boost_stepper button,
+.fluid_video_wrapper .cvp_volume_boost_modes button {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+  cursor: pointer;
+  height: 32px;
+}
+
+.fluid_video_wrapper .cvp_volume_boost_stepper button {
+  border-radius: 4px;
+  font: 500 20px/1 sans-serif;
+  padding: 0;
+  width: 32px;
+}
+
+.fluid_video_wrapper .cvp_volume_boost_stepper button:hover:not(:disabled),
+.fluid_video_wrapper .cvp_volume_boost_stepper button:active:not(:disabled) {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.fluid_video_wrapper .cvp_volume_boost_stepper button:disabled {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.3);
+  cursor: default;
+}
+
+.cvp_volume_boost_stepper output {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 4px;
+  box-sizing: border-box;
+  display: flex;
+  font-variant-numeric: tabular-nums;
+  height: 32px;
+  justify-content: center;
+}
+
+.cvp_volume_boost_modes {
+  display: flex;
+}
+
+.fluid_video_wrapper .cvp_volume_boost_modes button {
+  font: 500 12px/1 sans-serif;
+  padding: 0 8px;
+}
+
+.fluid_video_wrapper .cvp_volume_boost_modes button:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.fluid_video_wrapper .cvp_volume_boost_modes button:last-child {
+  border-left: 0;
+  border-radius: 0 4px 4px 0;
+}
+
+.fluid_video_wrapper .cvp_volume_boost_modes button[aria-pressed='true'] {
+  background: #b7790b;
+  border-color: #f2b134;
+}
+
+.cvp_volume_boost_warning {
+  color: #ffd991;
+  font-size: 11px;
+  line-height: 1.25;
+  margin: 3px 0 5px;
+}
+
+.fluid_video_wrapper .cvp_volume_boost_reset_button {
+  background: #b7790b;
+  border: 1px solid #f2b134;
+  border-radius: 5px;
+  color: #fff;
+  cursor: pointer;
+  font: 500 13px/1 sans-serif;
+  height: 34px;
+  width: 100%;
+}
+
+.cvp_volume_boost_menu button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.cvp_volume_boost_unavailable > :not(.cvp_volume_boost_enabled_row) {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.cvp_volume_boost_error_dialog {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.72);
+  box-sizing: border-box;
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  opacity: 0;
+  padding: 16px;
+  pointer-events: none;
+  position: absolute;
+  transition: opacity 0.15s linear;
+  visibility: hidden;
+  z-index: 20;
+}
+
+.cvp_volume_boost_error_dialog.cvp_active {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+}
+
+.cvp_volume_boost_error_card {
+  background: #171717;
+  border: 1px solid rgba(255, 113, 113, 0.72);
+  border-left: 4px solid #e24a4a;
+  border-radius: 6px;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.55);
+  box-sizing: border-box;
+  color: #fff;
+  font:
+    400 13px/1.4 'Helvetica Neue',
+    Helvetica,
+    Arial,
+    sans-serif;
+  max-height: calc(100% - 24px);
+  max-width: 460px;
+  overflow: auto;
+  padding: 18px;
+  width: min(88%, 460px);
+}
+
+.cvp_volume_boost_error_card h2 {
+  color: #ffb0b0;
+  font-size: 17px;
+  line-height: 1.2;
+  margin: 0 0 10px;
+}
+
+.cvp_volume_boost_error_message {
+  font-weight: 600;
+  margin: 0 0 7px;
+}
+
+.cvp_volume_boost_error_help {
+  color: #ddd;
+  margin: 0 0 12px;
+}
+
+.cvp_volume_boost_error_technical strong {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.cvp_volume_boost_error_technical code {
+  background: #090909;
+  border: 1px solid #444;
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: #f5c6c6;
+  display: block;
+  font:
+    11px/1.4 Consolas,
+    Monaco,
+    monospace;
+  max-height: 74px;
+  overflow: auto;
+  padding: 8px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.fluid_video_wrapper .cvp_volume_boost_error_close {
+  background: #b53030;
+  border: 1px solid #ef6b6b;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  height: 34px;
+  margin-top: 14px;
+  width: 100%;
+}
+
+.fluid_mobile .cvp_volume_boost_menu {
+  font-size: 14px;
+  padding: 0 8px 10px;
+}
+
+.fluid_mobile .cvp_volume_boost_stepper_controls {
+  grid-template-columns: 34px 54px 34px;
+}
+
+.fluid_mobile .cvp_volume_boost_stepper button,
+.fluid_mobile .cvp_volume_boost_stepper output,
+.fluid_mobile .cvp_volume_boost_modes button {
+  height: 36px;
+}
+
+.fluid_mobile .cvp_selector.cvp_volumeBoost .fluid_icon_volumeBoost {
+  display: block;
+  margin: 0 auto;
+  padding-bottom: 0;
+}
+
+@media (max-width: 239px) {
+  .fluid_mobile .cvp_volume_boost_menu {
+    font-size: 12px;
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+
+  .fluid_mobile .cvp_volume_boost_stepper_controls {
+    grid-template-columns: 30px 48px 30px;
+  }
+
+  .cvp_volume_boost_error_dialog {
+    padding: 7px;
+  }
+
+  .cvp_volume_boost_error_card {
+    font-size: 11px;
+    max-height: calc(100% - 10px);
+    padding: 11px;
+    width: 96%;
+  }
+
+  .cvp_volume_boost_error_card h2 {
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+}

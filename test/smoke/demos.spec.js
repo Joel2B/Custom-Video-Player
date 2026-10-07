@@ -43,6 +43,10 @@ for (const demo of demos) {
     const expectedPlayers = demo === 'vod_basic_multiple.html' ? 2 : 1;
     await expect(page.locator('.fluid_video_wrapper')).toHaveCount(expectedPlayers);
 
+    if (['hls_vod.html', 'hls_vod_preload.html', 'hls_vod_with_hls_js.html'].includes(demo)) {
+      await expect(page.locator('#fluid-player-e2e-case')).toHaveAttribute('crossorigin', 'anonymous');
+    }
+
     if (demo === 'hls_vod_preload.html') {
       await expect.poll(() => page.evaluate(() => Boolean(window.fluidPlayerDebug.at(-1).internals.streaming.hls))).toBe(true);
       await page.locator('#start-loading').click();

@@ -300,8 +300,7 @@ class Menu {
     toggleClass(subPage, 'hide', false);
     toggleClass(this.menu, 'cvp_level2', true);
 
-    this.background.style.width = `${width}px`;
-    this.background.style.height = `${height}px`;
+    this.resizeSubMenu(width, height);
 
     this.header.textContent = option.firstChild.nextSibling.textContent;
 
@@ -325,7 +324,25 @@ class Menu {
     }
   };
 
+  resizeSubMenu = (width, height) => {
+    if (!this.background) {
+      return;
+    }
+
+    this.background.style.width = `${width}px`;
+    this.background.style.height = `${height}px`;
+
+    if (this.player.mobile) {
+      this.menu.style.setProperty(
+        'height',
+        `${Math.min(height, 270, this.player.wrapper.clientHeight)}px`,
+        'important',
+      );
+    }
+  };
+
   restart = () => {
+    this.menu.style.removeProperty('height');
     this.background.style.width = `${this.width}px`;
     this.background.style.height = `${this.height}px`;
 

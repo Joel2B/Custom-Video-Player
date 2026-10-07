@@ -50,6 +50,35 @@ test('zoom submenu', async ({ page }) => {
   await expect(page.locator('.fluid_video_wrapper')).toHaveScreenshot('zoom-submenu.png');
 });
 
+test('volume boost submenu', async ({ page }) => {
+  await setup(page);
+  await page.locator('.fluid_button_main_menu').click();
+  await page.locator('.cvp_volumeBoost').click();
+  await expect(page.locator('.cvp_options_menu')).toHaveClass(/cvp_level2/);
+  await expect(page.locator('.fluid_video_wrapper')).toHaveScreenshot('volume-boost-submenu.png');
+});
+
+test('volume boost error state', async ({ page }) => {
+  await setup(page);
+  await page.evaluate(() => {
+    const boost = window.fluidPlayerDebug.at(-1).internals.volumeBoost;
+    boost.fail('cors');
+  });
+  await page.locator('.fluid_button_main_menu').click();
+  await page.locator('.cvp_volumeBoost').click();
+  await expect(page.locator('.fluid_video_wrapper')).toHaveScreenshot('volume-boost-error.png');
+});
+
+test('volume boost error dialog', async ({ page }) => {
+  await setup(page);
+  await page.evaluate(() => {
+    const boost = window.fluidPlayerDebug.at(-1).internals.volumeBoost;
+    boost.fail('cors');
+    boost.openError();
+  });
+  await expect(page.locator('.fluid_video_wrapper')).toHaveScreenshot('volume-boost-error-dialog.png');
+});
+
 test('keyboard focus', async ({ page }) => {
   await setup(page);
   await page.locator('.fluid_control_playpause').focus();

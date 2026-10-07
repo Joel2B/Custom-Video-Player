@@ -25,6 +25,13 @@ const defaults = {
       max: 4,
       reset: 1,
     },
+    volumeBoost: {
+      enabled: false,
+      min: 1,
+      max: 3,
+      reset: 1,
+      mode: 'limiter',
+    },
     audio: {
       language: 'auto',
     },
@@ -52,6 +59,7 @@ const defaults = {
       audio: false,
       subtitles: false,
       zoom: true,
+      volumeBoost: true,
     },
     theatre: {
       enabled: true,
@@ -100,6 +108,7 @@ const defaults = {
       volume: true,
       theatre: true,
       zoom: true,
+      volumeBoost: true,
     },
     controlForwardRewind: {
       show: false,

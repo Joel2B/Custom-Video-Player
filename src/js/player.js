@@ -9,6 +9,7 @@ import Preview from './control-bar/preview';
 import VolumeControl from './control-bar/volume';
 import ContextMenu from './context-menu';
 import Zoom from './zoom';
+import VolumeBoost from './volume-boost';
 
 import Menu from './menu/menu';
 import Loop from './menu/loop';
@@ -83,6 +84,7 @@ class CVP {
     }
 
     this.normalizeZoom();
+    this.normalizeVolumeBoost();
 
     if (FP_ENV === 'development') {
       this.config.debug = true;
@@ -315,6 +317,7 @@ class CVP {
     this.autoPlay = new Autoplay(this);
     this.loopMenu = new Loop(this);
     this.zoom = new Zoom(this);
+    this.volumeBoost = new VolumeBoost(this);
     this.speedMenu = new Speed(this);
     this.audio.init();
     this.subtitles.init();
@@ -359,6 +362,17 @@ class CVP {
     zoom.max = Number.isFinite(zoom.max) && zoom.max >= zoom.min ? zoom.max : Math.max(fallback.max, zoom.min);
     zoom.reset = Number.isFinite(zoom.reset) ? Math.min(Math.max(zoom.reset, zoom.min), zoom.max) : fallback.reset;
     zoom.reset = Math.min(Math.max(zoom.reset, zoom.min), zoom.max);
+  };
+
+  normalizeVolumeBoost = () => {
+    const boost = this.config.layoutControls.volumeBoost;
+    const fallback = defaults.layoutControls.volumeBoost;
+
+    boost.enabled = typeof boost.enabled === 'boolean' ? boost.enabled : fallback.enabled;
+    boost.min = Number.isFinite(boost.min) ? Math.min(Math.max(boost.min, 1), 8) : fallback.min;
+    boost.max = Number.isFinite(boost.max) ? Math.min(Math.max(boost.max, boost.min), 8) : fallback.max;
+    boost.reset = Number.isFinite(boost.reset) ? Math.min(Math.max(boost.reset, boost.min), boost.max) : fallback.reset;
+    boost.mode = ['limiter', 'pure'].includes(boost.mode) ? boost.mode : fallback.mode;
   };
 
   toggleLoader = (show) => {
@@ -902,6 +916,7 @@ class CVP {
       this.fullscreen,
       this.theatre,
       this.zoom,
+      this.volumeBoost,
     ].forEach((module) => module?.destroy?.());
 
     this.promiseTimeouts.forEach(clearTimeout);
@@ -965,6 +980,14 @@ class PlayerInterface {
 
   setVolume = (volume) => {
     return (this.instance.volume = volume);
+  };
+
+  setVolumeBoost = (level) => {
+    return this.instance.volumeBoost.setLevel(level);
+  };
+
+  setVolumeBoostMode = (mode) => {
+    return this.instance.volumeBoost.setMode(mode);
   };
 
   setHtmlOnPauseBlock = (options) => {

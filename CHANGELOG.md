@@ -1,3 +1,10 @@
+## Unreleased
+
+### Added
+
+- Added configurable Web Audio volume boost with limiter and pure-gain modes.
+- Persisted all volume boost settings and added press-and-hold stepper controls.
+
 # 2.1.0 (2026-08-04)
 
 ### Added
