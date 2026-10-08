@@ -1,56 +1,65 @@
 # 4. Bootstrap
 
-## Copy public key and setup
+Bootstrap reconciles deployment helpers and Nginx configuration. It preserves `/srv/cvp`, existing releases, and UFW rules.
 
-Execute in Windows PowerShell from project root:
+## Back up existing state
+
+If an installation already exists, back it up on the VM:
+
+```bash
+paths=()
+for path in etc/cvp-deploy etc/nginx/sites-enabled/player \
+  etc/nginx/sites-available/player \
+  etc/sudoers.d/cvp-deploy home/cvp-deploy/.ssh srv/cvp var/lib/cvp-deploy; do
+  [ -e "/$path" ] && paths+=("$path")
+done
+[ "${#paths[@]}" -eq 0 ] || sudo tar -C / -czf /root/cvp-before-bootstrap.tgz "${paths[@]}"
+```
+
+## Copy setup
+
+From Windows PowerShell:
 
 ```powershell
 Set-Location C:\dev\Custom-Video-Player
-scp "$HOME\.ssh\cvp_deploy.pub" ADMIN_USER@VPS_TAILSCALE_IP:/tmp/cvp_deploy.pub
-scp -r deploy ADMIN_USER@VPS_TAILSCALE_IP:/tmp/cvp-setup
-scp "C:\SECURE_PATH\player.tinyapps.download.pem" ADMIN_USER@VPS_TAILSCALE_IP:/tmp/player-origin.pem
-scp "C:\SECURE_PATH\player.tinyapps.download.key" ADMIN_USER@VPS_TAILSCALE_IP:/tmp/player-origin.key
+scp "$HOME\.ssh\cvp_deploy.pub" ADMIN_USER@192.168.2.197:/tmp/cvp_deploy.pub
+scp -r deploy ADMIN_USER@192.168.2.197:/tmp/cvp-setup
 ```
 
-Replace placeholders. Never copy deploy private key.
+Never copy the deploy private key or Cloudflare Tunnel token.
 
-## Prepare trusted staging
-
-Execute on VPS through Tailscale SSH:
+On the VM:
 
 ```bash
 sudo install -d -o root -g root -m 700 /root/cvp-setup
 sudo cp -R /tmp/cvp-setup/. /root/cvp-setup/
 sudo cp /tmp/cvp_deploy.pub /root/cvp-setup/cvp_deploy.pub
-sudo cp /tmp/player-origin.pem /root/cvp-setup/player-origin.pem
-sudo cp /tmp/player-origin.key /root/cvp-setup/player-origin.key
 sudo chown -R root:root /root/cvp-setup
 sudo chmod -R go-w /root/cvp-setup
-sudo chmod 600 /root/cvp-setup/player-origin.key
-rm -rf /tmp/cvp-setup /tmp/cvp_deploy.pub /tmp/player-origin.pem /tmp/player-origin.key
+rm -rf /tmp/cvp-setup /tmp/cvp_deploy.pub
 ```
 
 ## Run bootstrap
 
-Stay in SSH session connected to `VPS_TAILSCALE_IP`:
+Confirm `cloudflared` and UFW first:
 
 ```bash
-sudo env "SSH_CONNECTION=$SSH_CONNECTION" bash /root/cvp-setup/new-server/bootstrap.sh \
+systemctl is-active cloudflared
+sudo ufw status verbose
+```
+
+Then run:
+
+```bash
+sudo bash /root/cvp-setup/new-server/bootstrap.sh \
   --domain player.tinyapps.download \
   --public-key /root/cvp-setup/cvp_deploy.pub \
-  --tls-cert /root/cvp-setup/player-origin.pem \
-  --tls-key /root/cvp-setup/player-origin.key
+  --ssh-source 192.168.2.0/24
 ```
 
-Review firewall summary. Type exactly:
+Review summary and type `INSTALL`. Bootstrap refuses open SSH/web firewall rules, never resets UFW, and never changes Tunnel credentials. Existing `current`, `testing`, and `stable` pointers are rendered through the new loopback-only template without changing published bytes.
 
-```text
-INSTALL
-```
-
-Do not use `--yes` during first real installation.
-
-Passing `SSH_CONNECTION` explicitly is required because Ubuntu `sudo` removes it by default. Bootstrap uses destination IP plus `tailscale whois` to prove current session runs through Tailscale before replacing firewall rules.
+Production configuration remains at `/etc/cvp-deploy/nginx/default.conf`, exposed to Nginx through `/etc/nginx/sites-enabled/player`. Bootstrap rejects any different symlink target. It does not delete the unused `/etc/nginx/sites-available/player`; remove that file only in a separate maintenance window after confirming no include or symlink references it.
 
 Expected final output:
 
@@ -59,44 +68,21 @@ Server verification passed.
 Server ready. Continue with docs/05-first-deploy.md.
 ```
 
-## Confirm access before closing session
+## Confirm isolation
 
-Open second Windows PowerShell window:
-
-```powershell
-ssh ADMIN_USER@VPS_TAILSCALE_IP
-```
-
-On VPS, inspect firewall:
+On the VM:
 
 ```bash
+sudo ss -ltnp
 sudo ufw status verbose
 ```
 
-Expected inbound rules:
-
-```text
-22/tcp on tailscale0 ALLOW IN
-80/tcp                ALLOW IN
-443/tcp               ALLOW IN
-```
-
-There must be no generic public `22/tcp ALLOW IN` rule.
-
-## Verify restricted account
+Nginx must listen on `127.0.0.1:8080` only. No inbound UFW rule may allow ports `80`, `443`, or `8080`.
 
 From Windows:
 
 ```powershell
-ssh -i "$HOME\.ssh\cvp_deploy" -o IdentitiesOnly=yes cvp-deploy@VPS_TAILSCALE_IP
+ssh -i "$HOME\.ssh\cvp_deploy" -o IdentitiesOnly=yes cvp-deploy@192.168.2.197
 ```
 
-Expected:
-
-```text
-Command not permitted
-```
-
-Shell must not open.
-
-Bootstrap is idempotent for setup files and directories. It does reset UFW each run; rerun only from Tailscale SSH with console access available.
+Expected: `Command not permitted`. Shell must not open.

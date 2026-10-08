@@ -1,3 +1,10 @@
+# Unreleased
+
+### Changed
+
+- Updated deployment setup for a LAN VM behind Cloudflare Tunnel with a loopback-only HTTP origin.
+- Removed the retired Docker deployment stack.
+
 # 2.2.0 (2026-10-07)
 
 ### Added

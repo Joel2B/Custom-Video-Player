@@ -2,7 +2,7 @@
 
 ## Register SSH host key
 
-Get trusted fingerprint from VPS provider console or already trusted administrative session:
+Get trusted fingerprint from the VM console or an already trusted administrative session:
 
 ```bash
 sudo ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
@@ -13,7 +13,7 @@ Record SHA-256 fingerprint.
 From Windows PowerShell:
 
 ```powershell
-ssh-keyscan -t ed25519 VPS_TAILSCALE_IP |
+ssh-keyscan -t ed25519 192.168.2.197 |
   Set-Content -Encoding ascii "$HOME\.ssh\cvp_new_known_hosts"
 ssh-keygen -lf "$HOME\.ssh\cvp_new_known_hosts"
 ```
@@ -26,7 +26,7 @@ Set project `.env`:
 
 ```dotenv
 DEPLOY_CDN=https://player.tinyapps.download
-DEPLOY_HOST=VPS_TAILSCALE_IP
+DEPLOY_HOST=192.168.2.197
 DEPLOY_USER=cvp-deploy
 DEPLOY_KEY=C:\Users\YOUR_USER\.ssh\cvp_deploy
 DEPLOY_KNOWN_HOSTS=C:\Users\YOUR_USER\.ssh\cvp_new_known_hosts
@@ -81,8 +81,8 @@ pwsh ./deploy/new-server/promote-existing.ps1 $version
 
 `promote-existing.ps1` does not create or change Git tags. It verifies existing tag points to `HEAD`, then promotes exact bytes from `current`.
 
-## Configure DNS
+## Confirm Tunnel hostname
 
-Follow [Cloudflare](02-cloudflare.md). Point proxied A record to VPS public IP. Wait for Cloudflare to serve new origin.
+Follow [Cloudflare Tunnel](02-cloudflare.md). Confirm `player.tinyapps.download` belongs to the Tunnel and targets `http://127.0.0.1:8080`. Do not create an `A` record for the VM.
 
 Continue with public verification.

@@ -210,20 +210,9 @@ npm run deploy
 
 Required `.env` values are documented in `.env.example`. Deploy uses locked dependencies without lifecycle scripts, builds production CDN and E2E artifacts, validates ZIP entries and SHA-256, acquires local and remote locks, and keeps a persistent rollback transaction until Nginx reload succeeds. Public E2E builds omit source maps.
 
-The current Docker-based production deploy uses the restricted `cvp-deploy` SSH account installed by `deploy/legacy/install.sh`. Its forced command accepts deployment packages over standard input and exposes no shell, forwarding, PTY, `sudo`, or Docker access beyond the root-owned Nginx activation helper. Dedicated greenfield server instructions live in `deploy/new-server/README.md`.
+Production runs on an Ubuntu VM. Windows deploys over SSH to its fixed LAN address through the restricted `cvp-deploy` account. Cloudflare Tunnel publishes `player.tinyapps.download` to loopback-only Nginx at `http://127.0.0.1:8080`; no web port is exposed on the LAN or Internet. Setup and recovery instructions live in [`deploy/new-server/README.md`](deploy/new-server/README.md).
 
-Copy the deploy sources and dedicated Ed25519 public key into a root-owned staging directory, then run the installer there. The installer rejects source paths writable by non-root users:
-
-```text
-sudo install -d -o root -g root -m 700 /root/cvp-install
-sudo cp -R deploy /root/cvp-install/
-sudo cp /path/to/cvp_deploy.pub /root/cvp-install/
-sudo chown -R root:root /root/cvp-install
-sudo chmod -R go-w /root/cvp-install
-sudo bash /root/cvp-install/deploy/legacy/install.sh /root/cvp-install/cvp_deploy.pub
-```
-
-The installer creates `cvp-deploy`, installs root-owned deploy and Nginx activation helpers, validates the dedicated sudoers rule, restricts `authorized_keys`, and keeps published releases root-owned. Keep an administrative SSH account separate from deployment credentials.
+The forced SSH command accepts deployment packages over standard input and exposes no shell, forwarding, PTY, or unrestricted `sudo`. Published releases and activation helpers remain root-owned.
 
 ## Changes
 

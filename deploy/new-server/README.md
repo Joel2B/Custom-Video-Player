@@ -1,21 +1,21 @@
 # Dedicated deployment server
 
-Greenfield setup for a server dedicated to Custom Video Player. Target architecture:
+Setup and recovery guide for the production Ubuntu VM. Target architecture:
 
 ```text
-Cloudflare proxied HTTPS -> Ubuntu 24.04 Nginx -> /srv/cvp
-Windows Tailscale -> OpenSSH -> restricted cvp-deploy account
+Cloudflare HTTPS -> Cloudflare Tunnel -> http://127.0.0.1:8080 -> Nginx -> /srv/cvp
+Windows -> LAN OpenSSH -> restricted cvp-deploy account
 ```
 
 No Docker, Docker Compose, Portainer, Nginx Proxy Manager, Node.js, npm, application process, database, migration, or restore is used on the server. Builds run on Windows; server receives verified release archives.
 
 ## Order
 
-Complete documents in order. Do not skip fingerprint or Tailscale checks.
+Complete documents in order. Do not skip host fingerprint, firewall, or backup checks.
 
 1. [Requirements](docs/01-requirements.md)
 2. [Cloudflare](docs/02-cloudflare.md)
-3. [Tailscale](docs/03-tailscale.md)
+3. [LAN SSH](docs/03-lan-ssh.md)
 4. [Bootstrap](docs/04-bootstrap.md)
 5. [First deploy](docs/05-first-deploy.md)
 6. [Verification](docs/06-verification.md)
@@ -32,44 +32,44 @@ python3
 sudo
 ufw
 curl
-openssl
 util-linux
 cvp-deploy restricted account
 ```
 
-Tailscale must be installed and connected first. Bootstrap refuses to run unless current administrative SSH session arrives over Tailscale.
+Cloudflare Tunnel must already be installed, registered by token, and active. UFW must already deny incoming traffic by default and allow SSH only from `192.168.2.0/24`. Bootstrap verifies these controls but never changes firewall rules or Tunnel credentials.
 
 ## Files changed on server
 
 ```text
 /etc/cvp-deploy
-/etc/nginx/sites-enabled/player.conf
+/etc/cvp-deploy/nginx/default.conf
+/etc/nginx/sites-enabled/player
 /etc/sudoers.d/cvp-deploy
 /home/cvp-deploy/.ssh/authorized_keys
 /srv/cvp
 /usr/local/libexec/cvp-*
 /usr/local/sbin/cvp-nginx-activate
 /var/lib/cvp-deploy
-UFW rules
 ```
 
-Bootstrap resets UFW. Final inbound rules permit public TCP `80` and `443`, plus TCP `22` only on `tailscale0`.
+Bootstrap is idempotent and preserves `/srv/cvp` releases. Nginx listens only on `127.0.0.1:8080`; LAN ports `80`, `443`, and `8080` remain closed.
 
 ## Final checklist
 
 ```text
-[ ] Ubuntu 24.04 LTS VPS created
-[ ] Windows and VPS connected to same Tailscale network
-[ ] Administrative SSH works through server Tailscale IP
-[ ] Cloudflare Origin Certificate and key created
+[ ] Ubuntu 26.04 LTS VM uses fixed LAN IP 192.168.2.197
+[ ] Administrative SSH works over LAN
+[ ] UFW allows SSH from 192.168.2.0/24 only
+[ ] Cloudflare Tunnel service is active
+[ ] Tunnel hostname targets http://127.0.0.1:8080
 [ ] Dedicated Ed25519 deploy public key prepared
 [ ] Setup copied into root-owned staging directory
 [ ] bootstrap.sh completed
 [ ] verify.sh completed
-[ ] SSH host fingerprint matched through trusted VPS console
-[ ] .env points DEPLOY_HOST to Tailscale IP
-[ ] Cloudflare A record points to public VPS IP and is proxied
-[ ] Cloudflare SSL mode is Full (strict)
+[ ] SSH host fingerprint matched through trusted VM console
+[ ] .env points DEPLOY_HOST to 192.168.2.197
+[ ] Nginx has no LAN or public web listener
+[ ] /etc/nginx/sites-enabled/player points to /etc/cvp-deploy/nginx/default.conf
 [ ] npm run deploy completed
 [ ] stable release promoted
 [ ] public endpoint verification completed
