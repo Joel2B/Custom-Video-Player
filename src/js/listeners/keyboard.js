@@ -99,22 +99,21 @@ class Keyboard {
 
   captureKey = (event) => {
     const { player } = this;
+    const target = event.target;
 
-    if (
-      event.target.closest(
-        'input, textarea, select, [contenteditable]:not([contenteditable="false"]), ' +
-          '[role="textbox"], [role="combobox"]',
-      )
-    ) {
+    if (target.isContentEditable || target.closest('input, textarea, select, [role="textbox"], [role="combobox"]')) {
       return;
     }
 
     if (
-      event.target.closest(
-        'button, a, [role="button"], [role="switch"], [role="slider"], [role="option"], [role="menuitem"], ' +
-          '[role="dialog"]',
-      )
+      target.closest("button, a, [role='button'], [role='switch'], [role='slider'], [role='option'], [role='menuitem']")
     ) {
+      return;
+    }
+
+    const targetDialog = target.closest('dialog, [role="dialog"], [role="alertdialog"]');
+
+    if (targetDialog && !targetDialog.contains(player.wrapper)) {
       return;
     }
 

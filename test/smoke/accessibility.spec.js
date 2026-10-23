@@ -129,6 +129,7 @@ test('global shortcuts ignore editable controls', async ({ page }) => {
       <textarea id="textarea"></textarea>
       <select id="select"><option>One</option><option>Two</option></select>
       <div id="editable" contenteditable="true"></div>
+      <div id="plaintext" contenteditable="plaintext-only"></div>
       <video id="player" width="640" height="360"></video>
     </div>`,
   );
@@ -139,6 +140,7 @@ test('global shortcuts ignore editable controls', async ({ page }) => {
       document.getElementById('textarea'),
       document.getElementById('select'),
       document.getElementById('editable'),
+      document.getElementById('plaintext'),
     );
   });
 
@@ -148,12 +150,40 @@ test('global shortcuts ignore editable controls', async ({ page }) => {
   await page.keyboard.press('ArrowDown');
   await page.locator('#editable').focus();
   await page.keyboard.type('f t');
+  await page.locator('#plaintext').focus();
+  await page.keyboard.type('k m');
 
   expect(await page.locator('#input').inputValue()).toBe('k');
   expect(await page.locator('#textarea').inputValue()).toBe('m');
   expect(await page.locator('#select').inputValue()).toBe('Two');
   await expect(page.locator('#editable')).toHaveText('f t');
+  await expect(page.locator('#plaintext')).toHaveText('k m');
   await expect(page.locator('.fluid_video_wrapper')).not.toHaveClass(/fluid_theatre_mode/);
+});
+
+test('global shortcuts work inside the player modal and ignore other dialogs', async ({ page }) => {
+  await loadPlayer(
+    page,
+    `<div id="player-dialog" role="dialog">
+      <video id="player" width="640" height="360"></video>
+      <div id="player-target" contenteditable="false" tabindex="0"></div>
+    </div>
+    <div id="other-dialog" role="alertdialog" tabindex="0"></div>`,
+  );
+  await page.evaluate(() => {
+    window.fluidPlayer('player');
+    document.querySelector('.fluid_video_wrapper').append(document.getElementById('player-target'));
+  });
+
+  const wrapper = page.locator('.fluid_video_wrapper');
+  await wrapper.click({ position: { x: 10, y: 10 } });
+  await page.locator('#player-target').focus();
+  await page.keyboard.press('t');
+  await expect(wrapper).toHaveClass(/fluid_theatre_mode/);
+
+  await page.locator('#other-dialog').focus();
+  await page.keyboard.press('t');
+  await expect(wrapper).toHaveClass(/fluid_theatre_mode/);
 });
 
 test('keyboard shortcuts dialog traps focus and restores its invoker', async ({ page }) => {
