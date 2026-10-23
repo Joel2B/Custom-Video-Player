@@ -216,6 +216,7 @@ test('zoom panel controls fit a 200px mobile player', async ({ browser, baseURL 
     baseURL,
     viewport: { width: 400, height: 600 },
     hasTouch: true,
+    reducedMotion: 'reduce',
     userAgent:
       'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 ' +
       '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
